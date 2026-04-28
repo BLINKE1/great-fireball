@@ -1,0 +1,43 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/hud/hud.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="2"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1")
+layer = 10
+
+[node name="Margin" type="MarginContainer" parent="."]
+offset_right = 230.0
+offset_bottom = 72.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HPBar" type="ProgressBar" parent="Margin/VBox"]
+custom_minimum_size = Vector2(200, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+modulate = Color(1.0, 0.25, 0.25, 1.0)
+
+[node name="ManaBar" type="ProgressBar" parent="Margin/VBox"]
+custom_minimum_size = Vector2(200, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+modulate = Color(0.2, 0.6, 1.0, 1.0)
+
+[node name="TimeStopOverlay" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+color = Color(0.2, 0.5, 1.0, 0.12)
+mouse_filter = 2
+visible = false
+
+[node name="PauseMenu" parent="." instance=ExtResource("2")]

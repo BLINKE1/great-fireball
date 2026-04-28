@@ -1,0 +1,97 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/goblin.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/golem.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/world/kill_zone.gd" id="5"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(1280, 32)
+
+[sub_resource type="PlaceholderTexture2D" id="2"]
+size = Vector2(1280, 32)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(3000, 32)
+
+[sub_resource type="RectangleShape2D" id="4"]
+size = Vector2(300, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="5"]
+size = Vector2(300, 16)
+
+[sub_resource type="RectangleShape2D" id="6"]
+size = Vector2(200, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="7"]
+size = Vector2(200, 16)
+
+[sub_resource type="RectangleShape2D" id="8"]
+size = Vector2(160, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="9"]
+size = Vector2(160, 16)
+
+[node name="TestLevel" type="Node2D"]
+
+[node name="HUD" parent="." instance=ExtResource("4")]
+
+[node name="Player" parent="." instance=ExtResource("1")]
+position = Vector2(200, 300)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(640, 500)
+
+[node name="Sprite2D" type="Sprite2D" parent="Floor"]
+texture = SubResource("2")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("1")
+
+[node name="Platform1" type="StaticBody2D" parent="."]
+position = Vector2(960, 400)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platform1"]
+texture = SubResource("5")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform1"]
+shape = SubResource("4")
+
+[node name="Platform2" type="StaticBody2D" parent="."]
+position = Vector2(250, 380)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platform2"]
+texture = SubResource("7")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2"]
+shape = SubResource("6")
+
+[node name="Platform3" type="StaticBody2D" parent="."]
+position = Vector2(620, 310)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platform3"]
+texture = SubResource("9")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform3"]
+shape = SubResource("8")
+
+[node name="Goblin1" parent="." instance=ExtResource("2")]
+position = Vector2(500, 464)
+
+[node name="Goblin2" parent="." instance=ExtResource("2")]
+position = Vector2(960, 372)
+
+[node name="Golem1" parent="." instance=ExtResource("3")]
+position = Vector2(800, 454)
+
+[node name="KillZone" type="Area2D" parent="."]
+script = ExtResource("5")
+position = Vector2(640, 700)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+shape = SubResource("3")

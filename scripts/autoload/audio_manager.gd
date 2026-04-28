@@ -1,0 +1,89 @@
+extends Node
+
+const SAMPLE_RATE = 22050
+const POOL_SIZE = 12
+
+var _pool: Array[AudioStreamPlayer] = []
+
+func _ready() -> void:
+	for i in POOL_SIZE:
+		var p = AudioStreamPlayer.new()
+		p.bus = "Master"
+		add_child(p)
+		_pool.append(p)
+
+func play(sound: String, pitch: float = 1.0) -> void:
+	var stream = _build(sound)
+	if not stream:
+		return
+	var player = _free_player()
+	player.stream = stream
+	player.pitch_scale = pitch
+	player.play()
+
+func _free_player() -> AudioStreamPlayer:
+	for p in _pool:
+		if not p.playing:
+			return p
+	return _pool[0]
+
+func _build(sound: String) -> AudioStreamWAV:
+	match sound:
+		"jump":       return _wave(380.0, 0.09, "up",        0.50)
+		"land":       return _wave(100.0, 0.07, "thud",      0.45)
+		"sword":      return _wave(280.0, 0.11, "noise",     0.60)
+		"hit":        return _wave(220.0, 0.09, "noise",     0.55)
+		"hit_player": return _wave(140.0, 0.22, "thud",      0.80)
+		"cast":       return _wave(560.0, 0.14, "down",      0.40)
+		"missile":    return _wave(480.0, 0.09, "up",        0.38)
+		"time_stop":  return _wave(820.0, 0.32, "down",      0.35)
+		"heal":       return _wave(540.0, 0.28, "chord",     0.38)
+		"dash":       return _wave(520.0, 0.09, "up",        0.25)
+		"die":        return _wave(90.0,  0.55, "thud",      0.85)
+		"enemy_die":  return _wave(180.0, 0.35, "thud",      0.55)
+		"unlock":     return _wave(660.0, 0.45, "chord",     0.48)
+		"chest":      return _wave(440.0, 0.30, "chord",     0.42)
+		"fireball":   return _wave(110.0, 0.90, "explosion", 0.92)
+	return null
+
+func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV:
+	var n = int(SAMPLE_RATE * dur)
+	var data = PackedByteArray()
+	data.resize(n * 2)
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	for i in n:
+		var t  = float(i) / SAMPLE_RATE
+		var p  = float(i) / n
+		var env := pow(1.0 - p, 0.6)
+		var s  := 0.0
+		match shape:
+			"up":
+				var f = freq * (1.0 + p * 1.5)
+				s = sin(TAU * f * t)
+			"down":
+				var f = freq * (2.5 - p * 1.5)
+				s = sin(TAU * f * t)
+			"thud":
+				var f = freq * (1.0 - p * 0.75)
+				s = sin(TAU * f * t)
+				env = pow(1.0 - p, 1.8)
+			"noise":
+				s = rng.randf_range(-1.0, 1.0)
+				env = pow(1.0 - p, 1.5)
+			"chord":
+				s = sin(TAU * freq * t) * 0.5 + sin(TAU * freq * 1.25 * t) * 0.3 + sin(TAU * freq * 1.5 * t) * 0.2
+				env = 1.0 - p * 0.65
+			"explosion":
+				var f = freq * (1.0 - p * 0.5)
+				s = sin(TAU * f * t) * 0.35 + rng.randf_range(-0.65, 0.65)
+				env = pow(1.0 - p, 0.75)
+		var pcm = int(clamp(s * env * vol, -1.0, 1.0) * 32767)
+		data[i * 2]     = pcm & 0xFF
+		data[i * 2 + 1] = (pcm >> 8) & 0xFF
+	var stream = AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.stereo = false
+	stream.mix_rate = SAMPLE_RATE
+	stream.data = data
+	return stream
