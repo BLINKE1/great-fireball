@@ -10,6 +10,7 @@ const DISPLAY_NAMES = {
 	"missile_piercing":   "Míssil Perfurante",
 	"missile_giant":      "Míssil Gigante",
 	"missile_curved":     "Míssil Curvo",
+	"magic_shield":       "Escudo Mágico",
 	"magic_dash":         "Dash Mágico",
 	"sword":              "Golpe de Cajado",
 	"double_jump":        "Duplo Salto",
@@ -23,6 +24,7 @@ const KEYS = {
 	"missile_piercing":   "S",
 	"missile_giant":      "D",
 	"missile_curved":     "E",
+	"magic_shield":       "F",
 	"magic_dash":         "Shift",
 	"sword":              "Q",
 	"double_jump":        "(auto)",
@@ -39,6 +41,7 @@ const DESCRIPTIONS = {
 	"magic_dash":       "Rasga o espaço com um traço mágico.",
 	"sword":            "Golpeia diretamente com o cajado.",
 	"double_jump":      "Salta uma segunda vez no ar.",
+	"magic_shield":     "Cria um escudo que absorve todo dano por alguns segundos.",
 }
 
 var _unlocked: Dictionary = {
@@ -52,6 +55,7 @@ var _unlocked: Dictionary = {
 	"missile_curved":   false,
 	"magic_dash":       false,
 	"double_jump":      false,
+	"magic_shield":     false,
 }
 
 func reset() -> void:

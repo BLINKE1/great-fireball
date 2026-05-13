@@ -63,6 +63,11 @@ func _build(sound: String) -> AudioStreamWAV:
 		"missile_curved":     return _wave(620.0,  0.13, "spiral",    0.38)
 		"heartbeat":          return _wave(52.0,   0.22, "heartbeat", 0.42)
 		"skill_use":          return _wave(440.0,  0.10, "up",        0.22)
+		"shield_activate":    return _wave(780.0,  0.28, "chord",     0.44)
+		"shield_hit":         return _wave(320.0,  0.18, "thud",      0.55)
+		"shield_break":       return _wave(160.0,  0.40, "explosion", 0.60)
+		"burn":               return _wave(280.0,  0.55, "noise",     0.28)
+		"fire_arrow":         return _wave(480.0,  0.08, "up",        0.30)
 	return null
 
 func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV:

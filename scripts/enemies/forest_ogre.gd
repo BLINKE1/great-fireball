@@ -291,6 +291,7 @@ func _die() -> void:
 	is_charging = false
 	is_winding_up = false
 	velocity = Vector2.ZERO
+	GameState.enemy_died()
 	boss_hp_changed.emit(0.0)
 	boss_died.emit()
 	sprite.modulate = Color(0.55, 0.50, 0.40, 0.55)

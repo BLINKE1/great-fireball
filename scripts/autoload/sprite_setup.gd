@@ -34,6 +34,8 @@ func _ready() -> void:
 	_gen_missile_giant()
 	_gen_missile_curved()
 	_gen_portal()
+	_gen_fire_goblin_archer()
+	_gen_fire_goblin_arrow()
 
 func get_texture(name: String) -> ImageTexture:
 	return _t.get(name)
@@ -1071,3 +1073,95 @@ func _gen_portal() -> void:
 	_glow_soft(img, 16, 22, 14, GL, 0.30)
 
 	_store("portal", img)
+
+# ── Fire Goblin Archer (28x40) ────────────────────────────────────────────────
+# Darker, more menacing variant with fire-orange palette and burn-glow eyes.
+
+func _gen_fire_goblin_archer() -> void:
+	const GR  := Color(0.18, 0.42, 0.08)
+	const DG  := Color(0.10, 0.25, 0.04)
+	const OR  := Color(0.95, 0.38, 0.04)
+	const DOR := Color(0.65, 0.22, 0.02)
+	const YE  := Color(1.00, 0.82, 0.10)
+	const BK  := Color(0.06, 0.06, 0.06)
+	const RE  := Color(0.85, 0.08, 0.04)
+	const LBR := Color(0.55, 0.35, 0.10)
+	const DBR := Color(0.28, 0.15, 0.03)
+	const SK  := Color(0.90, 0.72, 0.58)
+
+	var img := Image.create(28, 40, false, Image.FORMAT_RGBA8)
+
+	_fc(img, 14, 11, 9, GR)
+	_fr(img, 0, 8, 3, 5, GR)
+	_fr(img, 25, 8, 3, 5, GR)
+	# Flame-orange headband
+	_fr(img, 5, 6, 18, 2, OR)
+	# Burning eyes (orange-red glow)
+	_fr(img, 6, 9, 4, 4, OR)
+	_fr(img, 18, 9, 4, 4, OR)
+	_fr(img, 7, 10, 2, 2, Color(1.0, 0.55, 0.0))
+	_fr(img, 19, 10, 2, 2, Color(1.0, 0.55, 0.0))
+	# Fire glow dots in eyes
+	img.set_pixel(7, 10, RE); img.set_pixel(8, 10, RE)
+	img.set_pixel(19, 10, RE); img.set_pixel(20, 10, RE)
+	# Nose
+	_fr(img, 12, 14, 4, 2, DG)
+	# Teeth
+	_fr(img, 11, 17, 6, 2, SK)
+	_fr(img, 12, 17, 2, 2, BK)
+	_fr(img, 14, 17, 2, 2, BK)
+	# Body (dark fire tunic)
+	_fr(img, 7, 20, 14, 10, DOR)
+	_fr(img, 6, 20, 16, 2, DG)
+	# Fire trim on tunic
+	for tx in range(7, 21):
+		if tx % 2 == 0:
+			img.set_pixel(tx, 28, OR)
+			img.set_pixel(tx, 29, YE)
+	# Arms
+	_fr(img, 1, 20, 7, 4, DG)
+	_fr(img, 20, 20, 7, 4, DG)
+	# Quiver (fire-colored arrows inside)
+	_fr(img, 1, 14, 3, 10, DBR)
+	_fr(img, 2, 13, 2, 2, OR)
+	img.set_pixel(2, 15, YE)
+	img.set_pixel(2, 17, OR)
+	# Bow stave (darker wood)
+	_fr(img, 25, 10, 2, 20, LBR)
+	_fr(img, 25, 10, 1, 20, DBR)
+	img.set_pixel(26, 10, BK); img.set_pixel(26, 18, BK); img.set_pixel(26, 28, BK)
+	# Legs
+	_fr(img, 8, 30, 4, 10, DG)
+	_fr(img, 16, 30, 4, 10, DG)
+	# Feet
+	_fr(img, 6, 38, 6, 2, DG)
+	_fr(img, 14, 38, 6, 2, DG)
+	img.set_pixel(6, 39, BK); img.set_pixel(8, 39, BK); img.set_pixel(10, 39, BK)
+	img.set_pixel(14, 39, BK); img.set_pixel(16, 39, BK); img.set_pixel(18, 39, BK)
+
+	_store("fire_goblin_archer", img)
+
+# ── Fire Goblin Arrow (22x6) ──────────────────────────────────────────────────
+# Flaming arrow — darker shaft with orange-red fire tip.
+
+func _gen_fire_goblin_arrow() -> void:
+	const DBR := Color(0.32, 0.18, 0.04)
+	const OR  := Color(1.00, 0.45, 0.06)
+	const YE  := Color(1.00, 0.82, 0.10)
+	const RE  := Color(0.90, 0.12, 0.04)
+
+	var img := Image.create(22, 6, false, Image.FORMAT_RGBA8)
+	# Shaft (dark wood)
+	_fr(img, 3, 2, 13, 2, DBR)
+	# Burning tip
+	_fr(img, 16, 1, 4, 4, OR)
+	img.set_pixel(19, 2, RE)
+	img.set_pixel(20, 2, RE)
+	img.set_pixel(21, 2, YE)
+	# Fire fletching
+	_fr(img, 0, 0, 4, 2, OR)
+	_fr(img, 0, 4, 4, 2, OR)
+	img.set_pixel(0, 0, YE); img.set_pixel(1, 1, YE)
+	img.set_pixel(0, 5, YE); img.set_pixel(1, 4, YE)
+
+	_store("fire_goblin_arrow", img)
