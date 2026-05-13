@@ -23,6 +23,7 @@ var _skill_fills:   Array[ColorRect] = []
 var _cd_overlays:   Array[ColorRect] = []
 var _player: Node = null
 var _mana_flash_timer: float = 0.0
+var _vignette: ColorRect = null
 
 func _ready() -> void:
 	GameState.time_stop_started.connect(_on_time_stop_start)
@@ -30,6 +31,15 @@ func _ready() -> void:
 	call_deferred("_setup_bars")
 	call_deferred("_build_skill_bar")
 	call_deferred("_connect_to_player")
+	call_deferred("_build_vignette")
+
+func _build_vignette() -> void:
+	_vignette = ColorRect.new()
+	_vignette.color = Color(0.75, 0.0, 0.0, 0.0)
+	_vignette.anchor_right = 1.0
+	_vignette.anchor_bottom = 1.0
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_vignette)
 
 func _connect_to_player() -> void:
 	_player = get_tree().get_first_node_in_group("player")
@@ -148,6 +158,10 @@ func _build_skill_bar() -> void:
 
 func _on_hp_changed(ratio: float) -> void:
 	hp_bar.value = ratio * 100.0
+	if ratio < 0.25 and _vignette:
+		# Flash vignette on each damage hit when critical
+		_vignette.color.a = 0.40
+
 
 func _on_mana_changed(ratio: float) -> void:
 	mana_bar.value = ratio * 100.0
@@ -166,12 +180,16 @@ func _process(delta: float) -> void:
 	if not _player or not is_instance_valid(_player):
 		return
 
-	# Low HP pulse
+	# Low HP pulse + vignette
 	if hp_bar.value < 25.0:
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.0085)
 		hp_bar.modulate = Color(1.0, 0.42 + pulse * 0.30, 0.42 + pulse * 0.30)
+		if _vignette:
+			_vignette.color.a = 0.10 + pulse * 0.14
 	else:
 		hp_bar.modulate = Color.WHITE
+		if _vignette:
+			_vignette.color.a = maxf(_vignette.color.a - delta * 2.0, 0.0)
 
 	if _mana_flash_timer > 0.0:
 		_mana_flash_timer = maxf(_mana_flash_timer - delta, 0.0)

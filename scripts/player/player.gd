@@ -74,6 +74,7 @@ var missile_curved_cd: float = 0.0
 # Screen shake state
 var _shake_intensity: float = 0.0
 var _shake_duration: float  = 0.0
+var _heartbeat_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -137,6 +138,15 @@ func _tick_timers(delta: float) -> void:
 	missile_piercing_cd = max(missile_piercing_cd - delta, 0.0)
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
+
+	# Critical HP heartbeat
+	if hp.get_ratio() < 0.25 and not is_dead:
+		_heartbeat_timer -= delta
+		if _heartbeat_timer <= 0.0:
+			_heartbeat_timer = 1.05
+			AudioManager.play("heartbeat", randf_range(0.90, 1.04))
+	else:
+		_heartbeat_timer = 0.0
 
 	if is_on_floor() and abs(velocity.x) > 20.0 and not is_dashing and _step_timer <= 0.0:
 		_step_timer = 0.27

@@ -146,12 +146,19 @@ func _flash() -> void:
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
-	$Sprite2D.modulate = Color(0.6, 0.6, 0.6, 0.5)
 	AudioManager.play("enemy_die")
+	VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.55, 0.50, 0.40), 18, 95.0, 50.0)
+	VFX.burst(global_position + Vector2(0, -4), get_parent(), Color(0.38, 0.34, 0.28), 10, 65.0, 18.0)
 	if randf() < 0.55:
 		var orb = ManaOrb.instantiate()
 		orb.position = global_position + Vector2(randf_range(-18, 18), -10)
 		get_parent().add_child(orb)
-	await get_tree().create_timer(0.6).timeout
+	# Rock shatter: squash down then crumble
+	var tw := create_tween()
+	tw.tween_property($Sprite2D, "scale", Vector2(1.35, 0.60), 0.09)
+	tw.tween_property($Sprite2D, "scale", Vector2(0.45, 0.45), 0.30)
+	tw.parallel().tween_property($Sprite2D, "rotation", randf_range(-0.45, 0.45), 0.30)
+	tw.parallel().tween_property($Sprite2D, "modulate:a", 0.0, 0.34)
+	await tw.finished
 	if is_instance_valid(self):
 		queue_free()

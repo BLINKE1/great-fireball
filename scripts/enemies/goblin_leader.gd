@@ -10,6 +10,7 @@ const MAX_HP = 80.0
 const KNOCKBACK_DECAY = 1100.0
 
 const DamageNumber = preload("res://scenes/effects/damage_number.tscn")
+const ManaOrb      = preload("res://scenes/world/mana_orb.tscn")
 
 @onready var hp_bar = $HPBar
 
@@ -121,8 +122,19 @@ func _flash() -> void:
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
-	$Sprite2D.modulate = Color(0.6, 0.3, 0.3, 0.5)
 	AudioManager.play("enemy_die")
-	await get_tree().create_timer(0.5).timeout
+	VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.78, 0.12, 0.08), 20, 115.0, 58.0)
+	VFX.burst(global_position + Vector2(0, -8), get_parent(), Color(0.95, 0.45, 0.08), 10, 72.0, 30.0)
+	VFX.ring(global_position + Vector2(0, -12), get_parent(), Color(0.90, 0.30, 0.10, 0.85), 44.0, 0.38)
+	if randf() < 0.80:
+		var orb = ManaOrb.instantiate()
+		orb.position = global_position + Vector2(randf_range(-14, 14), -8)
+		get_parent().add_child(orb)
+	var tw := create_tween()
+	tw.tween_property($Sprite2D, "scale", Vector2(1.5, 0.55), 0.10)
+	tw.tween_property($Sprite2D, "rotation", randf_range(-1.8, 1.8), 0.34)
+	tw.parallel().tween_property($Sprite2D, "scale", Vector2(1.0, 1.0), 0.34)
+	tw.parallel().tween_property($Sprite2D, "modulate:a", 0.0, 0.40)
+	await tw.finished
 	if is_instance_valid(self):
 		queue_free()

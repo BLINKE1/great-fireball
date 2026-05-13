@@ -33,8 +33,9 @@ func _activate() -> void:
 	if tex_on:
 		crystal.texture = tex_on
 
-	# Glow burst
+	# Glow burst + ring
 	VFX.burst(global_position, get_parent(), Color(0.25, 0.70, 1.0), 20, 90.0, 100.0)
+	VFX.ring(global_position, get_parent(), Color(0.30, 0.75, 1.0, 0.85), 48.0, 0.48)
 
 	# Breathing scale pulse
 	var tw := create_tween().set_loops()

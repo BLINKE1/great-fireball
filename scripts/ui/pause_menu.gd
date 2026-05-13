@@ -23,7 +23,7 @@ func _add_controls_hint() -> void:
 	hint.text = "Mover: ←→      Pular: Espaço\n" + \
 				"Ataque: Q       Míssil: Z\n" + \
 				"Míssil Duplo: A     Perfurante: S\n" + \
-				"Míssil Gigante: D\n" + \
+				"Míssil Gigante: D   Míssil Curvo: E\n" + \
 				"Para o Tempo: X     Cura: C\n" + \
 				"Dash: Shift     Pause: Esc"
 	hint.add_theme_font_size_override("font_size", 11)

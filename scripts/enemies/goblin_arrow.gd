@@ -1,10 +1,12 @@
 extends Area2D
 
-const SPEED  = 230.0
-const DAMAGE = 12.0
-const LIFETIME = 3.0
+const SPEED   = 230.0
+const GRAVITY = 220.0
+const DAMAGE  = 12.0
+const LIFETIME = 2.8
 
 var direction: float = 1.0
+var _vy: float = 0.0
 
 func _ready() -> void:
 	var tex := SpriteSetup.get_texture("goblin_arrow")
@@ -17,7 +19,11 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if GameState.time_stopped: return
+	_vy += GRAVITY * delta
 	position.x += direction * SPEED * delta
+	position.y += _vy * delta
+	# Tilt arrow downward as it drops
+	$Sprite2D.rotation = atan2(_vy, SPEED) * direction
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("player"):
