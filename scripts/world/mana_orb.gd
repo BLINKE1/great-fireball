@@ -13,10 +13,13 @@ func _ready() -> void:
 		$Sprite2D.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	body_entered.connect(_on_body_entered)
 	_player = get_tree().get_first_node_in_group("player")
-	# Gentle float animation on sprite (independent of root movement)
+	# Gentle float + scale pulse animation
 	var tw := create_tween().set_loops()
 	tw.tween_property($Sprite2D, "position:y", -6.0, 0.85).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property($Sprite2D, "position:y",  0.0, 0.85).set_ease(Tween.EASE_IN_OUT)
+	var tw2 := create_tween().set_loops()
+	tw2.tween_property($Sprite2D, "scale", Vector2(1.22, 1.22), 0.70).set_ease(Tween.EASE_IN_OUT)
+	tw2.tween_property($Sprite2D, "scale", Vector2(1.00, 1.00), 0.70).set_ease(Tween.EASE_IN_OUT)
 
 func _process(delta: float) -> void:
 	if not _player or not is_instance_valid(_player): return

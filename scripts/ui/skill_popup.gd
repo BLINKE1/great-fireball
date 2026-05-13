@@ -12,6 +12,7 @@ const SKILL_ACCENT_COLORS = {
 	"missile_spread":   Color(0.80, 0.35, 1.00),
 	"missile_piercing": Color(0.10, 0.95, 0.60),
 	"missile_giant":    Color(0.40, 0.90, 1.00),
+	"missile_curved":   Color(0.62, 0.18, 1.00),
 	"time_stop":        Color(0.55, 0.38, 1.00),
 	"heal":             Color(0.22, 0.90, 0.44),
 	"magic_dash":       Color(0.12, 0.88, 1.00),

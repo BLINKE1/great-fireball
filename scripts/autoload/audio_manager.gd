@@ -61,6 +61,7 @@ func _build(sound: String) -> AudioStreamWAV:
 		"missile_giant":      return _wave(180.0,  0.55, "explosion", 0.75)
 		"missile_giant_hit":  return _wave(95.0,   0.70, "explosion", 0.90)
 		"missile_curved":     return _wave(620.0,  0.13, "spiral",    0.38)
+		"heartbeat":          return _wave(52.0,   0.22, "heartbeat", 0.42)
 		"skill_use":          return _wave(440.0,  0.10, "up",        0.22)
 	return null
 
@@ -96,6 +97,16 @@ func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV
 				var f = freq * (1.0 + sin(p * TAU * 2.0) * 0.25)
 				s = sin(TAU * f * t) * 0.60 + sin(TAU * f * 1.50 * t) * 0.40
 				env = pow(1.0 - p, 0.5)
+			"heartbeat":
+				# Lub-dub: first thump at t=0, second at t=0.10
+				var lub := pow(maxf(1.0 - p / 0.35, 0.0), 2.2)
+				var dub_t := t - 0.10
+				var dub := 0.0
+				if dub_t >= 0.0:
+					var dp := dub_t / (dur - 0.10)
+					dub = pow(maxf(1.0 - dp / 0.38, 0.0), 2.0) * 0.65
+				s = sin(TAU * freq * t) * (lub + dub)
+				env = 1.0
 			"explosion":
 				var f = freq * (1.0 - p * 0.5)
 				s = sin(TAU * f * t) * 0.35 + rng.randf_range(-0.65, 0.65)

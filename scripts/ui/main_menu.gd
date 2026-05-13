@@ -17,6 +17,27 @@ func _init_atmosphere() -> void:
 	MusicManager.play("menu")
 	_animate_title()
 	_spawn_orbs()
+	_add_lore_quote()
+
+func _add_lore_quote() -> void:
+	var vp := get_viewport_rect().size
+	var quote := Label.new()
+	quote.text = "\"Toda aprendiz de magia sonha com o Fireball.\"\n— Soph"
+	quote.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	quote.add_theme_font_size_override("font_size", 11)
+	quote.add_theme_color_override("font_color", Color(0.55, 0.50, 0.72, 0.80))
+	quote.size = Vector2(vp.x * 0.70, 40)
+	quote.position = Vector2(vp.x * 0.15, vp.y - 52)
+	add_child(quote)
+
+	var ver := Label.new()
+	ver.text = "Demo v0.3"
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ver.add_theme_font_size_override("font_size", 10)
+	ver.add_theme_color_override("font_color", Color(0.40, 0.38, 0.52, 0.65))
+	ver.size = Vector2(vp.x - 16, 20)
+	ver.position = Vector2(8, vp.y - 22)
+	add_child(ver)
 
 func _animate_title() -> void:
 	var title = $VBox/Title
