@@ -2,11 +2,20 @@ extends CanvasLayer
 
 signal dialogue_finished
 
-const CHAR_DELAY = 0.038
+const CHAR_DELAY = 0.036
 
-@onready var name_label: Label = $Background/Margin/VBox/NameLabel
-@onready var text_label: Label = $Background/Margin/VBox/TextLabel
-@onready var hint_label: Label = $Background/Margin/VBox/HintLabel
+@onready var name_badge: ColorRect = $Background/Margin/VBox/NameBadge
+@onready var name_label: Label     = $Background/Margin/VBox/NameBadge/NameLabel
+@onready var text_label: Label     = $Background/Margin/VBox/TextLabel
+@onready var hint_label: Label     = $Background/Margin/VBox/HintLabel
+
+# Speaker name → accent color for the top border
+const SPEAKER_COLORS = {
+	"Mago Graduado": Color(1.00, 0.55, 0.10),
+	"Soph":          Color(0.28, 0.58, 1.00),
+	"Maga":          Color(0.28, 0.58, 1.00),
+	"Dica":          Color(0.30, 0.90, 0.45),
+}
 
 var _lines: Array = []
 var _names: Array = []
@@ -28,10 +37,21 @@ func _show_current() -> void:
 		visible = false
 		dialogue_finished.emit()
 		return
+
 	_full_text = _lines[_current]
 	var speaker = _names[_current] if _current < _names.size() else ""
 	name_label.text = speaker
-	name_label.visible = speaker != ""
+	name_badge.visible = speaker != ""
+
+	# Accent color based on speaker
+	if speaker != "":
+		var col: Color = SPEAKER_COLORS.get(speaker, Color(0.28, 0.55, 1.0))
+		name_badge.color = Color(col.r * 0.30, col.g * 0.30, col.b * 0.30, 0.88)
+		name_label.add_theme_color_override("font_color", col.lightened(0.25))
+		$Background/TopBorder.color = Color(col.r, col.g, col.b, 0.88)
+	else:
+		$Background/TopBorder.color = Color(0.22, 0.44, 0.80, 0.85)
+
 	text_label.text = ""
 	hint_label.visible = false
 	_char_index = 0

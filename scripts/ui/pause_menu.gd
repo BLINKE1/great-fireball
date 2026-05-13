@@ -9,10 +9,10 @@ func _ready() -> void:
 
 func _add_controls_hint() -> void:
 	# Expand panel to fit controls
-	$Panel.offset_top    = -155.0
-	$Panel.offset_bottom =  155.0
-	$Panel.offset_left   = -165.0
-	$Panel.offset_right  =  165.0
+	$Panel.offset_top    = -185.0
+	$Panel.offset_bottom =  185.0
+	$Panel.offset_left   = -175.0
+	$Panel.offset_right  =  175.0
 
 	var sep := HSeparator.new()
 	sep.layout_mode = 2
@@ -20,7 +20,12 @@ func _add_controls_hint() -> void:
 
 	var hint := Label.new()
 	hint.layout_mode = 2
-	hint.text = "Mover: ←→   Pular: Espaço\nAtaque: Q   Míssil: Z\nPara o Tempo: X   Cura: C\nDash: Shift   Pause: Esc"
+	hint.text = "Mover: ←→      Pular: Espaço\n" + \
+				"Ataque: Q       Míssil: Z\n" + \
+				"Míssil Duplo: A     Perfurante: S\n" + \
+				"Míssil Gigante: D\n" + \
+				"Para o Tempo: X     Cura: C\n" + \
+				"Dash: Shift     Pause: Esc"
 	hint.add_theme_font_size_override("font_size", 11)
 	hint.add_theme_color_override("font_color", Color(0.70, 0.70, 0.85))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

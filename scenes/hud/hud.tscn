@@ -8,28 +8,52 @@ script = ExtResource("1")
 layer = 10
 
 [node name="Margin" type="MarginContainer" parent="."]
-offset_right = 230.0
-offset_bottom = 72.0
+offset_right = 260.0
+offset_bottom = 80.0
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 5
 
-[node name="HPBar" type="ProgressBar" parent="Margin/VBox"]
-custom_minimum_size = Vector2(200, 16)
+[node name="HPRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HPLabel" type="Label" parent="Margin/VBox/HPRow"]
+layout_mode = 2
+text = "HP"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.9, 0.35, 0.35, 1.0)
+custom_minimum_size = Vector2(18, 0)
+vertical_alignment = 1
+
+[node name="HPBar" type="ProgressBar" parent="Margin/VBox/HPRow"]
+custom_minimum_size = Vector2(200, 18)
 layout_mode = 2
 value = 100.0
 show_percentage = false
-modulate = Color(1.0, 0.25, 0.25, 1.0)
 
-[node name="ManaBar" type="ProgressBar" parent="Margin/VBox"]
-custom_minimum_size = Vector2(200, 16)
+[node name="ManaRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ManaLabel" type="Label" parent="Margin/VBox/ManaRow"]
+layout_mode = 2
+text = "MP"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.35, 0.65, 1.0, 1.0)
+custom_minimum_size = Vector2(18, 0)
+vertical_alignment = 1
+
+[node name="ManaBar" type="ProgressBar" parent="Margin/VBox/ManaRow"]
+custom_minimum_size = Vector2(200, 18)
 layout_mode = 2
 value = 100.0
 show_percentage = false
-modulate = Color(0.2, 0.6, 1.0, 1.0)
 
 [node name="TimeStopOverlay" type="ColorRect" parent="."]
 anchor_right = 1.0

@@ -37,8 +37,99 @@ func burst(
 	if is_instance_valid(p):
 		p.queue_free()
 
+# Expanding ring effect — great for impacts and unlocks.
+func ring(world_pos: Vector2, parent: Node, color: Color, radius: float = 40.0, duration: float = 0.35) -> void:
+	if not is_instance_valid(parent): return
+	var ring_node := _RingNode.new()
+	ring_node.ring_color = color
+	ring_node.start_radius = radius * 0.1
+	ring_node.end_radius   = radius
+	ring_node.duration     = duration
+	parent.add_child(ring_node)
+	ring_node.global_position = world_pos
+	await get_tree().create_timer(duration + 0.05).timeout
+	if is_instance_valid(ring_node):
+		ring_node.queue_free()
+
+# Sparkle burst — smaller particles that linger longer (good for magic).
+func sparkle(world_pos: Vector2, parent: Node, color: Color, count: int = 18) -> void:
+	if not is_instance_valid(parent): return
+	var p := CPUParticles2D.new()
+	parent.add_child(p)
+	p.global_position = world_pos
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 0.85
+	p.amount = count
+	p.lifetime = 0.85
+	p.local_coords = false
+	p.direction = Vector2(0, -1)
+	p.spread = 180.0
+	p.gravity = Vector2(0, 60.0)
+	p.initial_velocity_min = 20.0
+	p.initial_velocity_max = 80.0
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 4.0
+	p.color = color
+	p.color_ramp = _fade_gradient(color)
+	await get_tree().create_timer(1.2).timeout
+	if is_instance_valid(p):
+		p.queue_free()
+
+# Shockwave flash on ground — horizontal burst staying near Y.
+func ground_burst(world_pos: Vector2, parent: Node, color: Color, count: int = 20) -> void:
+	if not is_instance_valid(parent): return
+	var p := CPUParticles2D.new()
+	parent.add_child(p)
+	p.global_position = world_pos
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 0.95
+	p.amount = count
+	p.lifetime = 0.45
+	p.local_coords = false
+	p.direction = Vector2(1, 0)
+	p.spread = 35.0
+	p.gravity = Vector2(0, 320.0)
+	p.initial_velocity_min = 80.0
+	p.initial_velocity_max = 200.0
+	p.scale_amount_min = 4.0
+	p.scale_amount_max = 8.0
+	p.color = color
+	p.color_ramp = _fade_gradient(color)
+	# Mirror burst
+	var p2 := p.duplicate() as CPUParticles2D
+	parent.add_child(p2)
+	p2.global_position = world_pos
+	p2.direction = Vector2(-1, 0)
+	p2.emitting = true
+	await get_tree().create_timer(1.0).timeout
+	if is_instance_valid(p):  p.queue_free()
+	if is_instance_valid(p2): p2.queue_free()
+
 func _fade_gradient(base: Color) -> Gradient:
 	var g := Gradient.new()
 	g.set_color(0, base)
 	g.set_color(1, Color(base.r, base.g, base.b, 0.0))
 	return g
+
+# ── Internal ring drawing node ────────────────────────────────────────────────
+
+class _RingNode extends Node2D:
+	var ring_color: Color = Color.WHITE
+	var start_radius: float = 5.0
+	var end_radius: float   = 40.0
+	var duration: float     = 0.35
+	var _t: float           = 0.0
+
+	func _process(delta: float) -> void:
+		_t += delta / duration
+		queue_redraw()
+		if _t >= 1.0:
+			set_process(false)
+
+	func _draw() -> void:
+		var r   := lerpf(start_radius, end_radius, _t)
+		var alp := (1.0 - _t) * ring_color.a
+		var c   := Color(ring_color.r, ring_color.g, ring_color.b, alp)
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 28, c, 2.5, true)

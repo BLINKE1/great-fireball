@@ -3,30 +3,51 @@ extends Node
 signal skill_unlocked(skill_name: String)
 
 const DISPLAY_NAMES = {
-	"time_stop":     "Parar o Tempo",
-	"heal":          "Cura",
-	"magic_missile": "Míssil Mágico",
-	"magic_dash":    "Dash Mágico",
-	"sword":         "Golpe de Cajado",
-	"double_jump":   "Duplo Salto",
+	"time_stop":          "Parar o Tempo",
+	"heal":               "Cura",
+	"magic_missile":      "Míssil Mágico",
+	"missile_spread":     "Míssil Duplo",
+	"missile_piercing":   "Míssil Perfurante",
+	"missile_giant":      "Míssil Gigante",
+	"magic_dash":         "Dash Mágico",
+	"sword":              "Golpe de Cajado",
+	"double_jump":        "Duplo Salto",
 }
 
 const KEYS = {
-	"time_stop":     "X",
-	"heal":          "C",
-	"magic_missile": "Z",
-	"magic_dash":    "Shift",
-	"sword":         "Q",
-	"double_jump":   "(auto)",
+	"time_stop":          "X",
+	"heal":               "C",
+	"magic_missile":      "Z",
+	"missile_spread":     "A",
+	"missile_piercing":   "S",
+	"missile_giant":      "D",
+	"magic_dash":         "Shift",
+	"sword":              "Q",
+	"double_jump":        "(auto)",
+}
+
+const DESCRIPTIONS = {
+	"magic_missile":    "Dispara um míssil mágico de energia.",
+	"missile_spread":   "Dispara dois mísseis em leque simultâneos.",
+	"missile_piercing": "Um míssil que atravessa inimigos sem parar.",
+	"missile_giant":    "Concentra toda a mana num míssil devastador.",
+	"time_stop":        "Paralisa todos os inimigos por instantes.",
+	"heal":             "Recupera pontos de vida com magia.",
+	"magic_dash":       "Rasga o espaço com um traço mágico.",
+	"sword":            "Golpeia diretamente com o cajado.",
+	"double_jump":      "Salta uma segunda vez no ar.",
 }
 
 var _unlocked: Dictionary = {
-	"sword":         true,
-	"time_stop":     false,
-	"heal":          false,
-	"magic_missile": false,
-	"magic_dash":    false,
-	"double_jump":   false,
+	"sword":            true,
+	"time_stop":        false,
+	"heal":             false,
+	"magic_missile":    false,
+	"missile_spread":   false,
+	"missile_piercing": false,
+	"missile_giant":    false,
+	"magic_dash":       false,
+	"double_jump":      false,
 }
 
 func reset() -> void:
@@ -48,3 +69,6 @@ func display_name(skill: String) -> String:
 
 func key_for(skill: String) -> String:
 	return KEYS.get(skill, "?")
+
+func description(skill: String) -> String:
+	return DESCRIPTIONS.get(skill, "")

@@ -54,8 +54,13 @@ func _build(sound: String) -> AudioStreamWAV:
 		"no_mana":      return _wave(110.0,  0.14, "thud",     0.22)
 		"step":         return _wave(160.0,  0.055,"thud",     0.18)
 		"enemy_attack": return _wave(220.0,  0.10, "noise",    0.32)
-		"roar":         return _wave(55.0,   0.55, "explosion", 0.78)
-		"victory":      return _wave(392.0,  1.10, "chord",     0.72)
+		"roar":               return _wave(55.0,   0.55, "explosion", 0.78)
+		"victory":            return _wave(392.0,  1.10, "chord",     0.72)
+		"missile_spread":     return _wave(540.0,  0.11, "chord",     0.42)
+		"missile_piercing":   return _wave(680.0,  0.08, "up",        0.35)
+		"missile_giant":      return _wave(180.0,  0.55, "explosion", 0.75)
+		"missile_giant_hit":  return _wave(95.0,   0.70, "explosion", 0.90)
+		"skill_use":          return _wave(440.0,  0.10, "up",        0.22)
 	return null
 
 func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV:
