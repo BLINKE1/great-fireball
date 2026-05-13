@@ -30,6 +30,12 @@ const MAGIC_SHIELD_COST       = 35.0
 const MAGIC_SHIELD_DURATION   = 3.5
 const MAGIC_SHIELD_CD         = 6.0
 
+# Fall damage thresholds (pixels fallen from apex/start to landing)
+const FALL_SAFE   = 220.0   # below this: no damage
+const FALL_LIGHT  = 380.0   # 15 HP
+const FALL_MEDIUM = 560.0   # 30 HP
+const FALL_HEAVY  = 760.0   # 55 HP (above: 100 HP, usually lethal)
+
 const IFRAME_DURATION   = 1.0
 const KNOCKBACK_FORCE   = 300.0
 const COYOTE_TIME       = 0.12
@@ -86,6 +92,13 @@ var _burn_dps: float = 0.0
 var _burn_tick: float = 0.0
 var _burn_flash: float = 0.0
 
+# Fall tracking
+var _fall_start_y:  float = 0.0   # Y at fall apex (or edge departure)
+var _air_hike_y:    float = 0.0   # Y at moment air-hike was activated
+var _prev_vy:       float = 0.0   # velocity.y from previous frame
+var _tracking_fall: bool  = false  # currently in a tracked falling phase
+var _air_hiked:     bool  = false  # used double jump mid-fall this flight
+
 # Screen shake state
 var _shake_intensity: float = 0.0
 var _shake_duration: float  = 0.0
@@ -139,6 +152,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_apply_gravity(delta)
+	_tick_fall()
 	_handle_jump()
 	_handle_movement()
 	_handle_spells()
@@ -146,6 +160,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _tick_timers(delta: float) -> void:
+	_prev_vy            = velocity.y
 	iframe_timer        = max(iframe_timer        - delta, 0.0)
 	jump_buffer_timer   = max(jump_buffer_timer   - delta, 0.0)
 	dash_cooldown_timer = max(dash_cooldown_timer - delta, 0.0)
@@ -225,6 +240,7 @@ func _check_landing() -> void:
 		AudioManager.play("land")
 		VFX.burst(global_position + Vector2(0, 16), get_parent(),
 				Color(0.70, 0.58, 0.42, 0.85), 7, 42.0, -15.0)
+		_on_landed()
 	was_on_floor = is_on_floor()
 
 func _apply_gravity(delta: float) -> void:
@@ -234,10 +250,68 @@ func _apply_gravity(delta: float) -> void:
 func _max_air_jumps() -> int:
 	return 1 if SkillManager.has("double_jump") else 0
 
+# ── Fall tracking ─────────────────────────────────────────────────────────────
+
+func _tick_fall() -> void:
+	if is_on_floor(): return
+	# Detect the moment velocity turns downward (jump apex or walking off edge)
+	if velocity.y > 0 and _prev_vy <= 0:
+		if not _air_hiked:
+			# Fresh fall: measure from current apex/departure point
+			_fall_start_y = global_position.y
+		_tracking_fall = true
+
+func _on_landed() -> void:
+	if not _tracking_fall: return
+	var dist: float
+	if _air_hiked:
+		# Segment 2: from air-hike activation point to final landing
+		dist = global_position.y - _air_hike_y
+	else:
+		# No air-hike: full fall distance from apex
+		dist = global_position.y - _fall_start_y
+	var dmg := _fall_damage(maxf(dist, 0.0))
+	if dmg > 0.0:
+		_apply_fall_damage(dmg)
+	_tracking_fall = false
+	_air_hiked     = false
+
+func _fall_damage(dist: float) -> float:
+	if   dist < FALL_SAFE:   return 0.0
+	elif dist < FALL_LIGHT:  return 15.0
+	elif dist < FALL_MEDIUM: return 30.0
+	elif dist < FALL_HEAVY:  return 55.0
+	else:                    return 100.0
+
+func _apply_fall_damage(amount: float) -> void:
+	if is_dead: return
+	hp.take_damage(amount)
+	shake(minf(amount * 0.55, 14.0), 0.35)
+	AudioManager.play("stomp", randf_range(0.78, 0.96))
+	VFX.burst(global_position + Vector2(0, 12), get_parent(),
+			Color(0.80, 0.65, 0.40), 12, 72.0, 16.0)
+	VFX.ground_burst(global_position + Vector2(0, 10), get_parent(),
+			Color(0.65, 0.52, 0.30), 8)
+	var dmg_num = DamageNumber.instantiate()
+	get_parent().add_child(dmg_num)
+	dmg_num.global_position = global_position + Vector2(0, -32)
+	dmg_num.setup(amount, Color(0.90, 0.65, 0.22))
+	var tw := sprite.create_tween()
+	tw.tween_property(sprite, "modulate", Color(1.6, 0.55, 0.18), 0.0)
+	tw.tween_property(sprite, "modulate", base_modulate, 0.22)
+
 func _handle_jump() -> void:
 	if Input.is_action_just_pressed("ui_accept"):
 		jump_buffer_timer = JUMP_BUFFER_TIME
 		if not is_on_floor() and coyote_timer <= 0.0 and jumps_remaining > 0:
+			# Air-hike in a fall: calculate segment 1 damage and start segment 2
+			if _tracking_fall and velocity.y > 0:
+				var seg1 := global_position.y - _fall_start_y
+				var seg1_dmg := _fall_damage(maxf(seg1, 0.0))
+				if seg1_dmg > 0.0:
+					_apply_fall_damage(seg1_dmg)
+				_air_hiked  = true
+				_air_hike_y = global_position.y
 			velocity.y = JUMP_VELOCITY * 0.85
 			jumps_remaining -= 1
 			jump_buffer_timer = 0.0
@@ -480,6 +554,8 @@ func respawn() -> void:
 	iframe_timer = IFRAME_DURATION
 	sprite.modulate = base_modulate
 	hair.modulate   = Color.WHITE
+	_tracking_fall = false
+	_air_hiked     = false
 
 func _update_visuals() -> void:
 	if is_on_floor() and abs(velocity.x) < 5.0 and not is_dashing and not is_dead:
