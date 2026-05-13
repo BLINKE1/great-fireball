@@ -1,6 +1,7 @@
 extends Node
 
 signal mana_changed(ratio: float)
+signal mana_depleted
 
 @export var max_mana: float = 100.0
 @export var regen_rate: float = 0.0  # mana/sec, increased by equipment
@@ -16,6 +17,7 @@ func _process(delta: float) -> void:
 
 func spend(amount: float) -> bool:
 	if current_mana < amount:
+		mana_depleted.emit()
 		return false
 	_set_mana(current_mana - amount)
 	return true

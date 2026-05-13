@@ -40,3 +40,15 @@ func _activate() -> void:
 	var tw := create_tween().set_loops()
 	tw.tween_property(crystal, "scale", Vector2(1.08, 1.08), 0.9).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(crystal, "scale", Vector2(1.00, 1.00), 0.9).set_ease(Tween.EASE_IN_OUT)
+
+	# Floating "Salvo!" notification
+	var lbl := Label.new()
+	lbl.text = "Checkpoint salvo!"
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.add_theme_color_override("font_color", Color(0.38, 0.82, 1.0))
+	lbl.position = global_position + Vector2(-48, -52)
+	get_parent().add_child(lbl)
+	var ltw := lbl.create_tween()
+	ltw.tween_property(lbl, "position:y", lbl.position.y - 44, 1.4).set_ease(Tween.EASE_OUT)
+	ltw.parallel().tween_property(lbl, "modulate:a", 0.0, 1.4).set_ease(Tween.EASE_IN)
+	ltw.tween_callback(lbl.queue_free)

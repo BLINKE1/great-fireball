@@ -1,10 +1,11 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/goblin.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/golem.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn" id="4"]
 [ext_resource type="Script" path="res://scripts/world/kill_zone.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/world/level_visuals.gd" id="6"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(1280, 32)
@@ -34,6 +35,9 @@ size = Vector2(160, 16)
 size = Vector2(160, 16)
 
 [node name="TestLevel" type="Node2D"]
+
+[node name="LevelVisuals" type="Node" parent="."]
+script = ExtResource("6")
 
 [node name="HUD" parent="." instance=ExtResource("4")]
 

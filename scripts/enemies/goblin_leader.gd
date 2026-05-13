@@ -19,10 +19,18 @@ var attack_timer: float = 0.0
 var is_dead: bool = false
 var knockback: Vector2 = Vector2.ZERO
 var player: Node = null
+var _alerted: bool = false
 
 func _ready() -> void:
 	add_to_group("enemy")
 	player = get_tree().get_first_node_in_group("player")
+	var tex := SpriteSetup.get_texture("goblin_leader")
+	if tex:
+		$Sprite2D.texture = tex
+		$Sprite2D.modulate = Color.WHITE
+		$Sprite2D.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	GameState.time_stop_started.connect(_on_time_stop)
+	GameState.time_stop_ended.connect(_on_time_resume)
 
 func _physics_process(delta: float) -> void:
 	knockback = knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
@@ -46,18 +54,45 @@ func _physics_process(delta: float) -> void:
 	if player and is_instance_valid(player):
 		var dist = global_position.distance_to(player.global_position)
 		if dist < DETECT_RANGE:
+			if not _alerted:
+				_alerted = true
+				_show_alert()
 			var dir = sign(player.global_position.x - global_position.x)
 			velocity.x = dir * SPEED
 			facing = dir
 			$Sprite2D.flip_h = dir < 0
 			if dist < ATTACK_RANGE and attack_timer <= 0.0:
 				attack_timer = ATTACK_COOLDOWN
+				AudioManager.play("enemy_attack", randf_range(0.78, 0.95))
 				if player.has_method("take_damage"):
 					player.take_damage(ATTACK_DAMAGE, global_position)
 		else:
 			velocity.x = move_toward(velocity.x, 0.0, SPEED)
 
 	move_and_slide()
+
+func _on_time_stop() -> void:
+	if is_dead: return
+	$Sprite2D.create_tween().tween_property($Sprite2D, "modulate", Color(0.55, 0.72, 1.20), 0.14)
+
+func _on_time_resume() -> void:
+	if is_dead: return
+	$Sprite2D.create_tween().tween_property($Sprite2D, "modulate", Color.WHITE, 0.18)
+
+func _show_alert() -> void:
+	AudioManager.play("detect")
+	var lbl := Label.new()
+	lbl.text = "!"
+	lbl.add_theme_font_size_override("font_size", 18)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.10))
+	lbl.position = Vector2(-5, -52)
+	add_child(lbl)
+	var tw := lbl.create_tween()
+	tw.tween_property(lbl, "scale", Vector2(1.6, 1.6), 0.08)
+	tw.tween_property(lbl, "scale", Vector2(1.0, 1.0), 0.15)
+	tw.tween_interval(0.35)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.24)
+	tw.tween_callback(lbl.queue_free)
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
@@ -72,6 +107,7 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if kdir == 0: kdir = 1.0
 	knockback = Vector2(kdir * 320.0, -120.0)
 	AudioManager.play("hit")
+	GameState.start_hitstop(0.08)
 	_flash()
 	if hp <= 0.0:
 		_die()

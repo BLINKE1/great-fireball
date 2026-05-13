@@ -8,6 +8,7 @@ const DISPLAY_NAMES = {
 	"magic_missile": "Míssil Mágico",
 	"magic_dash":    "Dash Mágico",
 	"sword":         "Golpe de Cajado",
+	"double_jump":   "Duplo Salto",
 }
 
 const KEYS = {
@@ -16,6 +17,7 @@ const KEYS = {
 	"magic_missile": "Z",
 	"magic_dash":    "Shift",
 	"sword":         "Q",
+	"double_jump":   "(auto)",
 }
 
 var _unlocked: Dictionary = {
@@ -24,7 +26,13 @@ var _unlocked: Dictionary = {
 	"heal":          false,
 	"magic_missile": false,
 	"magic_dash":    false,
+	"double_jump":   false,
 }
+
+func reset() -> void:
+	for key in _unlocked.keys():
+		_unlocked[key] = false
+	_unlocked["sword"] = true
 
 func unlock(skill: String) -> void:
 	if _unlocked.get(skill, false):

@@ -14,3 +14,46 @@ func start_time_stop(duration: float) -> void:
 	await get_tree().create_timer(duration).timeout
 	time_stopped = false
 	time_stop_ended.emit()
+
+# Brief freeze-frame on hit — creates satisfying impact feedback.
+# duration is real-world seconds (ignores time_scale).
+func start_hitstop(duration: float = 0.06) -> void:
+	if Engine.time_scale < 1.0 or time_stopped:
+		return
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(duration, false, false, true).timeout
+	Engine.time_scale = 1.0
+
+func reset_state() -> void:
+	time_stopped = false
+	dialogue_active = false
+	Engine.time_scale = 1.0
+
+func fade_out_then(callback: Callable, duration: float = 0.42) -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 48
+	get_tree().root.add_child(cl)
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0)
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cl.add_child(overlay)
+	var tw := overlay.create_tween()
+	tw.tween_property(overlay, "color:a", 1.0, duration).set_ease(Tween.EASE_IN)
+	tw.tween_callback(callback)
+	tw.tween_callback(cl.queue_free)
+
+func fade_in(duration: float = 0.55) -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 48
+	get_tree().root.add_child(cl)
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 1.0)
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cl.add_child(overlay)
+	var tw := overlay.create_tween()
+	tw.tween_property(overlay, "color:a", 0.0, duration).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(cl.queue_free)

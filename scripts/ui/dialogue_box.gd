@@ -47,6 +47,8 @@ func _process(delta: float) -> void:
 		if _char_index < _full_text.length():
 			text_label.text = _full_text.substr(0, _char_index + 1)
 			_char_index += 1
+			if _char_index % 2 == 0:
+				AudioManager.play("tick", randf_range(0.88, 1.15))
 		else:
 			_typing = false
 			hint_label.visible = true

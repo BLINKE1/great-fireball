@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/world/kill_zone.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/world/tutorial_manager.gd" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/world/checkpoint.tscn" id="7"]
+[ext_resource type="Script" path="res://scripts/world/level_visuals.gd" id="8"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(4000, 32)
@@ -60,6 +61,9 @@ size = Vector2(80, 80)
 size = Vector2(80, 80)
 
 [node name="TutorialLevel" type="Node2D"]
+
+[node name="LevelVisuals" type="Node" parent="."]
+script = ExtResource("8")
 
 [node name="HUD" parent="." instance=ExtResource("2")]
 

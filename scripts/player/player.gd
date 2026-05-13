@@ -23,6 +23,7 @@ const JUMP_BUFFER_TIME = 0.12
 
 const MagicMissile = preload("res://scenes/spells/magic_missile.tscn")
 const SwordSlash   = preload("res://scenes/player/sword_slash.tscn")
+const DamageNumber = preload("res://scenes/effects/damage_number.tscn")
 
 @onready var sprite: Sprite2D   = $Sprite2D
 @onready var hair: Sprite2D     = $Hair
@@ -32,6 +33,7 @@ const SwordSlash   = preload("res://scenes/player/sword_slash.tscn")
 
 var facing: float = 1.0
 var iframe_timer: float = 0.0
+var _step_timer: float = 0.0
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -44,6 +46,8 @@ var is_cutscene: bool = false
 var was_on_floor: bool = false
 var spawn_position: Vector2
 var base_modulate: Color
+var jumps_remaining: int = 1
+var _ghost_timer: float = 0.0
 
 # Screen shake state
 var _shake_intensity: float = 0.0
@@ -67,6 +71,7 @@ func _ready() -> void:
 	base_modulate = sprite.modulate
 	mana.mana_changed.connect(_on_mana_changed)
 	hp.died.connect(_on_died)
+	mana.regen_rate = 1.5
 
 func _physics_process(delta: float) -> void:
 	_tick_shake(delta)
@@ -99,17 +104,26 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _tick_timers(delta: float) -> void:
-	iframe_timer      = max(iframe_timer      - delta, 0.0)
-	jump_buffer_timer = max(jump_buffer_timer - delta, 0.0)
+	iframe_timer        = max(iframe_timer        - delta, 0.0)
+	jump_buffer_timer   = max(jump_buffer_timer   - delta, 0.0)
 	dash_cooldown_timer = max(dash_cooldown_timer - delta, 0.0)
-	sword_timer       = max(sword_timer       - delta, 0.0)
-	attack_flash_timer = max(attack_flash_timer - delta, 0.0)
+	sword_timer         = max(sword_timer         - delta, 0.0)
+	attack_flash_timer  = max(attack_flash_timer  - delta, 0.0)
+	_ghost_timer        = max(_ghost_timer        - delta, 0.0)
+	_step_timer         = max(_step_timer         - delta, 0.0)
+	if is_on_floor() and abs(velocity.x) > 20.0 and not is_dashing and _step_timer <= 0.0:
+		_step_timer = 0.27
+		AudioManager.play("step", randf_range(0.82, 1.18))
 	if is_dashing:
 		dash_timer -= delta
 		if dash_timer <= 0.0:
 			is_dashing = false
+		elif _ghost_timer <= 0.0:
+			_ghost_timer = 0.05
+			_spawn_dash_ghost()
 	if is_on_floor():
-		coyote_timer = COYOTE_TIME
+		coyote_timer    = COYOTE_TIME
+		jumps_remaining = _max_air_jumps()
 	else:
 		coyote_timer = max(coyote_timer - delta, 0.0)
 
@@ -130,19 +144,35 @@ func shake(intensity: float, duration: float) -> void:
 func _check_landing() -> void:
 	if is_on_floor() and not was_on_floor:
 		AudioManager.play("land")
+		VFX.burst(global_position + Vector2(0, 16), get_parent(),
+				Color(0.70, 0.58, 0.42, 0.85), 7, 42.0, -15.0)
 	was_on_floor = is_on_floor()
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 
+# Returns air jumps available AFTER a ground/coyote jump.
+# 1 with double_jump, 0 without — so falling off a ledge never grants an extra jump.
+func _max_air_jumps() -> int:
+	return 1 if SkillManager.has("double_jump") else 0
+
 func _handle_jump() -> void:
 	if Input.is_action_just_pressed("ui_accept"):
 		jump_buffer_timer = JUMP_BUFFER_TIME
+		# Air/double jump: strictly in the air, past coyote window, has jumps left.
+		if not is_on_floor() and coyote_timer <= 0.0 and jumps_remaining > 0:
+			velocity.y = JUMP_VELOCITY * 0.85
+			jumps_remaining -= 1
+			jump_buffer_timer = 0.0
+			AudioManager.play("double_jump")
+			VFX.burst(global_position, get_parent(), Color(0.5, 0.85, 1.0), 12, 65.0, 30.0)
+			return
 	if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
 		velocity.y = JUMP_VELOCITY
 		coyote_timer = 0.0
 		jump_buffer_timer = 0.0
+		jumps_remaining = _max_air_jumps()  # Reset air jumps after any ground/coyote jump
 		AudioManager.play("jump")
 
 func _handle_movement() -> void:
@@ -189,6 +219,10 @@ func _cast_heal() -> void:
 	AudioManager.play("heal")
 	hp.heal(HEAL_AMOUNT)
 	VFX.burst(global_position + Vector2(0, -20), get_parent(), Color(0.30, 1.00, 0.50), 22, 95.0, 80.0)
+	var dmg = DamageNumber.instantiate()
+	get_parent().add_child(dmg)
+	dmg.position = global_position + Vector2(0, -32)
+	dmg.setup(HEAL_AMOUNT, Color(0.28, 1.0, 0.48))
 
 func _cast_magic_dash() -> void:
 	if not SkillManager.has("magic_dash"): return
@@ -206,6 +240,7 @@ func _attack_sword() -> void:
 	attack_flash_timer = SWORD_FLASH
 	AudioManager.play("sword")
 	var slash = SwordSlash.instantiate()
+	slash.facing = facing
 	slash.global_position = global_position + Vector2(facing * 36, -16)
 	get_parent().add_child(slash)
 
@@ -219,13 +254,47 @@ func take_damage(amount: float, source_position: Vector2 = global_position) -> v
 	if kdir == 0: kdir = -facing
 	velocity = Vector2(kdir * KNOCKBACK_FORCE, -200.0)
 
+func get_skill_cooldown(skill: String) -> float:
+	match skill:
+		"magic_dash":    return dash_cooldown_timer / DASH_COOLDOWN
+		"sword":         return sword_timer / SWORD_COOLDOWN
+		"magic_missile": return 0.0 if mana.current_mana >= MAGIC_MISSILE_COST else 0.75
+		"time_stop":     return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
+		"heal":          return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
+		"double_jump":   return 0.0 if jumps_remaining > 0                     else 1.0
+	return 0.0
+
 func set_cutscene(active: bool) -> void:
 	is_cutscene = active
+
+func _spawn_dash_ghost() -> void:
+	if not sprite.texture: return
+	var ghost := Sprite2D.new()
+	ghost.texture     = sprite.texture
+	ghost.flip_h      = sprite.flip_h
+	ghost.global_position = sprite.global_position
+	ghost.modulate    = Color(0.35, 0.80, 1.0, 0.55)
+	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ghost.z_index     = -1
+	get_parent().add_child(ghost)
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.20)
+	tw.tween_callback(ghost.queue_free)
+
+func fall_into_void() -> void:
+	if is_dead: return
+	is_dead = true
+	velocity = Vector2.ZERO
+	AudioManager.play("die")
+	shake(10.0, 0.45)
+	sprite.modulate = Color(0.20, 0.20, 0.45, 1.0)
+	_death_fade()
 
 func respawn() -> void:
 	is_dead = false
 	is_dashing = false
 	is_cutscene = false
+	jumps_remaining = _max_air_jumps()
 	global_position = spawn_position
 	velocity = Vector2.ZERO
 	hp.restore_full()
@@ -235,6 +304,15 @@ func respawn() -> void:
 	hair.modulate   = Color.WHITE
 
 func _update_visuals() -> void:
+	# Idle breathing: subtle scale pulse when standing still
+	if is_on_floor() and abs(velocity.x) < 5.0 and not is_dashing and not is_dead:
+		var breathe := 1.0 + 0.018 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.40)
+		sprite.scale = Vector2(breathe, breathe)
+		hair.scale   = Vector2(breathe, breathe)
+	else:
+		sprite.scale = Vector2.ONE
+		hair.scale   = Vector2.ONE
+
 	if is_dashing:
 		sprite.modulate = Color(0.5, 0.85, 1.0, 1.0)
 		return
@@ -254,5 +332,33 @@ func _on_died() -> void:
 	AudioManager.play("die")
 	shake(12.0, 0.5)
 	sprite.modulate = Color(1.0, 0.3, 0.3, 1.0)
-	await get_tree().create_timer(1.5).timeout
-	respawn()
+	_death_fade()
+
+func _death_fade() -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 50
+	get_tree().root.add_child(cl)
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0)
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cl.add_child(overlay)
+	var msg := Label.new()
+	msg.text = "Você morreu..."
+	msg.anchor_left = 0.0; msg.anchor_right = 1.0
+	msg.anchor_top = 0.45; msg.anchor_bottom = 0.55
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.add_theme_font_size_override("font_size", 28)
+	msg.add_theme_color_override("font_color", Color(0.78, 0.22, 0.22))
+	msg.modulate.a = 0.0
+	cl.add_child(msg)
+	var tw := overlay.create_tween()
+	tw.tween_property(overlay, "color:a", 1.0, 0.45)
+	tw.tween_property(msg, "modulate:a", 1.0, 0.30)
+	tw.tween_interval(0.40)
+	tw.tween_property(msg, "modulate:a", 0.0, 0.20)
+	tw.tween_callback(respawn)
+	tw.tween_property(overlay, "color:a", 0.0, 0.55)
+	tw.tween_callback(cl.queue_free)

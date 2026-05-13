@@ -18,9 +18,12 @@ const LeaderScene  = preload("res://scenes/enemies/goblin_leader.tscn")
 var _heal_shown: bool = false
 
 func _ready() -> void:
+	SkillManager.reset()
+	GameState.fade_in()
 	call_deferred("_start")
 
 func _start() -> void:
+	MusicManager.play("game")
 	await _say([
 		"Um cajado mágico... ele está me chamando.",
 		"Vou pegá-lo.",
@@ -36,9 +39,10 @@ func _on_chest(body: Node) -> void:
 		chest_visual.queue_free()
 	AudioManager.play("chest")
 	await _say([
+		"Este cajado pode golpear diretamente — pressione Q para atacar.",
 		"As defesas mágicas da torre foram ativadas!",
 		"Golens de Pedra!",
-	], ["", ""])
+	], ["Dica", "", ""])
 	_spawn(GolemScene, Vector2(520, 464))
 	_spawn(GolemScene, Vector2(610, 464))
 	SkillManager.unlock("time_stop")
@@ -54,9 +58,9 @@ func _on_chest(body: Node) -> void:
 
 func _on_fled(body: Node) -> void:
 	if not body.is_in_group("player"): return
-	_spawn(GoblinScene, Vector2(950, 464))
-	_spawn(GoblinScene, Vector2(1050, 464))
-	_spawn(GoblinScene, Vector2(1150, 464))
+	_spawn(GoblinScene, Vector2(1200, 464))
+	_spawn(GoblinScene, Vector2(1300, 464))
+	_spawn(GoblinScene, Vector2(1400, 464))
 	player.hp.hp_changed.connect(_on_player_hurt)
 	_fled_fallback()
 
@@ -114,18 +118,20 @@ func _fireball_cutscene() -> void:
 	player.set_cutscene(true)
 	AudioManager.play("fireball")
 
-	var flash = ColorRect.new()
+	var cl := CanvasLayer.new()
+	cl.layer = 45
+	get_tree().root.add_child(cl)
+	var flash := ColorRect.new()
 	flash.anchor_right = 1.0
 	flash.anchor_bottom = 1.0
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	flash.color = Color(1.0, 0.45, 0.0, 0.0)
-	flash.z_index = 100
-	get_tree().root.add_child(flash)
+	cl.add_child(flash)
 
 	var tw = create_tween()
 	tw.tween_property(flash, "color:a", 0.85, 0.25)
 	tw.tween_property(flash, "color:a", 0.0,  0.60)
-	tw.tween_callback(flash.queue_free)
+	tw.tween_callback(cl.queue_free)
 
 	await get_tree().create_timer(0.4).timeout
 	for enemy in get_tree().get_nodes_in_group("enemy"):
@@ -149,8 +155,39 @@ func _fireball_cutscene() -> void:
 
 	await _say([
 		"A grande aventura começa agora...",
-		"(Use Z X C Shift Q para testar suas habilidades)",
+		"Vá para a direita — um portal irá abrir o caminho para a Floresta.",
 	], ["", ""])
+	_spawn_exit_portal()
+
+func _spawn_exit_portal() -> void:
+	var area = Area2D.new()
+	area.position = Vector2(3550, 460)
+	area.monitoring = true
+	var shape = CollisionShape2D.new()
+	var rect = RectangleShape2D.new()
+	rect.size = Vector2(90, 90)
+	shape.shape = rect
+	area.add_child(shape)
+	# Visual: glowing checkpoint crystal as portal marker
+	var spr = Sprite2D.new()
+	spr.texture = SpriteSetup.get_texture("checkpoint_on")
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.scale = Vector2(2.0, 2.5)
+	area.add_child(spr)
+	get_parent().add_child(area)
+	# Tween must be created after the node is in the scene tree
+	var tw := spr.create_tween().set_loops()
+	tw.tween_property(spr, "modulate", Color(0.7, 1.0, 1.0), 0.9).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(spr, "modulate", Color.WHITE, 0.9).set_ease(Tween.EASE_IN_OUT)
+	VFX.burst(Vector2(3550, 440), get_parent(), Color(0.35, 0.75, 1.0), 24, 110.0, 55.0)
+	area.body_entered.connect(_on_portal_entered)
+
+func _on_portal_entered(body: Node) -> void:
+	if not body.is_in_group("player"): return
+	body.set_cutscene(true)
+	GameState.fade_out_then(func():
+		get_tree().change_scene_to_file("res://scenes/world/dungeon_1.tscn")
+	)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -168,4 +205,5 @@ func _spawn(scene: PackedScene, pos: Vector2) -> Node:
 	var node = scene.instantiate()
 	node.position = pos
 	enemies.add_child(node)
+	VFX.burst(Vector2(pos.x, pos.y - 20), enemies, Color(0.55, 0.08, 0.04), 12, 78.0, -40.0)
 	return node

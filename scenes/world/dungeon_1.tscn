@@ -1,0 +1,248 @@
+[gd_scene load_steps=38 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn"     id="1"]
+[ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn"            id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn"    id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/skill_popup.tscn"     id="4"]
+[ext_resource type="PackedScene" path="res://scenes/ui/boss_hp_bar.tscn"     id="5"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint.tscn"   id="6"]
+[ext_resource type="Script"      path="res://scripts/world/kill_zone.gd"     id="7"]
+[ext_resource type="Script"      path="res://scripts/world/dungeon_manager.gd" id="8"]
+[ext_resource type="Script"      path="res://scripts/world/level_visuals.gd" id="9"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(5500, 32)
+
+[sub_resource type="PlaceholderTexture2D" id="2"]
+size = Vector2(5500, 32)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(16, 220)
+
+[sub_resource type="PlaceholderTexture2D" id="4"]
+size = Vector2(16, 220)
+
+[sub_resource type="RectangleShape2D" id="5"]
+size = Vector2(16, 220)
+
+[sub_resource type="PlaceholderTexture2D" id="6"]
+size = Vector2(16, 220)
+
+[sub_resource type="RectangleShape2D" id="7"]
+size = Vector2(180, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="8"]
+size = Vector2(180, 16)
+
+[sub_resource type="RectangleShape2D" id="9"]
+size = Vector2(160, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="10"]
+size = Vector2(160, 16)
+
+[sub_resource type="RectangleShape2D" id="11"]
+size = Vector2(200, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="12"]
+size = Vector2(200, 16)
+
+[sub_resource type="RectangleShape2D" id="13"]
+size = Vector2(220, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="14"]
+size = Vector2(220, 16)
+
+[sub_resource type="RectangleShape2D" id="15"]
+size = Vector2(180, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="16"]
+size = Vector2(180, 16)
+
+[sub_resource type="RectangleShape2D" id="17"]
+size = Vector2(300, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="18"]
+size = Vector2(300, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="19"]
+size = Vector2(32, 32)
+
+[sub_resource type="RectangleShape2D" id="20"]
+size = Vector2(90, 80)
+
+[sub_resource type="RectangleShape2D" id="21"]
+size = Vector2(90, 80)
+
+[sub_resource type="RectangleShape2D" id="22"]
+size = Vector2(100, 80)
+
+[sub_resource type="RectangleShape2D" id="23"]
+size = Vector2(100, 80)
+
+[sub_resource type="RectangleShape2D" id="24"]
+size = Vector2(5500, 32)
+
+[node name="Dungeon1" type="Node2D"]
+
+[node name="LevelVisuals" type="Node" parent="."]
+script = ExtResource("9")
+
+[node name="HUD" parent="." instance=ExtResource("2")]
+
+[node name="DialogueBox" parent="." instance=ExtResource("3")]
+
+[node name="SkillPopup" parent="." instance=ExtResource("4")]
+
+[node name="BossHPBar" parent="." instance=ExtResource("5")]
+
+[node name="Player" parent="." instance=ExtResource("1")]
+position = Vector2(150, 458)
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="Floor" type="StaticBody2D" parent="Environment"]
+position = Vector2(2750, 500)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Floor"]
+texture = SubResource("2")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Floor"]
+shape = SubResource("1")
+
+[node name="WallLeft" type="StaticBody2D" parent="Environment"]
+position = Vector2(34, 389)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/WallLeft"]
+texture = SubResource("4")
+modulate = Color(0.18, 0.15, 0.12, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/WallLeft"]
+shape = SubResource("3")
+
+[node name="WallRight" type="StaticBody2D" parent="Environment"]
+position = Vector2(5466, 389)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/WallRight"]
+texture = SubResource("6")
+modulate = Color(0.18, 0.15, 0.12, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/WallRight"]
+shape = SubResource("5")
+
+[node name="Platform1" type="StaticBody2D" parent="Environment"]
+position = Vector2(600, 430)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform1"]
+texture = SubResource("8")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform1"]
+shape = SubResource("7")
+
+[node name="Platform2" type="StaticBody2D" parent="Environment"]
+position = Vector2(1050, 390)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform2"]
+texture = SubResource("10")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform2"]
+shape = SubResource("9")
+
+[node name="Platform3" type="StaticBody2D" parent="Environment"]
+position = Vector2(1550, 450)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform3"]
+texture = SubResource("12")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform3"]
+shape = SubResource("11")
+
+[node name="Platform4" type="StaticBody2D" parent="Environment"]
+position = Vector2(2800, 420)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform4"]
+texture = SubResource("14")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform4"]
+shape = SubResource("13")
+
+[node name="Chest" type="Sprite2D" parent="Environment"]
+position = Vector2(2800, 406)
+texture = SubResource("19")
+modulate = Color(0.95, 0.78, 0.10, 1.0)
+
+[node name="Platform5" type="StaticBody2D" parent="Environment"]
+position = Vector2(3550, 380)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform5"]
+texture = SubResource("16")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform5"]
+shape = SubResource("15")
+
+[node name="Platform6" type="StaticBody2D" parent="Environment"]
+position = Vector2(4350, 440)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform6"]
+texture = SubResource("18")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform6"]
+shape = SubResource("17")
+
+[node name="Checkpoint1" parent="Environment" instance=ExtResource("6")]
+position = Vector2(1800, 464)
+
+[node name="Checkpoint2" parent="Environment" instance=ExtResource("6")]
+position = Vector2(3500, 464)
+
+[node name="Triggers" type="Node2D" parent="."]
+
+[node name="Area1Trigger" type="Area2D" parent="Triggers"]
+position = Vector2(420, 460)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/Area1Trigger"]
+shape = SubResource("20")
+
+[node name="Area2Trigger" type="Area2D" parent="Triggers"]
+position = Vector2(2050, 460)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/Area2Trigger"]
+shape = SubResource("21")
+
+[node name="ChestTrigger" type="Area2D" parent="Triggers"]
+position = Vector2(2800, 410)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/ChestTrigger"]
+shape = SubResource("22")
+
+[node name="BossTrigger" type="Area2D" parent="Triggers"]
+position = Vector2(4050, 460)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/BossTrigger"]
+shape = SubResource("23")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="KillZone" type="Area2D" parent="."]
+script = ExtResource("7")
+position = Vector2(2750, 700)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+shape = SubResource("24")
+
+[node name="DungeonManager" type="Node" parent="."]
+script = ExtResource("8")
