@@ -95,6 +95,14 @@ func _on_area2(body: Node) -> void:
 	], ["Soph", "Soph", "", "Dica", "Soph"])
 	SkillManager.unlock("missile_piercing")
 	await skill_popup.show_skill("missile_piercing")
+	await _say([
+		"Há outro glifo mais adiante... Deixa eu ver.",
+		"\"A linha reta é o caminho do aprendiz —\no arco, o caminho do mestre.\"",
+		"Sinto a trajetória curva tomar forma na minha mente!",
+		"Míssil Curvo — pressione E.\nEle sobrevoa obstáculos pelo alto.",
+	], ["Soph", "", "Soph", "Dica"])
+	SkillManager.unlock("missile_curved")
+	await skill_popup.show_skill("missile_curved")
 	boss_trigger.body_entered.connect(_on_boss_room, CONNECT_ONE_SHOT)
 
 # ── Boss Room: Ogro da Floresta ───────────────────────────────────────────────
