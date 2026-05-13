@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+signal fall_danger(is_dangerous: bool)
 const SPEED = 200.0
 const JUMP_VELOCITY = -420.0
 const GRAVITY = 980.0
@@ -93,11 +94,13 @@ var _burn_tick: float = 0.0
 var _burn_flash: float = 0.0
 
 # Fall tracking
-var _fall_start_y:  float = 0.0   # Y at fall apex (or edge departure)
-var _air_hike_y:    float = 0.0   # Y at moment air-hike was activated
-var _prev_vy:       float = 0.0   # velocity.y from previous frame
-var _tracking_fall: bool  = false  # currently in a tracked falling phase
-var _air_hiked:     bool  = false  # used double jump mid-fall this flight
+var _fall_start_y:      float = 0.0
+var _air_hike_y:        float = 0.0
+var _prev_vy:           float = 0.0
+var _tracking_fall:     bool  = false
+var _air_hiked:         bool  = false
+var _was_fall_dangerous: bool = false
+var _fall_trail_timer:  float = 0.0
 
 # Screen shake state
 var _shake_intensity: float = 0.0
@@ -182,15 +185,21 @@ func _tick_timers(delta: float) -> void:
 			_shield_active = false
 			if _shield_visual:
 				_shield_visual.deactivate()
+			AudioManager.play("shield_break")
+			VFX.ring(global_position + Vector2(0, -18), get_parent(),
+					Color(0.30, 0.68, 1.0, 0.70), 36.0, 0.32)
+			VFX.burst(global_position + Vector2(0, -18), get_parent(),
+					Color(0.45, 0.78, 1.0), 10, 60.0, 45.0)
 
-	# Burn damage-over-time
+	# Burn damage-over-time (shield blocks burn ticks)
 	if _burn_timer > 0.0:
 		_burn_timer -= delta
 		_burn_tick  -= delta
 		_burn_flash  = max(_burn_flash - delta * 3.0, 0.0)
 		if _burn_tick <= 0.0:
 			_burn_tick = 0.5
-			hp.take_damage(_burn_dps * 0.5)
+			if not _shield_active:
+				hp.take_damage(_burn_dps * 0.5)
 			VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(1.0, 0.45, 0.06), 3, 28.0, 20.0)
 			_burn_flash = 0.18
 		if _burn_timer <= 0.0:
@@ -253,16 +262,46 @@ func _max_air_jumps() -> int:
 # ── Fall tracking ─────────────────────────────────────────────────────────────
 
 func _tick_fall() -> void:
-	if is_on_floor(): return
+	if is_on_floor():
+		if _was_fall_dangerous:
+			_was_fall_dangerous = false
+			fall_danger.emit(false)
+		_fall_trail_timer = 0.0
+		return
 	# Detect the moment velocity turns downward (jump apex or walking off edge)
 	if velocity.y > 0 and _prev_vy <= 0:
 		if not _air_hiked:
-			# Fresh fall: measure from current apex/departure point
 			_fall_start_y = global_position.y
 		_tracking_fall = true
 
+	# Emit fall danger signal for HUD blue vignette
+	if _tracking_fall:
+		var ref_y := _air_hike_y if _air_hiked else _fall_start_y
+		var dist  := global_position.y - ref_y
+		var now_dangerous := dist > FALL_SAFE * 0.72
+		if now_dangerous != _was_fall_dangerous:
+			_was_fall_dangerous = now_dangerous
+			fall_danger.emit(now_dangerous)
+
+	# Wind-trail VFX when falling very fast
+	if velocity.y > 480.0:
+		_fall_trail_timer -= get_physics_process_delta_time()
+		if _fall_trail_timer <= 0.0:
+			_fall_trail_timer = 0.07
+			VFX.burst(global_position + Vector2(randf_range(-6.0, 6.0), 8.0),
+					get_parent(), Color(0.72, 0.68, 0.88, 0.55), 2, 18.0, -55.0)
+
+func clear_burn() -> void:
+	_burn_timer = 0.0
+	_burn_dps   = 0.0
+	_burn_tick  = 0.0
+	_burn_flash = 0.0
+
 func _on_landed() -> void:
 	if not _tracking_fall: return
+	if _was_fall_dangerous:
+		_was_fall_dangerous = false
+		fall_danger.emit(false)
 	var dist: float
 	if _air_hiked:
 		# Segment 2: from air-hike activation point to final landing
@@ -554,8 +593,16 @@ func respawn() -> void:
 	iframe_timer = IFRAME_DURATION
 	sprite.modulate = base_modulate
 	hair.modulate   = Color.WHITE
-	_tracking_fall = false
-	_air_hiked     = false
+	_tracking_fall      = false
+	_air_hiked          = false
+	_was_fall_dangerous = false
+	_burn_timer         = 0.0
+	_burn_dps           = 0.0
+	_burn_flash         = 0.0
+	if _shield_visual:
+		_shield_visual.deactivate()
+	_shield_active  = false
+	shield_timer    = 0.0
 
 func _update_visuals() -> void:
 	if is_on_floor() and abs(velocity.x) < 5.0 and not is_dashing and not is_dead:
@@ -600,24 +647,42 @@ func _death_fade() -> void:
 	overlay.anchor_bottom = 1.0
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cl.add_child(overlay)
+	var death_lines := [
+		"Você caiu...",
+		"Ainda não era sua hora...",
+		"O Fireball ainda espera...",
+		"Tente novamente...",
+		"A magia não erra duas vezes...",
+	]
 	var msg := Label.new()
-	msg.text = "Você morreu..."
+	msg.text = death_lines[randi() % death_lines.size()]
 	msg.anchor_left = 0.0; msg.anchor_right = 1.0
-	msg.anchor_top = 0.45; msg.anchor_bottom = 0.55
+	msg.anchor_top = 0.43; msg.anchor_bottom = 0.57
 	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	msg.add_theme_font_size_override("font_size", 32)
+	msg.add_theme_font_size_override("font_size", 30)
 	msg.add_theme_color_override("font_color", Color(0.85, 0.18, 0.18))
 	msg.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	msg.add_theme_constant_override("shadow_offset_x", 2)
 	msg.add_theme_constant_override("shadow_offset_y", 2)
 	msg.modulate.a = 0.0
 	cl.add_child(msg)
+	var sub := Label.new()
+	sub.text = "— Soph"
+	sub.anchor_left = 0.0; sub.anchor_right = 1.0
+	sub.anchor_top = 0.54; sub.anchor_bottom = 0.64
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 14)
+	sub.add_theme_color_override("font_color", Color(0.60, 0.50, 0.65, 0.85))
+	sub.modulate.a = 0.0
+	cl.add_child(sub)
 	var tw := overlay.create_tween()
 	tw.tween_property(overlay, "color:a", 1.0, 0.45)
 	tw.tween_property(msg, "modulate:a", 1.0, 0.30)
-	tw.tween_interval(0.40)
+	tw.parallel().tween_property(sub, "modulate:a", 1.0, 0.40).set_delay(0.15)
+	tw.tween_interval(0.55)
 	tw.tween_property(msg, "modulate:a", 0.0, 0.20)
+	tw.parallel().tween_property(sub, "modulate:a", 0.0, 0.20)
 	tw.tween_callback(respawn)
 	tw.tween_property(overlay, "color:a", 0.0, 0.55)
 	tw.tween_callback(cl.queue_free)

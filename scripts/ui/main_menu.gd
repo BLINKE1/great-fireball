@@ -31,7 +31,7 @@ func _add_lore_quote() -> void:
 	add_child(quote)
 
 	var ver := Label.new()
-	ver.text = "Demo v0.3"
+	ver.text = "Demo v0.4"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	ver.add_theme_font_size_override("font_size", 10)
 	ver.add_theme_color_override("font_color", Color(0.40, 0.38, 0.52, 0.65))

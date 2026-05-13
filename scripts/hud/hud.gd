@@ -25,6 +25,8 @@ var _cd_overlays:   Array[ColorRect] = []
 var _player: Node = null
 var _mana_flash_timer: float = 0.0
 var _vignette: ColorRect = null
+var _fall_vignette: ColorRect = null
+var _fall_danger: bool = false
 
 func _ready() -> void:
 	GameState.time_stop_started.connect(_on_time_stop_start)
@@ -42,11 +44,25 @@ func _build_vignette() -> void:
 	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_vignette)
 
+	_fall_vignette = ColorRect.new()
+	_fall_vignette.color = Color(0.10, 0.35, 0.80, 0.0)
+	_fall_vignette.anchor_right = 1.0
+	_fall_vignette.anchor_bottom = 1.0
+	_fall_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fall_vignette)
+
 func _connect_to_player() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	if not _player:
 		return
 	_player.hp.hp_changed.connect(_on_hp_changed)
+	if _player.has_signal("fall_danger"):
+		_player.fall_danger.connect(_on_fall_danger)
+
+func _on_fall_danger(is_dangerous: bool) -> void:
+	_fall_danger = is_dangerous
+	if is_dangerous and _fall_vignette:
+		_fall_vignette.color.a = 0.22
 	_player.mana.mana_changed.connect(_on_mana_changed)
 	_player.mana.mana_depleted.connect(_on_mana_depleted)
 	_on_hp_changed(_player.hp.get_ratio())
@@ -191,6 +207,14 @@ func _process(delta: float) -> void:
 		hp_bar.modulate = Color.WHITE
 		if _vignette:
 			_vignette.color.a = maxf(_vignette.color.a - delta * 2.0, 0.0)
+
+	# Fall danger vignette (blue border pulses when approaching lethal fall)
+	if _fall_vignette:
+		if _fall_danger:
+			var fp := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.013)
+			_fall_vignette.color.a = 0.10 + fp * 0.16
+		else:
+			_fall_vignette.color.a = maxf(_fall_vignette.color.a - delta * 4.0, 0.0)
 
 	if _mana_flash_timer > 0.0:
 		_mana_flash_timer = maxf(_mana_flash_timer - delta, 0.0)

@@ -191,8 +191,12 @@ func _fireball_cutscene() -> void:
 
 	await _say([
 		"A floresta encantada me chama.",
+		"Mas cuidado — a queda de lugares altos machuca.",
+		"Quanto maior a altura, maior o dano — quedas muito altas são letais.",
+		"O Duplo Salto pode amortecer a queda: use-o na descida para dividir o dano em dois segmentos.",
+		"No timing perfeito, você dobra a altura que pode cair sem se machucar.",
 		"Vá para a direita — um portal abrirá o caminho.",
-	], ["Soph", ""])
+	], ["Soph", "Soph", "Dica", "Dica", "Dica", ""])
 	_spawn_exit_portal()
 
 func _spawn_exit_portal() -> void:
