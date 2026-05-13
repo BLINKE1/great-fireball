@@ -24,6 +24,8 @@ const MISSILE_PIERCING_COST   = 22.0
 const MISSILE_PIERCING_CD     = 0.28
 const MISSILE_GIANT_COST      = 50.0
 const MISSILE_GIANT_CD        = 1.60
+const MISSILE_CURVED_COST     = 18.0
+const MISSILE_CURVED_CD       = 0.55
 
 const IFRAME_DURATION   = 1.0
 const KNOCKBACK_FORCE   = 300.0
@@ -34,6 +36,7 @@ const MagicMissile    = preload("res://scenes/spells/magic_missile.tscn")
 const MissileSpread   = preload("res://scenes/spells/missile_spread.tscn")
 const MissilePiercing = preload("res://scenes/spells/missile_piercing.tscn")
 const MissileGiant    = preload("res://scenes/spells/missile_giant.tscn")
+const MissileCurved   = preload("res://scenes/spells/missile_curved.tscn")
 const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
 
@@ -66,6 +69,7 @@ var magic_missile_cd: float = 0.0
 var missile_spread_cd: float = 0.0
 var missile_piercing_cd: float = 0.0
 var missile_giant_cd: float = 0.0
+var missile_curved_cd: float = 0.0
 
 # Screen shake state
 var _shake_intensity: float = 0.0
@@ -132,6 +136,7 @@ func _tick_timers(delta: float) -> void:
 	missile_spread_cd   = max(missile_spread_cd   - delta, 0.0)
 	missile_piercing_cd = max(missile_piercing_cd - delta, 0.0)
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
+	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
 
 	if is_on_floor() and abs(velocity.x) > 20.0 and not is_dashing and _step_timer <= 0.0:
 		_step_timer = 0.27
@@ -213,6 +218,8 @@ func _handle_spells() -> void:
 		_cast_missile_piercing()
 	if Input.is_action_just_pressed("spell_missile_giant"):
 		_cast_missile_giant()
+	if Input.is_action_just_pressed("spell_missile_curved"):
+		_cast_missile_curved()
 	if Input.is_action_just_pressed("spell_time_stop"):
 		_cast_time_stop()
 	if Input.is_action_just_pressed("spell_heal"):
@@ -269,6 +276,18 @@ func _cast_missile_giant() -> void:
 	var m = MissileGiant.instantiate()
 	m.direction = facing
 	m.position  = global_position + Vector2(facing * 28, -18)
+	get_parent().add_child(m)
+
+func _cast_missile_curved() -> void:
+	if not SkillManager.has("missile_curved"): return
+	if missile_curved_cd > 0.0: return
+	if not mana.spend(MISSILE_CURVED_COST): return
+	missile_curved_cd = MISSILE_CURVED_CD
+	AudioManager.play("missile_curved")
+	VFX.sparkle(global_position + Vector2(facing * 18, -20), get_parent(), Color(0.60, 0.15, 1.0), 6)
+	var m = MissileCurved.instantiate()
+	m.direction = facing
+	m.position  = global_position + Vector2(facing * 20, -22)
 	get_parent().add_child(m)
 
 func _cast_time_stop() -> void:
@@ -333,6 +352,8 @@ func get_skill_cooldown(skill: String) -> float:
 		                            else (0.0 if mana.current_mana >= MISSILE_PIERCING_COST else 0.75)
 		"missile_giant":     return missile_giant_cd / MISSILE_GIANT_CD if missile_giant_cd > 0.0 \
 		                            else (0.0 if mana.current_mana >= MISSILE_GIANT_COST else 0.75)
+		"missile_curved":    return missile_curved_cd / MISSILE_CURVED_CD if missile_curved_cd > 0.0 \
+		                            else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

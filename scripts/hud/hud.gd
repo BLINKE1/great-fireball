@@ -10,6 +10,7 @@ const SKILLS = [
 	{"name": "missile_spread",  "key": "A",    "symbol": "❊",  "color": Color(0.80, 0.35, 1.00)},
 	{"name": "missile_piercing","key": "S",    "symbol": "→",  "color": Color(0.10, 0.95, 0.60)},
 	{"name": "missile_giant",   "key": "D",    "symbol": "◉",  "color": Color(0.40, 0.90, 1.00)},
+	{"name": "missile_curved",  "key": "E",    "symbol": "↺",  "color": Color(0.62, 0.18, 1.00)},
 	{"name": "time_stop",       "key": "X",    "symbol": "⏸",  "color": Color(0.55, 0.38, 1.00)},
 	{"name": "heal",            "key": "C",    "symbol": "♥",  "color": Color(0.22, 0.90, 0.44)},
 	{"name": "magic_dash",      "key": "Shft", "symbol": "»",  "color": Color(0.12, 0.88, 1.00)},

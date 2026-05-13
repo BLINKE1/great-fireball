@@ -32,6 +32,7 @@ func _ready() -> void:
 	_gen_missile_spread()
 	_gen_missile_piercing()
 	_gen_missile_giant()
+	_gen_missile_curved()
 	_gen_portal()
 
 func get_texture(name: String) -> ImageTexture:
@@ -1001,6 +1002,36 @@ func _gen_missile_giant() -> void:
 	img.set_pixel(55, 12, Color(1.0, 1.0, 1.0, 1.0))
 	img.set_pixel(54, 14, Color(0.9, 1.0, 1.0, 0.9))
 	_store("missile_giant", img)
+
+# ── Missile Curved (Míssil Curvo) — 24x14, indigo-violet teardrop orb ────────
+# Oriented tip-right for sprite rotation to match velocity direction.
+
+func _gen_missile_curved() -> void:
+	var img := Image.create(24, 14, true, Image.FORMAT_RGBA8)
+	# Trailing energy fade (left side)
+	for x in 16:
+		var prog := float(x) / 15.0
+		var half := int(1.5 + prog * 4.5)
+		var a := prog * 0.80
+		for y in range(7 - half, 7 + half + 1):
+			if y >= 0 and y < 14:
+				var existing := img.get_pixel(x, y)
+				if existing.a < a:
+					img.set_pixel(x, y, Color(0.35, 0.05, 0.90, a))
+	# Orb core glow
+	_glow_soft(img, 18, 7, 6, Color(0.60, 0.20, 1.00), 0.95)
+	_glow_soft(img, 18, 7, 4, Color(0.78, 0.45, 1.00), 0.98)
+	_fc(img, 18, 7, 2, Color(0.92, 0.72, 1.00))
+	_fc(img, 18, 7, 1, Color(1.00, 0.95, 1.00))
+	# Tip spark
+	img.set_pixel(22, 6, Color(0.95, 0.80, 1.0, 0.90))
+	img.set_pixel(23, 7, Color(1.00, 1.00, 1.0, 1.00))
+	img.set_pixel(22, 8, Color(0.95, 0.80, 1.0, 0.90))
+	# Helical shimmer stripe along trail
+	for x in range(2, 15, 3):
+		img.set_pixel(x, 5, Color(0.70, 0.30, 1.0, 0.55))
+		img.set_pixel(x + 1, 9, Color(0.70, 0.30, 1.0, 0.55))
+	_store("missile_curved", img)
 
 # ── Portal (animated exit) — 32x48, glowing crystal portal ───────────────────
 
