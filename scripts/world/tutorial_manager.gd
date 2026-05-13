@@ -23,6 +23,7 @@ func _ready() -> void:
 	call_deferred("_start")
 
 func _start() -> void:
+	GameState.start_session()
 	MusicManager.play("game")
 	await _say([
 		"Este cajado...",

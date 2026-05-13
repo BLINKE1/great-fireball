@@ -15,6 +15,7 @@ const SKILLS = [
 	{"name": "heal",            "key": "C",    "symbol": "♥",  "color": Color(0.22, 0.90, 0.44)},
 	{"name": "magic_dash",      "key": "Shft", "symbol": "»",  "color": Color(0.12, 0.88, 1.00)},
 	{"name": "double_jump",     "key": "↑↑",   "symbol": "↑",  "color": Color(0.60, 0.85, 1.00)},
+	{"name": "magic_shield",    "key": "F",    "symbol": "◎",  "color": Color(0.30, 0.68, 1.00)},
 ]
 
 var _skill_panels:  Array[ColorRect] = []

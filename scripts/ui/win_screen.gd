@@ -47,8 +47,15 @@ func _build_ui() -> void:
 	lore.add_theme_color_override("font_color", Color(0.80, 0.76, 0.90))
 	vbox.add_child(lore)
 
+	var score := Label.new()
+	score.text = "Inimigos derrotados: %d      Tempo: %s" % [GameState.kill_count, GameState.get_elapsed_time()]
+	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	score.add_theme_font_size_override("font_size", 13)
+	score.add_theme_color_override("font_color", Color(0.95, 0.82, 0.42))
+	vbox.add_child(score)
+
 	var spacer2 := Control.new()
-	spacer2.custom_minimum_size = Vector2(0, 36)
+	spacer2.custom_minimum_size = Vector2(0, 24)
 	vbox.add_child(spacer2)
 
 	var hint := Label.new()

@@ -18,6 +18,7 @@ const SKILL_ACCENT_COLORS = {
 	"magic_dash":       Color(0.12, 0.88, 1.00),
 	"sword":            Color(0.95, 0.72, 0.12),
 	"double_jump":      Color(0.60, 0.85, 1.00),
+	"magic_shield":     Color(0.30, 0.68, 1.00),
 }
 
 func show_skill(skill: String) -> void:

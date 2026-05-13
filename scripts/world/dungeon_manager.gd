@@ -1,9 +1,10 @@
 extends Node
 
-const GoblinScene       = preload("res://scenes/enemies/goblin.tscn")
-const GoblinArcherScene = preload("res://scenes/enemies/goblin_archer.tscn")
-const GolemScene        = preload("res://scenes/enemies/golem.tscn")
-const ForestOgreScene   = preload("res://scenes/enemies/forest_ogre.tscn")
+const GoblinScene          = preload("res://scenes/enemies/goblin.tscn")
+const GoblinArcherScene    = preload("res://scenes/enemies/goblin_archer.tscn")
+const GolemScene           = preload("res://scenes/enemies/golem.tscn")
+const ForestOgreScene      = preload("res://scenes/enemies/forest_ogre.tscn")
+const FireGoblinArcherScene = preload("res://scenes/enemies/fire_goblin_archer.tscn")
 
 @onready var player       = get_tree().get_first_node_in_group("player")
 @onready var dialogue_box = $"../DialogueBox"
@@ -23,6 +24,7 @@ func _ready() -> void:
 	call_deferred("_start")
 
 func _start() -> void:
+	GameState.start_session()
 	MusicManager.play("game")
 	await _say([
 		"Que lugar sombrio...",
@@ -78,13 +80,14 @@ func _on_area2(body: Node) -> void:
 	await _say([
 		"Golens e arqueiros! Eles ficam mais fortes conforme entro mais fundo.",
 	], ["Soph"])
-	_spawn(GolemScene,        Vector2(2400, 488))
-	_spawn(GolemScene,        Vector2(2700, 488))
-	_spawn(GoblinArcherScene, Vector2(2900, 448))
-	_spawn(GoblinArcherScene, Vector2(3150, 448))
-	_spawn(GoblinScene,       Vector2(2550, 488))
-	_spawn(GoblinScene,       Vector2(2800, 488))
-	_spawn(GoblinScene,       Vector2(3050, 488))
+	_spawn(GolemScene,             Vector2(2400, 488))
+	_spawn(GolemScene,             Vector2(2700, 488))
+	_spawn(GoblinArcherScene,      Vector2(2900, 448))
+	_spawn(FireGoblinArcherScene,  Vector2(3100, 448))
+	_spawn(FireGoblinArcherScene,  Vector2(3300, 448))
+	_spawn(GoblinScene,            Vector2(2550, 488))
+	_spawn(GoblinScene,            Vector2(2800, 488))
+	_spawn(GoblinScene,            Vector2(3050, 488))
 	await _wait_clear()
 	await _say([
 		"Consegui!",
@@ -103,6 +106,14 @@ func _on_area2(body: Node) -> void:
 	], ["Soph", "", "Soph", "Dica"])
 	SkillManager.unlock("missile_curved")
 	await skill_popup.show_skill("missile_curved")
+	await _say([
+		"Aqueles arqueiros de fogo queimaram minha capa...",
+		"Outro glifo — este parece uma barreira de energia.",
+		"\"Reflexo é a armadura da mente sábia —\nEscudo Mágico.\"",
+		"Escudo Mágico desbloqueado! Pressione F para criar uma barreira temporária.",
+	], ["Soph", "Soph", "", "Dica"])
+	SkillManager.unlock("magic_shield")
+	await skill_popup.show_skill("magic_shield")
 	boss_trigger.body_entered.connect(_on_boss_room, CONNECT_ONE_SHOT)
 
 # ── Boss Room: Ogro da Floresta ───────────────────────────────────────────────

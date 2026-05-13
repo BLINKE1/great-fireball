@@ -11,6 +11,17 @@ func _ready() -> void:
 	_apply_stone_textures(level)
 	_apply_special_objects(level)
 	_add_point_lights(level)
+	_add_ambient_particles(level)
+
+func _add_ambient_particles(level: Node) -> void:
+	var AmbientScript = load("res://scripts/world/ambient_particles.gd")
+	if not AmbientScript:
+		return
+	var ap = AmbientScript.new()
+	ap.area_width    = 5200.0 if level.has_node("DungeonManager") else 3800.0
+	ap.area_height   = 580.0
+	ap.particle_count = 40 if level.has_node("DungeonManager") else 25
+	level.add_child(ap)
 
 # ── Solid background (behind parallax) ───────────────────────────────────────
 

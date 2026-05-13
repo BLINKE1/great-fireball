@@ -144,6 +144,7 @@ func _flash() -> void:
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
+	GameState.enemy_died()
 	AudioManager.play("enemy_die")
 	VFX.burst(global_position + Vector2(0, -12), get_parent(), Color(0.22, 0.65, 0.16), 10, 62.0, 35.0)
 	if randf() < 0.60:

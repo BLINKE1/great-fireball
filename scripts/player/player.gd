@@ -26,6 +26,9 @@ const MISSILE_GIANT_COST      = 50.0
 const MISSILE_GIANT_CD        = 1.60
 const MISSILE_CURVED_COST     = 18.0
 const MISSILE_CURVED_CD       = 0.55
+const MAGIC_SHIELD_COST       = 35.0
+const MAGIC_SHIELD_DURATION   = 3.5
+const MAGIC_SHIELD_CD         = 6.0
 
 const IFRAME_DURATION   = 1.0
 const KNOCKBACK_FORCE   = 300.0
@@ -71,6 +74,18 @@ var missile_piercing_cd: float = 0.0
 var missile_giant_cd: float = 0.0
 var missile_curved_cd: float = 0.0
 
+# Shield state
+var shield_timer: float = 0.0
+var shield_cd_timer: float = 0.0
+var _shield_active: bool = false
+var _shield_visual: Node2D = null
+
+# Burn state
+var _burn_timer: float = 0.0
+var _burn_dps: float = 0.0
+var _burn_tick: float = 0.0
+var _burn_flash: float = 0.0
+
 # Screen shake state
 var _shake_intensity: float = 0.0
 var _shake_duration: float  = 0.0
@@ -94,6 +109,11 @@ func _ready() -> void:
 	mana.mana_changed.connect(_on_mana_changed)
 	hp.died.connect(_on_died)
 	mana.regen_rate = 1.5
+
+	var ShieldVisual = load("res://scripts/player/shield_visual.gd")
+	_shield_visual = ShieldVisual.new()
+	_shield_visual.position = Vector2(0, -18)
+	add_child(_shield_visual)
 
 func _physics_process(delta: float) -> void:
 	_tick_shake(delta)
@@ -138,6 +158,28 @@ func _tick_timers(delta: float) -> void:
 	missile_piercing_cd = max(missile_piercing_cd - delta, 0.0)
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
+	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
+
+	# Shield expiry
+	if _shield_active:
+		shield_timer -= delta
+		if shield_timer <= 0.0:
+			_shield_active = false
+			if _shield_visual:
+				_shield_visual.deactivate()
+
+	# Burn damage-over-time
+	if _burn_timer > 0.0:
+		_burn_timer -= delta
+		_burn_tick  -= delta
+		_burn_flash  = max(_burn_flash - delta * 3.0, 0.0)
+		if _burn_tick <= 0.0:
+			_burn_tick = 0.5
+			hp.take_damage(_burn_dps * 0.5)
+			VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(1.0, 0.45, 0.06), 3, 28.0, 20.0)
+			_burn_flash = 0.18
+		if _burn_timer <= 0.0:
+			_burn_dps = 0.0
 
 	# Critical HP heartbeat
 	if hp.get_ratio() < 0.25 and not is_dead:
@@ -230,6 +272,8 @@ func _handle_spells() -> void:
 		_cast_missile_giant()
 	if Input.is_action_just_pressed("spell_missile_curved"):
 		_cast_missile_curved()
+	if Input.is_action_just_pressed("spell_magic_shield"):
+		_cast_magic_shield()
 	if Input.is_action_just_pressed("spell_time_stop"):
 		_cast_time_stop()
 	if Input.is_action_just_pressed("spell_heal"):
@@ -300,6 +344,18 @@ func _cast_missile_curved() -> void:
 	m.position  = global_position + Vector2(facing * 20, -22)
 	get_parent().add_child(m)
 
+func _cast_magic_shield() -> void:
+	if not SkillManager.has("magic_shield"): return
+	if _shield_active or shield_cd_timer > 0.0: return
+	if not mana.spend(MAGIC_SHIELD_COST): return
+	_shield_active = true
+	shield_timer = MAGIC_SHIELD_DURATION
+	shield_cd_timer = MAGIC_SHIELD_CD
+	AudioManager.play("shield_activate")
+	if _shield_visual:
+		_shield_visual.activate()
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.30, 0.68, 1.0, 0.80), 32.0, 0.35)
+
 func _cast_time_stop() -> void:
 	if not SkillManager.has("time_stop"): return
 	if not mana.spend(TIME_STOP_COST): return
@@ -340,8 +396,23 @@ func _attack_sword() -> void:
 	slash.global_position = global_position + Vector2(facing * 36, -16)
 	get_parent().add_child(slash)
 
+func apply_burn(dps: float, duration: float) -> void:
+	_burn_dps   = maxf(dps, _burn_dps)
+	_burn_timer = maxf(duration, _burn_timer)
+	_burn_tick  = 0.5
+	AudioManager.play("burn", randf_range(0.85, 1.15))
+
+func is_shielded() -> bool:
+	return _shield_active
+
 func take_damage(amount: float, source_position: Vector2 = global_position) -> void:
 	if iframe_timer > 0.0 or is_dead: return
+	if _shield_active:
+		AudioManager.play("shield_hit")
+		if _shield_visual:
+			_shield_visual.hit_flash()
+		VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.30, 0.68, 1.0), 8, 55.0, 30.0)
+		return
 	hp.take_damage(amount)
 	iframe_timer = IFRAME_DURATION
 	AudioManager.play("hit_player")
@@ -364,6 +435,8 @@ func get_skill_cooldown(skill: String) -> float:
 		                            else (0.0 if mana.current_mana >= MISSILE_GIANT_COST else 0.75)
 		"missile_curved":    return missile_curved_cd / MISSILE_CURVED_CD if missile_curved_cd > 0.0 \
 		                            else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
+		"magic_shield":      return shield_cd_timer / MAGIC_SHIELD_CD if shield_cd_timer > 0.0 \
+		                            else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0
@@ -422,6 +495,9 @@ func _update_visuals() -> void:
 		return
 	if attack_flash_timer > 0.0:
 		sprite.modulate = Color(1.6, 1.6, 1.0, 1.0)
+		return
+	if _burn_flash > 0.0:
+		sprite.modulate = Color(1.6, 0.55, 0.20, 1.0)
 		return
 	var c = base_modulate
 	if iframe_timer > 0.0:
