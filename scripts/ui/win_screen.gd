@@ -41,7 +41,7 @@ func _build_ui() -> void:
 	vbox.add_child(spacer)
 
 	var lore := Label.new()
-	lore.text = "Soph derrotou o Ogro da Floresta e descobriu\na localização da Montanha de Cinzas.\n\nEla aprendeu o Míssil Duplo, o Míssil Perfurante,\no Míssil Curvo e o temido Míssil Gigante —\nmas o Fireball ainda escapa entre seus dedos.\n\nA Montanha de Cinzas guarda o segredo.\nE Soph está indo até lá."
+	lore.text = "Soph derrotou o Ogro da Floresta e descobriu\na localização da Montanha de Cinzas.\n\nEla aprendeu o Míssil Duplo, o Míssil Perfurante,\no Míssil Curvo, o Míssil Gigante e o Escudo Mágico —\nmas o Fireball ainda escapa entre seus dedos.\n\n\"Talvez o problema não seja a magia.\nTalvez seja eu.\"\n\nA Montanha de Cinzas guarda o segredo.\nE Soph está indo até lá."
 	lore.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lore.add_theme_font_size_override("font_size", 14)
 	lore.add_theme_color_override("font_color", Color(0.80, 0.76, 0.90))

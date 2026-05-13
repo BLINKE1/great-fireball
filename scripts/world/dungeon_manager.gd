@@ -79,7 +79,10 @@ func _on_area2(body: Node) -> void:
 	area2_trigger.monitoring = false
 	await _say([
 		"Golens e arqueiros! Eles ficam mais fortes conforme entro mais fundo.",
-	], ["Soph"])
+		"E este lugar é mais fundo do que parece... melhor não cair.",
+		"Alturas grandes machucam — e as alturas aqui podem ser letais.",
+		"Lembro da dica: Duplo Salto durante a queda amortece o impacto.",
+	], ["Soph", "Soph", "Dica", "Dica"])
 	_spawn(GolemScene,             Vector2(2400, 488))
 	_spawn(GolemScene,             Vector2(2700, 488))
 	_spawn(GoblinArcherScene,      Vector2(2900, 448))
