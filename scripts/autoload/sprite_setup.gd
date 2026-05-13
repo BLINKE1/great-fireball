@@ -29,6 +29,10 @@ func _ready() -> void:
 	_gen_ogre_shockwave()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
+	_gen_missile_spread()
+	_gen_missile_piercing()
+	_gen_missile_giant()
+	_gen_portal()
 
 func get_texture(name: String) -> ImageTexture:
 	return _t.get(name)
@@ -139,18 +143,28 @@ func _gen_player_body() -> void:
 # ── Player Hair (32x20) ───────────────────────────────────────────────────────
 
 func _gen_player_hair() -> void:
-	const H := Color.WHITE
+	# Blue hair per lore
+	const H  := Color(0.22, 0.58, 1.00)   # main blue
+	const HL := Color(0.55, 0.82, 1.00)   # highlight
+	const DK := Color(0.10, 0.32, 0.80)   # shadow
 
 	var img := Image.create(32, 20, false, Image.FORMAT_RGBA8)
 
-	_fr(img, 8, 0, 16, 2, H)
-	_fr(img, 5, 2, 22, 3, H)
-	_fr(img, 2, 5, 28, 3, H)
-	_fr(img, 0, 8, 32, 5, H)
+	_fr(img, 8,  0, 16, 2, H)
+	_fr(img, 5,  2, 22, 3, H)
+	_fr(img, 2,  5, 28, 3, H)
+	_fr(img, 0,  8, 32, 5, H)
 	_fr(img, 0, 13, 11, 7, H)
 	_fr(img, 21, 13, 11, 7, H)
 	img.set_pixel(0, 19, Color.TRANSPARENT)
 	img.set_pixel(31, 19, Color.TRANSPARENT)
+
+	# Highlights on top
+	_fr(img, 10, 0, 8, 1, HL)
+	_fr(img, 8,  1, 6, 1, HL)
+	# Shadow on lower strands
+	_fr(img, 0, 16, 6, 4, DK)
+	_fr(img, 26, 16, 6, 4, DK)
 
 	_store("player_hair", img)
 
@@ -920,3 +934,109 @@ func _gen_sword_slash_sprite() -> void:
 				var a := minf(bright * 1.2, 0.92)
 				img.set_pixel(x, y, Color(r, g, b, a))
 	_store("sword_slash_arc", img)
+
+# ── Missile Spread (Míssil Duplo) — 28x12, violet-purple tones ───────────────
+
+func _gen_missile_spread() -> void:
+	var img := Image.create(28, 12, false, Image.FORMAT_RGBA8)
+	for y in 12:
+		for x in 28:
+			var cy    := abs(y - 5.5) / 5.5
+			var prog  := float(x) / 27.0
+			var bright := (1.0 - cy * cy) * (0.25 + prog * 0.75)
+			if bright > 0.02:
+				var r := bright * 0.75
+				var g := bright * 0.18
+				var b := bright * 1.00
+				var a := minf(bright * 1.5, 1.0)
+				img.set_pixel(x, y, Color(r, g, b, a))
+	# Bright tip
+	img.set_pixel(26, 5, Color(0.95, 0.70, 1.0, 1.0))
+	img.set_pixel(27, 5, Color(1.00, 1.00, 1.0, 1.0))
+	img.set_pixel(27, 6, Color(0.95, 0.70, 1.0, 1.0))
+	_store("missile_spread", img)
+
+# ── Missile Piercing (Míssil Perfurante) — 36x10, teal-green ─────────────────
+
+func _gen_missile_piercing() -> void:
+	var img := Image.create(36, 10, false, Image.FORMAT_RGBA8)
+	for y in 10:
+		for x in 36:
+			var cy    := abs(y - 4.5) / 4.5
+			var prog  := float(x) / 35.0
+			var bright := (1.0 - cy * cy * 1.2) * (0.2 + prog * 0.8)
+			if bright > 0.02:
+				var r := bright * 0.05
+				var g := bright * 0.95
+				var b := bright * 0.65
+				var a := minf(bright * 1.6, 1.0)
+				img.set_pixel(x, y, Color(r, g, b, a))
+	# Sharp tip — elongated
+	img.set_pixel(34, 4, Color(0.60, 1.0, 0.85, 1.0))
+	img.set_pixel(35, 4, Color(1.00, 1.0, 1.00, 1.0))
+	img.set_pixel(35, 5, Color(0.60, 1.0, 0.85, 1.0))
+	_store("missile_piercing", img)
+
+# ── Missile Giant (Míssil Gigante) — 56x24, radiant blue-white orb ───────────
+
+func _gen_missile_giant() -> void:
+	var img := Image.create(56, 24, false, Image.FORMAT_RGBA8)
+	# Glowing orb core
+	_glow_soft(img, 44, 12, 11, Color(0.35, 0.80, 1.0), 0.95)
+	_glow_soft(img, 44, 12,  7, Color(0.65, 0.92, 1.0), 0.98)
+	_fc(img, 44, 12, 4, Color(0.85, 0.97, 1.0))
+	_fc(img, 44, 12, 2, Color(1.00, 1.00, 1.0))
+	# Energy trail
+	for x in 36:
+		var t := float(x) / 35.0
+		var a  := t * 0.75
+		var half := int(3.0 + t * 5.0)
+		for y in range(12 - half, 12 + half + 1):
+			if y >= 0 and y < 24:
+				var existing := img.get_pixel(x, y)
+				if existing.a < a:
+					img.set_pixel(x, y, Color(0.20, 0.65, 1.0, a))
+	# Tip sparks
+	img.set_pixel(54, 10, Color(0.9, 1.0, 1.0, 0.9))
+	img.set_pixel(55, 12, Color(1.0, 1.0, 1.0, 1.0))
+	img.set_pixel(54, 14, Color(0.9, 1.0, 1.0, 0.9))
+	_store("missile_giant", img)
+
+# ── Portal (animated exit) — 32x48, glowing crystal portal ───────────────────
+
+func _gen_portal() -> void:
+	const BL  := Color(0.30, 0.72, 1.00)
+	const LBL := Color(0.65, 0.90, 1.00)
+	const WH  := Color(1.00, 1.00, 1.00)
+	const DBL := Color(0.10, 0.38, 0.85)
+	const GL  := Color(0.55, 0.88, 1.00)
+
+	var img := Image.create(32, 48, false, Image.FORMAT_RGBA8)
+
+	# Base pedestal
+	_fr(img, 8,  42, 16, 6, Color(0.28, 0.24, 0.38))
+	_fr(img, 6,  44, 20, 4, Color(0.22, 0.18, 0.32))
+
+	# Crystal body
+	_fr(img, 12,  6, 8, 2, LBL)
+	_fr(img, 10,  8, 12, 3, BL)
+	_fr(img, 8,  11, 16, 26, BL)
+	_fr(img, 8,  11, 3, 26, LBL)  # left highlight
+	_fr(img, 21, 11, 3, 26, DBL)  # right shadow
+	_fr(img, 10, 36, 12, 4, BL)
+	_fr(img, 12, 39, 8, 3, DBL)
+
+	# Inner glow streak
+	_fr(img, 14, 10, 4, 28, WH)
+	img.set_pixel(14, 10, LBL); img.set_pixel(17, 10, LBL)
+	img.set_pixel(14, 37, LBL); img.set_pixel(17, 37, LBL)
+
+	# Crystal tip (top point)
+	img.set_pixel(16,  2, LBL)
+	img.set_pixel(16,  3, LBL)
+	_fr(img, 15,  4, 3, 2, BL)
+
+	# Ambient outer glow
+	_glow_soft(img, 16, 22, 14, GL, 0.30)
+
+	_store("portal", img)

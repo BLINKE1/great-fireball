@@ -25,9 +25,11 @@ func _ready() -> void:
 func _start() -> void:
 	MusicManager.play("game")
 	await _say([
-		"Um cajado mágico... ele está me chamando.",
-		"Vou pegá-lo.",
-	], ["Maga", "Maga"])
+		"Este cajado...",
+		"Sinto uma energia enorme nele. Preciso levá-lo.",
+		"Toda aprendiz de magia sonha com o Fireball.",
+		"Mas primeiro — preciso sair desta torre.",
+	], ["Soph", "Soph", "Soph", "Soph"])
 	chest_trigger.body_entered.connect(_on_chest, CONNECT_ONE_SHOT)
 
 # ── Golens ───────────────────────────────────────────────────────────────────
@@ -49,7 +51,7 @@ func _on_chest(body: Node) -> void:
 	await _say(["Parar o Tempo deve funcionar! Pressione X."], ["Dica"])
 	await skill_popup.show_skill("time_stop")
 	await _wait_clear()
-	await _say(["Preciso fugir desta torre!"], ["Maga"])
+	await _say(["Preciso fugir desta torre!"], ["Soph"])
 	if is_instance_valid(tower_door):
 		tower_door.queue_free()
 	flee_trigger.body_entered.connect(_on_fled, CONNECT_ONE_SHOT)
@@ -83,7 +85,7 @@ func _teach_heal() -> void:
 	await _say(["Estou ferida! Use Cura para recuperar HP — Pressione C."], ["Dica"])
 	await skill_popup.show_skill("heal")
 	await _wait_clear()
-	await _say(["Quem está bloqueando o caminho?"], ["Maga"])
+	await _say(["Quem está bloqueando o caminho?"], ["Soph"])
 	_begin_leader()
 
 # ── Goblin Líder ─────────────────────────────────────────────────────────────
@@ -101,7 +103,7 @@ func _begin_leader() -> void:
 func _on_leader_dead() -> void:
 	if is_instance_valid(blockade):
 		blockade.queue_free()
-	await _say(["O caminho está livre! Mas... o que é isso?"], ["Maga"])
+	await _say(["O caminho está livre! Mas... o que é isso?"], ["Soph"])
 	horde_trigger.body_entered.connect(_on_horde, CONNECT_ONE_SHOT)
 
 # ── Horda + Cutscene ─────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@ func _on_leader_dead() -> void:
 func _on_horde(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	horde_trigger.monitoring = false
-	for i in 7:
+	for i in 8:
 		_spawn(GoblinScene, Vector2(2150 + i * 85, 464))
 	await get_tree().create_timer(1.6).timeout
 	_fireball_cutscene()
@@ -129,34 +131,67 @@ func _fireball_cutscene() -> void:
 	cl.add_child(flash)
 
 	var tw = create_tween()
-	tw.tween_property(flash, "color:a", 0.85, 0.25)
-	tw.tween_property(flash, "color:a", 0.0,  0.60)
+	tw.tween_property(flash, "color:a", 0.90, 0.20)
+	tw.tween_property(flash, "color:a", 0.0,  0.70)
 	tw.tween_callback(cl.queue_free)
 
-	await get_tree().create_timer(0.4).timeout
+	# Screen shake
+	if is_instance_valid(player) and player.has_method("shake"):
+		player.shake(14.0, 0.60)
+
+	await get_tree().create_timer(0.35).timeout
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(enemy):
+			VFX.burst(enemy.global_position, enemy.get_parent(), Color(1.0, 0.50, 0.05), 8, 55.0, -20.0)
 			enemy.queue_free()
 
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(1.1).timeout
 	player.set_cutscene(false)
 
 	await _say([
 		"...",
-		"Não importa qual é o problema —",
-		"Bola de Fogo sempre é a melhor solução.",
-		"Você tem potencial, aprendiz.",
-		"Vá — aprenda Fireball.",
-	], ["", "Mago Graduado", "Mago Graduado", "Mago Graduado", "Mago Graduado"])
+		"O que foi isso?!",
+	], ["", "Soph"])
+
+	# Add dramatic pause before mage speaks from the tower
+	await get_tree().create_timer(0.5).timeout
+
+	await _say([
+		"Não importa o tamanho do problema —",
+		"Bola de Fogo é sempre a melhor solução.",
+	], ["Mago Graduado", "Mago Graduado"])
+
+	# Second screen pulse — mage disappears
+	var cl2 := CanvasLayer.new()
+	cl2.layer = 44
+	get_tree().root.add_child(cl2)
+	var flash2 := ColorRect.new()
+	flash2.anchor_right = 1.0
+	flash2.anchor_bottom = 1.0
+	flash2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash2.color = Color(1.0, 0.65, 0.0, 0.0)
+	cl2.add_child(flash2)
+	var tw2 = create_tween()
+	tw2.tween_property(flash2, "color:a", 0.35, 0.15)
+	tw2.tween_property(flash2, "color:a", 0.0,  0.50)
+	tw2.tween_callback(cl2.queue_free)
+
+	await _say([
+		"...",
+		"Ele foi embora.",
+		"Que poder...",
+		"Não importa o que aconteça — vou aprender tudo sobre magia.",
+		"E um dia... vou chegar lá.",
+	], ["", "Soph", "Soph", "Soph", "Soph"])
 
 	SkillManager.unlock("magic_dash")
 	await _say(["Dash Mágico desbloqueado! Pressione Shift para deslizar."], ["Dica"])
 	await skill_popup.show_skill("magic_dash")
 
 	await _say([
-		"A grande aventura começa agora...",
-		"Vá para a direita — um portal irá abrir o caminho para a Floresta.",
-	], ["", ""])
+		"A floresta encantada me chama.",
+		"Vá para a direita — um portal abrirá o caminho.",
+	], ["Soph", ""])
 	_spawn_exit_portal()
 
 func _spawn_exit_portal() -> void:
@@ -168,18 +203,24 @@ func _spawn_exit_portal() -> void:
 	rect.size = Vector2(90, 90)
 	shape.shape = rect
 	area.add_child(shape)
-	# Visual: glowing checkpoint crystal as portal marker
+
 	var spr = Sprite2D.new()
-	spr.texture = SpriteSetup.get_texture("checkpoint_on")
+	var portal_tex = SpriteSetup.get_texture("portal")
+	if portal_tex:
+		spr.texture = portal_tex
+	else:
+		spr.texture = SpriteSetup.get_texture("checkpoint_on")
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	spr.scale = Vector2(2.0, 2.5)
+	spr.scale = Vector2(2.0, 2.0)
 	area.add_child(spr)
 	get_parent().add_child(area)
-	# Tween must be created after the node is in the scene tree
+
 	var tw := spr.create_tween().set_loops()
-	tw.tween_property(spr, "modulate", Color(0.7, 1.0, 1.0), 0.9).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_property(spr, "modulate", Color.WHITE, 0.9).set_ease(Tween.EASE_IN_OUT)
-	VFX.burst(Vector2(3550, 440), get_parent(), Color(0.35, 0.75, 1.0), 24, 110.0, 55.0)
+	tw.tween_property(spr, "modulate", Color(0.65, 1.0, 1.0), 0.85).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(spr, "modulate", Color.WHITE, 0.85).set_ease(Tween.EASE_IN_OUT)
+
+	VFX.burst(Vector2(3550, 440), get_parent(), Color(0.35, 0.75, 1.0), 28, 120.0, 55.0)
+	VFX.ring(Vector2(3550, 460), get_parent(), Color(0.40, 0.80, 1.0, 0.90), 50.0, 0.55)
 	area.body_entered.connect(_on_portal_entered)
 
 func _on_portal_entered(body: Node) -> void:

@@ -21,13 +21,19 @@ func _process(delta: float) -> void:
 			visible = false
 
 func _draw() -> void:
-	var h := 5.0
+	var h := 6.0
 	var w := bar_width
-	draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Color(0.12, 0.12, 0.12, 0.88))
+	# Border
+	draw_rect(Rect2(-w * 0.5 - 1, -h * 0.5 - 1, w + 2, h + 2), Color(0.0, 0.0, 0.0, 0.80))
+	# Background track
+	draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Color(0.10, 0.10, 0.14, 0.90))
 	if ratio > 0.0:
-		var col := Color(0.85, 0.15, 0.15, 0.92)
+		var col := Color(0.85, 0.15, 0.10, 1.0)
 		if ratio > 0.6:
-			col = Color(0.2, 0.78, 0.2, 0.92)
+			col = Color(0.18, 0.80, 0.20, 1.0)
 		elif ratio > 0.3:
-			col = Color(0.9, 0.55, 0.1, 0.92)
+			col = Color(0.92, 0.52, 0.08, 1.0)
 		draw_rect(Rect2(-w * 0.5, -h * 0.5, w * ratio, h), col)
+		# Shine strip on top of bar
+		draw_rect(Rect2(-w * 0.5, -h * 0.5, w * ratio, 2.0),
+				Color(1.0, 1.0, 1.0, 0.22))

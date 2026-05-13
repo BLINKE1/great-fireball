@@ -26,9 +26,10 @@ func _start() -> void:
 	MusicManager.play("game")
 	await _say([
 		"Que lugar sombrio...",
-		"Dizem que um mago antigo escondeu segredos sobre Fireball nesta floresta.",
+		"Dizem que um mago antigo escondeu segredos sobre magia avançada nesta floresta.",
+		"Preciso aprender tudo o que puder. O caminho até o Fireball é longo.",
 		"Vou explorar com cuidado.",
-	], ["Soph", "Soph", "Soph"])
+	], ["Soph", "Soph", "Soph", "Soph"])
 	area1_trigger.body_entered.connect(_on_area1, CONNECT_ONE_SHOT)
 
 # ── Área 1: Entrada ───────────────────────────────────────────────────────────
@@ -47,7 +48,7 @@ func _on_area1(body: Node) -> void:
 	await _say(["Bom. O caminho está livre."], ["Soph"])
 	area2_trigger.body_entered.connect(_on_area2, CONNECT_ONE_SHOT)
 
-# ── Baú: Duplo Salto ─────────────────────────────────────────────────────────
+# ── Baú: Duplo Salto + Míssil Duplo ──────────────────────────────────────────
 
 func _on_chest(body: Node) -> void:
 	if not body.is_in_group("player"): return
@@ -59,6 +60,14 @@ func _on_chest(body: Node) -> void:
 	], ["Soph", "Soph"])
 	SkillManager.unlock("double_jump")
 	await skill_popup.show_skill("double_jump")
+	await _say([
+		"E há uma inscrição mágica nas paredes...",
+		"\"Divida sua intenção e dobre sua força —\nMíssil Duplo.\"",
+		"Sinto a técnica fluindo pela minha mente!",
+		"Agora posso disparar dois mísseis ao mesmo tempo — pressione A.",
+	], ["Soph", "", "Soph", "Dica"])
+	SkillManager.unlock("missile_spread")
+	await skill_popup.show_skill("missile_spread")
 
 # ── Área 2: Caverna Profunda ──────────────────────────────────────────────────
 
@@ -77,7 +86,15 @@ func _on_area2(body: Node) -> void:
 	_spawn(GoblinScene,       Vector2(2800, 488))
 	_spawn(GoblinScene,       Vector2(3050, 488))
 	await _wait_clear()
-	await _say(["Consegui. Há algo mais à frente..."], ["Soph"])
+	await _say([
+		"Consegui!",
+		"Outro glifo mágico nas paredes...",
+		"\"Concentração. Precisão. Foco singular — Míssil Perfurante.\"",
+		"Um míssil que não para. Atravessa tudo em seu caminho — pressione S.",
+		"Isto vai ser útil contra o que estiver à frente.",
+	], ["Soph", "Soph", "", "Dica", "Soph"])
+	SkillManager.unlock("missile_piercing")
+	await skill_popup.show_skill("missile_piercing")
 	boss_trigger.body_entered.connect(_on_boss_room, CONNECT_ONE_SHOT)
 
 # ── Boss Room: Ogro da Floresta ───────────────────────────────────────────────
@@ -87,10 +104,9 @@ func _on_boss_room(body: Node) -> void:
 	boss_trigger.monitoring = false
 	await _say([
 		"O que é isso?!",
-		"Um Ogro enorme... Ele guarda alguma coisa.",
+		"Um Ogro enorme... Ele guarda alguma coisa importante.",
 		"Não há como evitar. Vou ter que lutar!",
 	], ["Soph", "Soph", "Soph"])
-	# Dramatic camera zoom in
 	if is_instance_valid(player) and player.has_node("Camera2D"):
 		var cam: Camera2D = player.get_node("Camera2D")
 		cam.create_tween().tween_property(cam, "zoom", Vector2(1.18, 1.18), 1.4).set_ease(Tween.EASE_IN_OUT)
@@ -100,13 +116,12 @@ func _on_boss_room(body: Node) -> void:
 	ogre.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
 
 func _on_ogre_died() -> void:
-	# Defeat remaining minions so they don't interrupt the victory sequence
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e.has_method("take_damage"):
 			e.take_damage(9999.0, e.global_position)
 	MusicManager.play("game")
 	AudioManager.play("victory")
-	# Brief white flash for impact
+	# White flash
 	var cl := CanvasLayer.new()
 	cl.layer = 45
 	get_tree().root.add_child(cl)
@@ -119,7 +134,7 @@ func _on_ogre_died() -> void:
 	ftw.tween_property(flash, "color:a", 0.55, 0.12)
 	ftw.tween_property(flash, "color:a", 0.0,  0.65)
 	ftw.tween_callback(cl.queue_free)
-	# Restore camera zoom
+	# Camera zoom restore
 	if is_instance_valid(player) and player.has_node("Camera2D"):
 		var cam: Camera2D = player.get_node("Camera2D")
 		cam.create_tween().tween_property(cam, "zoom", Vector2(1.0, 1.0), 1.8).set_ease(Tween.EASE_IN_OUT)
@@ -127,10 +142,16 @@ func _on_ogre_died() -> void:
 	await _say([
 		"Consegui!",
 		"... Há um livro antigo nas ruínas atrás dele.",
+		"\"O míssil mágico não tem limite de tamanho —",
+		"apenas de vontade e de mana.\"",
+		"Sinto um poder imenso se concentrando nas minhas mãos...",
+		"O Míssil Gigante! Pressione D.",
+		"Não é o Fireball... mas é o máximo que posso fazer agora.",
 		"\"A chama eterna repousa no coração da Montanha de Cinzas.\"",
-		"\"Quem suportar seu calor aprenderá o Fireball.\"",
 		"Minha jornada continua — à Montanha de Cinzas!",
-	], ["Soph", "Soph", "", "", "Soph"])
+	], ["Soph", "Soph", "", "", "Soph", "Dica", "Soph", "", "Soph"])
+	SkillManager.unlock("missile_giant")
+	await skill_popup.show_skill("missile_giant")
 	_spawn_exit_portal()
 
 func _spawn_exit_portal() -> void:
@@ -142,16 +163,22 @@ func _spawn_exit_portal() -> void:
 	rect.size = Vector2(90, 90)
 	shape.shape = rect
 	area.add_child(shape)
+	# Use new portal sprite
 	var spr = Sprite2D.new()
-	spr.texture = SpriteSetup.get_texture("checkpoint_on")
+	var portal_tex = SpriteSetup.get_texture("portal")
+	if portal_tex:
+		spr.texture = portal_tex
+	else:
+		spr.texture = SpriteSetup.get_texture("checkpoint_on")
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	spr.scale = Vector2(2.0, 2.5)
+	spr.scale = Vector2(2.0, 2.0)
 	area.add_child(spr)
 	get_parent().add_child(area)
 	var tw := spr.create_tween().set_loops()
 	tw.tween_property(spr, "modulate", Color(1.0, 0.68, 0.20), 0.9).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(spr, "modulate", Color.WHITE, 0.9).set_ease(Tween.EASE_IN_OUT)
 	VFX.burst(Vector2(5050, 440), get_parent(), Color(1.0, 0.60, 0.15), 26, 115.0, 55.0)
+	VFX.ring(Vector2(5050, 462), get_parent(), Color(1.0, 0.65, 0.20, 0.90), 55.0, 0.60)
 	AudioManager.play("boss_appear")
 	await _say([
 		"Um portal de saída... A Montanha de Cinzas aguarda.",
