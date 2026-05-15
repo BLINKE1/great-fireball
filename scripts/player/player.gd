@@ -102,10 +102,14 @@ var _air_hiked:         bool  = false
 var _was_fall_dangerous: bool = false
 var _fall_trail_timer:  float = 0.0
 
-# Screen shake state
+# Screen shake + camera state
 var _shake_intensity: float = 0.0
 var _shake_duration: float  = 0.0
 var _heartbeat_timer: float = 0.0
+var _look_ahead: float      = 0.0
+
+# Squash & stretch
+var _squash: Vector2 = Vector2.ONE
 
 func _ready() -> void:
 	add_to_group("player")
@@ -164,6 +168,7 @@ func _physics_process(delta: float) -> void:
 
 func _tick_timers(delta: float) -> void:
 	_prev_vy            = velocity.y
+	_squash             = _squash.lerp(Vector2.ONE, delta * 14.0)
 	iframe_timer        = max(iframe_timer        - delta, 0.0)
 	jump_buffer_timer   = max(jump_buffer_timer   - delta, 0.0)
 	dash_cooldown_timer = max(dash_cooldown_timer - delta, 0.0)
@@ -231,14 +236,15 @@ func _tick_timers(delta: float) -> void:
 		coyote_timer = max(coyote_timer - delta, 0.0)
 
 func _tick_shake(delta: float) -> void:
+	_look_ahead = lerpf(_look_ahead, facing * 88.0, delta * 3.8)
 	if _shake_duration > 0.0:
 		_shake_duration -= delta
 		camera.offset = Vector2(
-			randf_range(-_shake_intensity, _shake_intensity),
+			_look_ahead + randf_range(-_shake_intensity, _shake_intensity),
 			randf_range(-_shake_intensity, _shake_intensity)
-		) * (_shake_duration / max(_shake_duration, 0.001))
+		)
 	else:
-		camera.offset = Vector2.ZERO
+		camera.offset = Vector2(_look_ahead, 0.0)
 
 func shake(intensity: float, duration: float) -> void:
 	_shake_intensity = intensity
@@ -247,6 +253,7 @@ func shake(intensity: float, duration: float) -> void:
 func _check_landing() -> void:
 	if is_on_floor() and not was_on_floor:
 		AudioManager.play("land")
+		_squash = Vector2(1.28, 0.74)
 		VFX.burst(global_position + Vector2(0, 16), get_parent(),
 				Color(0.70, 0.58, 0.42, 0.85), 7, 42.0, -15.0)
 		_on_landed()
@@ -354,6 +361,7 @@ func _handle_jump() -> void:
 			velocity.y = JUMP_VELOCITY * 0.85
 			jumps_remaining -= 1
 			jump_buffer_timer = 0.0
+			_squash = Vector2(0.72, 1.30)
 			AudioManager.play("double_jump")
 			VFX.burst(global_position, get_parent(), Color(0.5, 0.85, 1.0), 12, 65.0, 30.0)
 			return
@@ -362,6 +370,7 @@ func _handle_jump() -> void:
 		coyote_timer = 0.0
 		jump_buffer_timer = 0.0
 		jumps_remaining = _max_air_jumps()
+		_squash = Vector2(0.78, 1.24)
 		AudioManager.play("jump")
 
 func _handle_movement() -> void:
@@ -530,6 +539,8 @@ func take_damage(amount: float, source_position: Vector2 = global_position) -> v
 	iframe_timer = IFRAME_DURATION
 	AudioManager.play("hit_player")
 	shake(7.0, 0.28)
+	GameState.start_hitstop()
+	_squash = Vector2(1.22, 0.80)
 	var kdir = sign(global_position.x - source_position.x)
 	if kdir == 0: kdir = -facing
 	velocity = Vector2(kdir * KNOCKBACK_FORCE, -200.0)
@@ -593,6 +604,8 @@ func respawn() -> void:
 	iframe_timer = IFRAME_DURATION
 	sprite.modulate = base_modulate
 	hair.modulate   = Color.WHITE
+	_squash             = Vector2.ONE
+	_look_ahead         = 0.0
 	_tracking_fall      = false
 	_air_hiked          = false
 	_was_fall_dangerous = false
@@ -605,13 +618,13 @@ func respawn() -> void:
 	shield_timer    = 0.0
 
 func _update_visuals() -> void:
-	if is_on_floor() and abs(velocity.x) < 5.0 and not is_dashing and not is_dead:
+	var sq := _squash
+	if is_on_floor() and abs(velocity.x) < 5.0 and not is_dashing and not is_dead \
+			and sq.distance_squared_to(Vector2.ONE) < 0.0004:
 		var breathe := 1.0 + 0.018 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.40)
-		sprite.scale = Vector2(breathe, breathe)
-		hair.scale   = Vector2(breathe, breathe)
-	else:
-		sprite.scale = Vector2.ONE
-		hair.scale   = Vector2.ONE
+		sq = Vector2(breathe, breathe)
+	sprite.scale = sq
+	hair.scale   = sq
 
 	if is_dashing:
 		sprite.modulate = Color(0.5, 0.85, 1.0, 1.0)
