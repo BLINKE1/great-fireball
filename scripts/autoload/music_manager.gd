@@ -18,9 +18,10 @@ func _ready() -> void:
 	_thread.start(_build_threaded)
 
 func _build_threaded() -> void:
-	_streams["menu"] = _gen_menu()
-	_streams["game"] = _gen_game()
-	_streams["boss"] = _gen_boss()
+	_streams["menu"]  = _gen_menu()
+	_streams["game"]  = _gen_game()
+	_streams["boss"]  = _gen_boss()
+	_streams["tower"] = _gen_tower()
 	call_deferred("_on_built")
 
 func _on_built() -> void:
@@ -247,6 +248,45 @@ func _gen_boss() -> AudioStreamWAV:
 	return _make_stream(data)
 
 # ─────────────────────────────────────────────────────────────────────────────
+
+func _gen_tower() -> AudioStreamWAV:
+	var data := PackedByteArray()
+	data.resize(N * 2)
+	for i in N:
+		var t := float(i) / SR
+		var s := 0.0
+
+		# Low drone — A1 + fifth (E2) for depth
+		s += sin(TAU * 55.0  * t) * 0.110
+		s += sin(TAU * 82.5  * t) * 0.055
+		s += sin(TAU * 110.0 * t) * 0.040   # A2 harmonic
+
+		# Slow pulse modulation — gives breathing feel
+		var pulse := 0.55 + 0.45 * sin(TAU * 0.085 * t)
+		s *= pulse
+
+		# Sparse bell melody — Am pentatonic, slow and haunting
+		s += _note(t,  0.0, 1.40, 440.0, 0.052)   # A4
+		s += _note(t,  2.2, 1.10, 523.0, 0.044)   # C5
+		s += _note(t,  4.8, 1.30, 392.0, 0.048)   # G4
+		s += _note(t,  7.0, 1.20, 329.0, 0.040)   # E4
+		s += _note(t,  9.5, 1.40, 440.0, 0.050)   # A4 (return)
+		s += _note(t, 11.2, 0.90, 587.0, 0.036)   # D5 (leading to loop)
+
+		# Subtle counter-melody (low register)
+		s += _note2(t,  1.2, 0.80, 220.0, 0.028)  # A3
+		s += _note2(t,  3.8, 0.75, 261.0, 0.024)  # C4
+		s += _note2(t,  6.2, 0.80, 196.0, 0.026)  # G3
+		s += _note2(t,  8.8, 0.72, 164.0, 0.022)  # E3
+
+		# Distant wind texture (soft filtered noise)
+		var wind := sin(TAU * 7.0 * t) * sin(TAU * 11.3 * t) * sin(TAU * 5.7 * t)
+		s += wind * 0.012 * (0.4 + 0.6 * sin(TAU * 0.13 * t))
+
+		var pcm := int(clamp(s, -1.0, 1.0) * 24000)
+		data[i * 2]     = pcm & 0xFF
+		data[i * 2 + 1] = (pcm >> 8) & 0xFF
+	return _make_stream(data)
 
 func _make_stream(data: PackedByteArray) -> AudioStreamWAV:
 	var stream := AudioStreamWAV.new()
