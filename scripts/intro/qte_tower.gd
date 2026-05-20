@@ -28,7 +28,11 @@ const SUCCESS_DUR   = 3.0
 const FAIL_DUR      = 2.2
 
 # ── State ─────────────────────────────────────────────────────────────────────
-var _phase:         Phase   = Phase.FADEIN
+const TYPEWRITER_SPD = 22.0   # chars per second
+
+var _dial_full: String = ""
+var _dial_chars: int   = 0
+var _dial_char_t: float = 0.0
 var _timer:         float   = 0.0
 var _torch_t:       float   = 0.0
 var _qte_ratio:     float   = 1.0
@@ -37,8 +41,9 @@ var _golems_shown:  bool    = false
 var _ts_radius:     float   = 0.0    # time-stop ring radius
 var _ts_alpha:      float   = 0.0
 var _fail_shake:    float   = 0.0
-var _fail_lunge:    float   = 0.0   # 0→1 golem lunge progress
-var _escape_dx:     float   = 0.0   # Soph escape offset
+var _fail_lunge:    float   = 0.0
+var _escape_dx:     float   = 0.0
+var _soph_startle:  float   = 0.0   # squash/stretch on golem surprise
 
 # Node references (all built procedurally)
 var _soph:      Sprite2D
@@ -138,6 +143,12 @@ func _process(delta: float) -> void:
 				_set_phase(Phase.DIALOGUE)
 
 		Phase.DIALOGUE:
+			# Typewriter reveal
+			_dial_char_t += delta * TYPEWRITER_SPD
+			var nc := mini(int(_dial_char_t), _dial_full.length())
+			if nc != _dial_chars:
+				_dial_chars = nc
+				_dial_lbl.text = _dial_full.substr(0, _dial_chars)
 			if _timer >= DIALOGUE_DUR:
 				_set_phase(Phase.TENSION)
 
@@ -150,9 +161,20 @@ func _process(delta: float) -> void:
 				_screen_shake(0.28, 5.0)
 			if _golems_shown:
 				var t := clampf((_timer - TENSION_PRE) / GOLEM_SLIDE, 0.0, 1.0)
-				var e := 1.0 - pow(1.0 - t, 3.0)   # ease-out cubic
+				var e := 1.0 - pow(1.0 - t, 3.0)
 				_golem_l.position = GL_START.lerp(GL_END, e)
 				_golem_r.position = GR_START.lerp(GR_END, e)
+				# Soph startled squash when golems first fully visible
+				if t >= 0.85 and _soph_startle == 0.0:
+					_soph_startle = 1.0
+					AudioManager.play("detect", 0.72)
+				if _soph_startle > 0.0:
+					_soph_startle = maxf(_soph_startle - delta * 4.0, 0.0)
+					var sq := 1.0 + sin(_soph_startle * PI) * 0.22
+					_soph.scale = Vector2(SOPH_SCALE.x * (2.0 - sq), SOPH_SCALE.y * sq)
+					_hair.scale  = _soph.scale
+					# Face toward right golem
+					_soph.flip_h = true; _hair.flip_h = true
 				if t >= 1.0:
 					_set_phase(Phase.QTE_ACTIVE)
 
@@ -175,14 +197,16 @@ func _process(delta: float) -> void:
 				_set_phase(Phase.FAIL_ANIM)
 
 		Phase.SUCCESS_ANIM:
-			# Time-stop ring expands
 			_ts_radius = minf(_ts_radius + delta * 320.0, 620.0)
 			_ts_alpha  = maxf(1.0 - _ts_radius / 620.0, 0.0) * 0.65
-			# Soph escapes to the right
 			if _timer >= 0.35:
-				_escape_dx = (_timer - 0.35) * 420.0
+				var prev_dx := _escape_dx
+				_escape_dx = (_timer - 0.35) * 440.0
 				_soph.position.x = SOPH_POS.x + _escape_dx
 				_hair.position.x = SOPH_POS.x + _escape_dx
+				# Dash ghosts every 28px of travel
+				if int(_escape_dx / 28.0) > int(prev_dx / 28.0):
+					_spawn_ghost(_soph.position)
 			# White flash and exit
 			if _timer >= SUCCESS_DUR - 0.6:
 				_overlay.color = Color(1.0, 1.0, 1.0,
@@ -210,11 +234,16 @@ func _set_phase(p: Phase) -> void:
 	match p:
 		Phase.DIALOGUE:
 			MusicManager.play("tower")
-			_dial_lbl.text = "\"Não acredito que foi tão fácil\npassar pelas defesas desta torre...\""
-			var tw := _dial_lbl.create_tween()
-			tw.tween_property(_dial_lbl, "modulate:a", 1.0, 0.45).set_ease(Tween.EASE_OUT)
-			tw.tween_interval(DIALOGUE_DUR - 1.5)
-			tw.tween_property(_dial_lbl, "modulate:a", 0.0, 0.50).set_ease(Tween.EASE_IN)
+			_dial_full    = "\"Não acredito que foi tão fácil\npassar pelas defesas desta torre...\""
+			_dial_chars   = 0
+			_dial_char_t  = 0.0
+			_dial_lbl.text = ""
+			_dial_lbl.modulate.a = 1.0
+			# Fade out only near end
+			get_tree().create_timer(DIALOGUE_DUR - 0.9).timeout.connect(func():
+				if _phase == Phase.DIALOGUE:
+					_dial_lbl.create_tween().tween_property(
+							_dial_lbl, "modulate:a", 0.0, 0.55))
 
 		Phase.TENSION:
 			_golems_shown = false
@@ -229,6 +258,8 @@ func _set_phase(p: Phase) -> void:
 
 		Phase.SUCCESS_ANIM:
 			AudioManager.play("time_stop")
+			get_tree().create_timer(0.3).timeout.connect(func():
+				AudioManager.play("dash", 1.1))
 			_qte_lbl.create_tween().tween_property(_qte_lbl, "modulate:a", 0.0, 0.18)
 			# Freeze golems with blue tint
 			_golem_l.create_tween().tween_property(_golem_l, "modulate",
@@ -424,6 +455,21 @@ func _draw_fail_vignette() -> void:
 
 var _shake_t: float = 0.0
 var _shake_i: float = 0.0
+
+func _spawn_ghost(pos: Vector2) -> void:
+	if not _soph.texture: return
+	var g := Sprite2D.new()
+	g.texture        = _soph.texture
+	g.flip_h         = _soph.flip_h
+	g.scale          = _soph.scale
+	g.global_position = pos
+	g.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	g.modulate        = Color(0.35, 0.80, 1.0, 0.48)
+	g.z_index         = -1
+	add_child(g)
+	var tw := g.create_tween()
+	tw.tween_property(g, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(g.queue_free)
 
 func _screen_shake(dur: float, intensity: float) -> void:
 	_shake_t = dur; _shake_i = intensity

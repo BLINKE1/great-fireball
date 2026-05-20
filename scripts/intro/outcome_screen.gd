@@ -17,6 +17,8 @@ const PC := 32
 func _ready() -> void:
 	_init_particles()
 	call_deferred("_build")
+	if success:
+		get_tree().create_timer(0.5).timeout.connect(func(): MusicManager.play("menu"))
 
 func _build() -> void:
 	# Background
