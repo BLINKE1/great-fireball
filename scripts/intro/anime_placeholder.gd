@@ -44,7 +44,6 @@ func _ready() -> void:
 	get_tree().create_timer(0.7).timeout.connect(func(): _skip_ok = true)
 
 func _build_ui() -> void:
-	var bg := ColorRect.new(); bg.color = Color(0,0,0); bg.size = Vector2(VW,VH); add_child(bg)
 	var cl := CanvasLayer.new(); cl.layer = 20; add_child(cl)
 	for top in [true, false]:
 		var bar := ColorRect.new(); bar.color = Color(0,0,0)
@@ -146,7 +145,7 @@ func _next_card() -> void:
 func _finish() -> void:
 	var tw := _overlay.create_tween()
 	tw.tween_property(_overlay, "color:a", 1.0, 0.55)
-	tw.tween_callback(finished.emit)
+	tw.tween_callback(func(): finished.emit())
 
 func _input(event: InputEvent) -> void:
 	if not _skip_ok: return
@@ -158,6 +157,8 @@ func _input(event: InputEvent) -> void:
 		_finish()
 
 func _draw() -> void:
+	# Full-screen black base (in case _draw scenes leave gaps)
+	draw_rect(Rect2(0, 0, VW, VH), Color(0, 0, 0))
 	match _card_idx:
 		0: _draw_forest()
 		1: _draw_tower_glow()
