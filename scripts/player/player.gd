@@ -550,17 +550,17 @@ func get_skill_cooldown(skill: String) -> float:
 		"magic_dash":        return dash_cooldown_timer / DASH_COOLDOWN
 		"sword":             return sword_timer / SWORD_COOLDOWN
 		"magic_missile":     return magic_missile_cd / MAGIC_MISSILE_CD if magic_missile_cd > 0.0 \
-		                            else (0.0 if mana.current_mana >= MAGIC_MISSILE_COST else 0.75)
+									else (0.0 if mana.current_mana >= MAGIC_MISSILE_COST else 0.75)
 		"missile_spread":    return missile_spread_cd / MISSILE_SPREAD_CD if missile_spread_cd > 0.0 \
-		                            else (0.0 if mana.current_mana >= MISSILE_SPREAD_COST else 0.75)
+									else (0.0 if mana.current_mana >= MISSILE_SPREAD_COST else 0.75)
 		"missile_piercing":  return missile_piercing_cd / MISSILE_PIERCING_CD if missile_piercing_cd > 0.0 \
-		                            else (0.0 if mana.current_mana >= MISSILE_PIERCING_COST else 0.75)
+									else (0.0 if mana.current_mana >= MISSILE_PIERCING_COST else 0.75)
 		"missile_giant":     return missile_giant_cd / MISSILE_GIANT_CD if missile_giant_cd > 0.0 \
-		                            else (0.0 if mana.current_mana >= MISSILE_GIANT_COST else 0.75)
+									else (0.0 if mana.current_mana >= MISSILE_GIANT_COST else 0.75)
 		"missile_curved":    return missile_curved_cd / MISSILE_CURVED_CD if missile_curved_cd > 0.0 \
-		                            else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
+									else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
 		"magic_shield":      return shield_cd_timer / MAGIC_SHIELD_CD if shield_cd_timer > 0.0 \
-		                            else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
+									else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

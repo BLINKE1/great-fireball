@@ -41,6 +41,7 @@ func _ready() -> void:
 	_build_ui()
 	_build_soph_close()
 	_show_card(0)
+	queue_redraw()
 	get_tree().create_timer(0.7).timeout.connect(func(): _skip_ok = true)
 
 func _build_ui() -> void:
@@ -176,7 +177,7 @@ func _draw_forest() -> void:
 		var t := float(i) / 11.0
 		var y := at + t * (ab - at) * 0.65
 		var h := (ab - at) * 0.65 / 11.0
-		var c := Color(0.01 + t * 0.03, 0.01 + t * 0.02, 0.06 + t * 0.04)
+		var c := Color(0.06 - t * 0.03, 0.03 - t * 0.01, 0.22 - t * 0.10)
 		draw_rect(Rect2(0, y, w, h + 1.0), c)
 	# Ground
 	draw_rect(Rect2(0, at + (ab-at)*0.62, w, (ab-at)*0.38), Color(0.010, 0.016, 0.010))
