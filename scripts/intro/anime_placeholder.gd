@@ -106,14 +106,14 @@ func _reset_particle(i: int, rand_y: bool = false) -> void:
 	_py[i]  = randf_range(LB, VH-LB) if rand_y else VH - LB + 4.0
 	_pvx[i] = randf_range(-7.0, 7.0); _pvy[i] = randf_range(-26.0, -9.0)
 	_pa[i]  = randf_range(0.05, 0.18)
-	var c := CARDS[_card_idx]
+	var c: Array = CARDS[_card_idx]
 	_ph[i]  = randf_range(c[1], c[2]); _ps[i] = randf_range(1.0, 2.8)
 
 func _show_card(idx: int) -> void:
 	_card_idx = idx; _card_t = 0.0; _scene_t = 0.0
 	_label.text = CARDS[idx][0]
 	for i in PC:
-		var c := CARDS[idx]; _ph[i] = randf_range(c[1], c[2])
+		var c: Array = CARDS[idx]; _ph[i] = randf_range(c[1], c[2])
 	var tw := _label.create_tween()
 	tw.tween_property(_label, "modulate:a", 1.0, 0.55).set_ease(Tween.EASE_OUT)
 	if idx == 2:
