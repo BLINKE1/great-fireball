@@ -79,8 +79,8 @@ func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	for i in n:
-		var t  = float(i) / SAMPLE_RATE
-		var p  = float(i) / n
+		var t: float = float(i) / SAMPLE_RATE
+		var p: float = float(i) / n
 		var env := pow(1.0 - p, 0.6)
 		var s  := 0.0
 		match shape:

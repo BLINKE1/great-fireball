@@ -30,9 +30,10 @@ const FAIL_DUR      = 2.2
 # ── State ─────────────────────────────────────────────────────────────────────
 const TYPEWRITER_SPD = 22.0   # chars per second
 
-var _dial_full: String = ""
-var _dial_chars: int   = 0
-var _dial_char_t: float = 0.0
+var _phase:         Phase   = Phase.FADEIN
+var _dial_full:     String  = ""
+var _dial_chars:    int     = 0
+var _dial_char_t:   float   = 0.0
 var _timer:         float   = 0.0
 var _torch_t:       float   = 0.0
 var _qte_ratio:     float   = 1.0

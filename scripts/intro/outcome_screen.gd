@@ -21,18 +21,21 @@ func _ready() -> void:
 		get_tree().create_timer(0.5).timeout.connect(func(): MusicManager.play("menu"))
 
 func _build() -> void:
-	# Background
-	var bg_col := Color(0.02, 0.01, 0.05) if success else Color(0.04, 0.00, 0.00)
-	var bg := ColorRect.new()
-	bg.color = bg_col; bg.size = Vector2(VW, VH)
-	add_child(bg)
-
+	# Wrap UI in CanvasLayer + Control so anchors work properly
+	var cl := CanvasLayer.new()
+	cl.layer = 5
+	add_child(cl)
+	var root := Control.new()
+	root.anchor_right = 1.0
+	root.anchor_bottom = 1.0
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cl.add_child(root)
 	var vbox := VBoxContainer.new()
 	vbox.anchor_left = 0.10; vbox.anchor_right  = 0.90
 	vbox.anchor_top  = 0.18; vbox.anchor_bottom = 0.82
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 20)
-	add_child(vbox)
+	root.add_child(vbox)
 
 	if success:
 		_add_label(vbox, "A SOPH ESCAPOU", 38, Color(0.35, 0.88, 1.0))
@@ -107,6 +110,8 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var bg_col := Color(0.02, 0.01, 0.05) if success else Color(0.04, 0.00, 0.00)
+	draw_rect(Rect2(0, 0, VW, VH), bg_col)
 	for i in PC:
 		draw_circle(Vector2(_px[i], _py[i]), _ps[i],
 				Color.from_hsv(fmod(_ph[i], 1.0), 0.60, 1.0, _pa[i]))
@@ -115,4 +120,4 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		get_viewport().set_input_as_handled()
 		set_process_input(false)
-		GameState.fade_out_then(restart_requested.emit, 0.45)
+		GameState.fade_out_then(func(): restart_requested.emit(), 0.45)

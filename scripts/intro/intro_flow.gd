@@ -1,8 +1,11 @@
 extends Node2D
 
 func _ready() -> void:
+	call_deferred("_start")
+
+func _start() -> void:
 	GameState.fade_in(0.9)
-	call_deferred("_show_anime")
+	_show_anime()
 
 func _show_anime() -> void:
 	var scene = load("res://scenes/intro/anime_placeholder.tscn").instantiate()
