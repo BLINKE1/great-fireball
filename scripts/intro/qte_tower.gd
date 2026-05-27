@@ -212,7 +212,8 @@ func _process(delta: float) -> void:
 			if _timer >= SUCCESS_DUR - 0.6:
 				_overlay.color = Color(1.0, 1.0, 1.0,
 					minf((_timer - (SUCCESS_DUR - 0.6)) / 0.6, 1.0))
-			if _timer >= SUCCESS_DUR:
+			if _timer >= SUCCESS_DUR and not _done:
+				_done = true
 				completed.emit(true)
 
 		Phase.FAIL_ANIM:
@@ -226,7 +227,8 @@ func _process(delta: float) -> void:
 			if _timer >= 0.5:
 				_overlay.color.a = minf((_timer - 0.5) / (FAIL_DUR - 0.5), 1.0)
 				_overlay.color = Color(0.08, 0.0, 0.0, _overlay.color.a)
-			if _timer >= FAIL_DUR:
+			if _timer >= FAIL_DUR and not _done:
+				_done = true
 				completed.emit(false)
 
 func _set_phase(p: Phase) -> void:
@@ -336,7 +338,7 @@ func _draw_tower_bg() -> void:
 	# Perspective convergence lines
 	for i in 9:
 		var t := float(i) / 8.0
-		var lx := lerp(-VW * 0.15, VW * 1.15, t)
+		var lx: float = lerpf(-VW * 0.15, VW * 1.15, t)
 		draw_line(Vector2(lx, act_bot), Vector2(cx, floor_y),
 				Color(0.11, 0.082, 0.155, 0.45), 1.0)
 	# Horizontal grout lines
@@ -395,10 +397,10 @@ func _draw_staff(cx: float, base_y: float) -> void:
 
 func _draw_torches() -> void:
 	var act_top := LB
-	var positions := [Vector2(VW * 0.135, act_top + 70.0),
+	var positions: Array[Vector2] = [Vector2(VW * 0.135, act_top + 70.0),
 					  Vector2(VW * 0.865, act_top + 70.0)]
 	for i in 2:
-		var tp  := positions[i]
+		var tp: Vector2 = positions[i]
 		var fl  := 0.68 + 0.32 * sin(_torch_t * 7.1 + i * 2.3) * sin(_torch_t * 4.5 + i * 1.1)
 
 		# Wall bracket
@@ -456,6 +458,7 @@ func _draw_fail_vignette() -> void:
 
 var _shake_t: float = 0.0
 var _shake_i: float = 0.0
+var _done: bool = false
 
 func _spawn_ghost(pos: Vector2) -> void:
 	if not _soph.texture: return
