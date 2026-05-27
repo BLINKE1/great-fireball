@@ -70,9 +70,20 @@ func _transition_to_landing() -> void:
 		GameState.fade_in(0.7)
 		scene.finished.connect(func():
 			scene.queue_free()
-			_transition_to_chapter_end()
+			_transition_to_goblin()
 		, CONNECT_ONE_SHOT)
 	, 0.40)
+
+func _transition_to_goblin() -> void:
+	GameState.fade_out_then(func():
+		var scene = load("res://scenes/intro/goblin_encounter.tscn").instantiate()
+		add_child(scene)
+		GameState.fade_in(0.6)
+		scene.finished.connect(func():
+			scene.queue_free()
+			_transition_to_chapter_end()
+		, CONNECT_ONE_SHOT)
+	, 0.45)
 
 func _transition_to_chapter_end() -> void:
 	GameState.fade_out_then(func():
