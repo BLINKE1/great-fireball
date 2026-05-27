@@ -32,8 +32,9 @@ const SC := 28
 var _soph_close: Sprite2D
 var _hair_close: Sprite2D
 
-var _label:   Label
-var _overlay: ColorRect
+var _label:    Label
+var _overlay:  ColorRect
+var _finishing: bool = false
 
 func _ready() -> void:
 	_init_stars()
@@ -144,6 +145,8 @@ func _next_card() -> void:
 	else: _finish()
 
 func _finish() -> void:
+	if _finishing: return
+	_finishing = true
 	var tw := _overlay.create_tween()
 	tw.tween_property(_overlay, "color:a", 1.0, 0.55)
 	tw.tween_callback(func(): finished.emit())

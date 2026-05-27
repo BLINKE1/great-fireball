@@ -1,5 +1,7 @@
 extends Node2D
 
+var _qte_packed: PackedScene
+
 func _ready() -> void:
 	call_deferred("_start")
 
@@ -8,6 +10,7 @@ func _start() -> void:
 	_show_anime()
 
 func _show_anime() -> void:
+	_qte_packed = load("res://scenes/intro/qte_tower.tscn")
 	var scene = load("res://scenes/intro/anime_placeholder.tscn").instantiate()
 	add_child(scene)
 	scene.finished.connect(func():
@@ -16,18 +19,16 @@ func _show_anime() -> void:
 	, CONNECT_ONE_SHOT)
 
 func _transition_to_qte() -> void:
-	GameState.fade_out_then(func():
-		var scene = load("res://scenes/intro/qte_tower.tscn").instantiate()
-		add_child(scene)
-		GameState.fade_in(0.55)
-		scene.completed.connect(func(success: bool):
-			scene.queue_free()
-			if success:
-				_transition_to_aftermath()
-			else:
-				_transition_to_capture_outcome()
-		, CONNECT_ONE_SHOT)
-	, 0.45)
+	var scene = _qte_packed.instantiate()
+	add_child(scene)
+	GameState.fade_in(0.55)
+	scene.completed.connect(func(success: bool):
+		scene.queue_free()
+		if success:
+			_transition_to_aftermath()
+		else:
+			_transition_to_capture_outcome()
+	, CONNECT_ONE_SHOT)
 
 func _transition_to_aftermath() -> void:
 	GameState.fade_out_then(func():
