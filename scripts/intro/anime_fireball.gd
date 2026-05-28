@@ -43,6 +43,12 @@ func _ready() -> void:
 	_build_horde()
 	_build_ui()
 	_build_soph()
+	# Standalone: fade_in inicial e loop voltando pro forest_fight
+	if get_tree().current_scene == self:
+		GameState.fade_in(0.6)
+		finished.connect(func():
+			get_tree().change_scene_to_file("res://scenes/intro/forest_fight.tscn")
+		, CONNECT_ONE_SHOT)
 
 func _build_horde() -> void:
 	for i in 22:
@@ -124,9 +130,9 @@ func _process(delta: float) -> void:
 			_fb_x -= delta * 310.0
 			var sweep_span: float = VW + 160.0
 			var prog: float = clampf(1.0 - (_fb_x + 80.0) / sweep_span, 0.0, 1.0)
-			_fb_r = lerpf(22.0, 95.0, sinf(prog * PI))
-			_sky_glow = 0.3 + sinf(prog * PI) * 0.7
-			_soph_lit = sinf(prog * PI) * clampf((SOPH_BASE_X - _fb_x) / 300.0, 0.0, 1.0)
+			_fb_r = lerpf(22.0, 95.0, sin(prog * PI))
+			_sky_glow = 0.3 + sin(prog * PI) * 0.7
+			_soph_lit = sin(prog * PI) * clampf((SOPH_BASE_X - _fb_x) / 300.0, 0.0, 1.0)
 			for h in _horde:
 				if h.alive and _fb_x <= h.x + _fb_r * 0.6:
 					h.alive = false
@@ -367,7 +373,7 @@ func _draw_mage() -> void:
 	draw_line(s_base, s_tip, Color(0.22, 0.15, 0.08, 0.92), 3.0)
 
 	# Crystal — residual warm glow after the Great Fireball
-	var glow: float = 0.32 + sinf(_t * 3.6) * 0.10
+	var glow: float = 0.32 + sin(_t * 3.6) * 0.10
 	draw_circle(s_tip, 5.0, Color(0.85, 0.45, 0.10, glow * 0.85))
 	draw_circle(s_tip, 3.0, Color(1.0, 0.72, 0.28, glow))
 

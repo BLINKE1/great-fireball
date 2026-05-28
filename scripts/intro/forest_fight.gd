@@ -54,9 +54,10 @@ var _blood:     Array = []
 var _expl:      Array = []   # boss death sparks
 
 # Horde (drawn procedurally)
-var _horde:     Array = []   # {x,y,big,hop_t,hop_phase}
-var _horde_in:  float = 0.0
-var _scare_t:   float = 0.0
+var _horde:       Array = []   # {x,y,big,hop_t,hop_phase}
+var _horde_in:    float = 0.0
+var _scare_t:     float = 0.0
+var _soph_scared: bool  = false
 
 # Nodes
 var _soph:      Sprite2D
@@ -71,6 +72,9 @@ func _ready() -> void:
 	_build()
 	_spawn_horde()
 	MusicManager.play("game")
+	# Standalone: faz fade_in inicial
+	if get_tree().current_scene == self:
+		GameState.fade_in(0.6)
 
 func _build() -> void:
 	_soph = _mk_spr("player_body", Vector2(SOPH_X, FLOOR_Y), Vector2(2.6, 2.6))
@@ -154,6 +158,16 @@ func _process(delta: float) -> void:
 	_t += delta; _ambient += delta
 	_shot_cd = maxf(_shot_cd - delta, 0.0)
 
+	# Debug: F1=goblins, F2=boss, F3=horde, F4=end
+	if Input.is_key_pressed(KEY_F1) and _phase != Phase.GOBLINS:
+		_set_phase(Phase.GOBLINS)
+	elif Input.is_key_pressed(KEY_F2) and _phase != Phase.BOSS_INTRO:
+		_set_phase(Phase.BOSS_INTRO)
+	elif Input.is_key_pressed(KEY_F3) and _phase != Phase.HORDE:
+		_set_phase(Phase.HORDE)
+	elif Input.is_key_pressed(KEY_F4) and _phase != Phase.END:
+		_set_phase(Phase.END)
+
 	if _shake_t > 0.0:
 		_shake_t -= delta
 		position = Vector2(randf_range(-_shake_i, _shake_i) * 5.0,
@@ -166,7 +180,7 @@ func _process(delta: float) -> void:
 
 	if _orb_active:
 		_orb_t += delta
-		_orb_pos = _orb_pos.lerp(Vector2(SOPH_X - 40.0, FLOOR_Y - 28.0), delta * 1.8)
+		_orb_pos = _orb_pos.lerp(Vector2(SOPH_X, FLOOR_Y - 18.0), delta * 1.8)
 		if _orb_pos.distance_to(Vector2(SOPH_X, FLOOR_Y - 18.0)) < 36.0:
 			_collect_orb()
 
@@ -181,7 +195,14 @@ func _process(delta: float) -> void:
 		Phase.HORDE:    _tick_horde(delta)
 		Phase.END:
 			_overlay.color.a = minf(_t / 1.0, 1.0)
-			if _t >= 1.0: finished.emit(); set_process(false)
+			if _t >= 1.0:
+				if get_tree().current_scene == self:
+					# Standalone: vai pro anime do meteoro
+					set_process(false)
+					get_tree().change_scene_to_file("res://scenes/intro/anime_fireball.tscn")
+				else:
+					finished.emit()
+					set_process(false)
 
 	_update_soph_visuals()
 	queue_redraw()
