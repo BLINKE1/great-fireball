@@ -13,6 +13,7 @@ Interface única:
 
 from __future__ import annotations
 import base64
+import time
 from io import BytesIO
 from typing import Protocol
 
@@ -34,28 +35,51 @@ class Engine(Protocol):
 
 class GeminiEngine:
     """
-    Google Gemini — free tier generoso, visão nativa, sem cartão de crédito.
+    Google Gemini via REST API — sem dependências complexas.
+    Free tier generoso, visão nativa, sem cartão de crédito.
     Chave gratuita em: https://aistudio.google.com/apikey
-    pip install google-generativeai
+    Requer apenas: pip install requests
     """
     name  = "gemini"
-    model = "gemini-2.0-flash"
+    model = "gemini-2.5-flash"
+
+    _BASE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
     def __init__(self, api_key: str, model: str | None = None):
         try:
-            import google.generativeai as genai
+            import requests as _req
+            self._req = _req
         except ImportError:
-            raise ImportError("pip install google-generativeai")
-        genai.configure(api_key=api_key)
-        self.model = model or self.model
-        self._client = genai.GenerativeModel(self.model)
+            raise ImportError("pip install requests")
+        self.api_key = api_key
+        self.model   = model or self.model
 
     def call(self, prompt: str, image: "Image.Image | None" = None) -> str:
-        parts: list = [prompt]
+        parts: list[dict] = []
         if image is not None:
-            parts = [image, prompt]   # Gemini aceita PIL.Image diretamente
-        response = self._client.generate_content(parts)
-        return response.text
+            buf = BytesIO()
+            image.save(buf, format="PNG")
+            b64 = base64.standard_b64encode(buf.getvalue()).decode()
+            parts.append({"inline_data": {"mime_type": "image/png", "data": b64}})
+        parts.append({"text": prompt})
+
+        url  = self._BASE.format(model=self.model)
+        body = {
+            "contents": [{"parts": parts}],
+            "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.4},
+        }
+        # Retry com backoff em caso de rate-limit (429) ou indisponibilidade (503)
+        for attempt, wait in enumerate([0, 15, 30, 60]):
+            if wait:
+                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/4)...", end=" ", flush=True)
+                time.sleep(wait)
+            resp = self._req.post(url, params={"key": self.api_key}, json=body, timeout=120)
+            if resp.status_code in (429, 503) and attempt < 3:
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        resp.raise_for_status()  # lança se esgotou as tentativas
 
 
 # ── Anthropic Claude ──────────────────────────────────────────────────────────

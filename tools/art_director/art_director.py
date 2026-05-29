@@ -41,11 +41,12 @@ from engines import build_engine, engine_help, ENGINE_KEYS, Engine
 
 # ── Caminhos ──────────────────────────────────────────────────────────────────
 
-HERE     = Path(__file__).parent
-GEN_FILE = HERE / "generator.py"
-OUT_DIR  = HERE / "iterations"
+HERE      = Path(__file__).parent
+GEN_FILE  = HERE / "generator.py"
+SEED_FILE = HERE / "generator_seed.py"
+OUT_DIR   = HERE / "iterations"
 FINAL_DIR = HERE.parent.parent / "assets" / "sprites" / "player"
-ZOOM     = 6
+ZOOM      = 6
 
 # ── Lore e prompt ─────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ CHECKLIST:
 6. PALETA: contraste limpo entre regiões?
 7. PIXEL ART: pixels intencionais, sem blur?
 
-Responda SOMENTE JSON puro (sem markdown):
+Responda SOMENTE JSON puro (sem markdown, SEM campo de código):
 {{
   "critique": "análise de cada ponto do checklist",
   "issues": ["problema específico com coordenadas ou cores", "..."],
@@ -106,9 +107,38 @@ Responda SOMENTE JSON puro (sem markdown):
     "proporcoes": <0-10>,
     "outline": <0-10>,
     "leitura_fantasia": <0-10>
-  }},
-  "improved_code": "<código Python COMPLETO com generate() -> PIL.Image 32×64 RGBA>"
+  }}
 }}"""
+
+CODE_PROMPT = """\
+Você é um programador de pixel art especialista em Python + PIL.
+
+══ PERSONAGEM-ALVO ══════════════════════
+{goal}
+═════════════════════════════════════════
+
+PROBLEMAS IDENTIFICADOS NA ITERAÇÃO {iteration}:
+{issues}
+
+CORPO ATUAL da função generate():
+```python
+{body}
+```
+
+As seguintes variáveis já estão definidas no escopo global (NÃO redefina):
+  W=32, H=64, T=(transparente)
+  OUTLINE, SKIN, SKIN_S, HAIR, HAIR_D, HAIR_H, EYE
+  ROBE, ROBE_D, ROBE_L, GOLD, GOLD_D, BOOT, BOOT_D
+  px(img,x,y,c), hline(img,x0,x1,y,c), vline(img,x,y0,y1,c), rect(img,x0,y0,x1,y1,c)
+
+Escreva APENAS o corpo da função generate() — sem assinatura def, sem variáveis de paleta,
+sem importações, sem explicações.
+
+IMPORTANTE: desenhe o personagem COMPLETO (cabeça + cabelo + rosto + pescoço + robe + braços + pernas + botas).
+Não omita partes — cada seção deve ter pixels. O código deve começar com:
+    img = Image.new("RGBA", (W, H), T)
+e terminar obrigatoriamente com:
+    return img"""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -123,6 +153,20 @@ def load_env(engine_name: str) -> str | None:
         if line.startswith(f"{key_name}="):
             return line.split("=", 1)[1].strip().strip('"')
     return None
+
+
+def validate_code(code: str) -> bool:
+    try:
+        compiled = compile(code, "<generator>", "exec")
+        ns: dict = {}
+        exec(compiled, ns)  # noqa: S102
+        fn = ns.get("generate")
+        if not callable(fn):
+            return False
+        result = fn()
+        return isinstance(result, Image.Image)
+    except Exception:
+        return False
 
 
 def run_generator(code: str) -> Image.Image:
@@ -164,25 +208,115 @@ def make_strip(images: list[Image.Image], scores: list[int]) -> Image.Image:
 
 def extract_json(text: str) -> dict:
     text = text.strip()
+    # Remove markdown fences
     text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$",          "", text)
+    text = re.sub(r"\s*```\s*$",       "", text)
+
+    # Tenta parse direto
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if m:
-            return json.loads(m.group())
-        raise
+        pass
+
+    # Extrai o maior bloco { ... } (tolerante a texto extra)
+    m = re.search(r"\{.*\}", text, re.DOTALL)
+    if m:
+        candidate = m.group()
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            result: dict = {}
+            for field in ("score", "critique", "issues"):
+                fm = re.search(rf'"{field}"\s*:\s*(.+?)(?=,\s*"[a-z]|\}})', candidate, re.DOTALL)
+                if fm:
+                    try:
+                        result[field] = json.loads(fm.group(1).strip().rstrip(","))
+                    except Exception:
+                        result[field] = fm.group(1).strip()
+            if result:
+                return result
+
+    raise ValueError(f"Não foi possível extrair JSON da resposta ({len(text)} chars)")
 
 
 # ── Core ──────────────────────────────────────────────────────────────────────
 
+def _extract_body(code: str) -> str:
+    """Extract the body of generate() (lines after 'def generate') dedented."""
+    lines = code.splitlines()
+    in_fn = False
+    body_lines: list[str] = []
+    for line in lines:
+        if re.match(r"^def generate\s*\(", line):
+            in_fn = True
+            continue
+        if in_fn:
+            # Stop at next top-level def/class
+            if line and not line[0].isspace() and not line.startswith("#"):
+                break
+            body_lines.append(line)
+    # Dedent: remove the common leading indent (4 spaces / 1 tab)
+    return "\n".join(
+        l[4:] if l.startswith("    ") else (l[1:] if l.startswith("\t") else l)
+        for l in body_lines
+    ).strip()
+
+
+def _splice_body(base_code: str, new_body: str) -> str:
+    """Replace the body of generate() in base_code with new_body."""
+    # Find the def generate line and remove everything after it
+    lines = base_code.splitlines()
+    pre: list[str] = []
+    post: list[str] = []
+    in_fn = False
+    after_fn = False
+    for line in lines:
+        if re.match(r"^def generate\s*\(", line):
+            pre.append(line)
+            in_fn = True
+            continue
+        if in_fn and not after_fn:
+            if line and not line[0].isspace() and not line.startswith("#"):
+                after_fn = True
+                post.append(line)
+        elif after_fn:
+            post.append(line)
+        else:
+            pre.append(line)
+    body_indented = "\n".join("    " + l for l in new_body.splitlines())
+    parts = ["\n".join(pre), body_indented]
+    if post:
+        parts.append("\n".join(post))
+    return "\n".join(parts) + "\n"
+
+
 def iterate(engine: Engine, code: str, img: Image.Image, iteration: int) -> dict:
-    prompt = CRITIQUE_PROMPT.format(
+    # Step 1: critique only (clean JSON, no embedded code)
+    crit_prompt = CRITIQUE_PROMPT.format(
         goal=GOAL, zoom=ZOOM, code=code, iteration=iteration
     )
-    text = engine.call(prompt, zoom_image(img))
-    return extract_json(text)
+    crit_text = engine.call(crit_prompt, zoom_image(img))
+    result = extract_json(crit_text)
+
+    # Step 2: generate() body only — much shorter than the full file
+    issues_text = "\n".join(f"- {i}" for i in result.get("issues", []))
+    if not issues_text:
+        issues_text = result.get("critique", "Melhore a fidelidade visual ao personagem.")
+    body = _extract_body(code)
+    code_prompt = CODE_PROMPT.format(
+        goal=GOAL, iteration=iteration, issues=issues_text, body=body
+    )
+    new_body = engine.call(code_prompt, None)
+    # Strip any accidental markdown fences the model may add
+    new_body = re.sub(r"^```(?:python)?\s*", "", new_body.strip())
+    new_body = re.sub(r"\s*```\s*$", "", new_body)
+    new_body = new_body.strip()
+    # Ensure the body always ends with return img
+    if not re.search(r"return\s+img\s*$", new_body):
+        new_body += "\nreturn img"
+    # Splice the improved body back into the full file
+    result["improved_code"] = _splice_body(code, new_body)
+    return result
 
 
 def export_final(img: Image.Image) -> None:
@@ -236,7 +370,12 @@ def main() -> None:
 
     engine = None if args.dry_run else build_engine(args.engine, api_key, args.model)
 
-    code        = GEN_FILE.read_text(encoding="utf-8")
+    code = GEN_FILE.read_text(encoding="utf-8")
+    if not validate_code(code):
+        print("  generator.py corrompido — restaurando semente...")
+        code = SEED_FILE.read_text(encoding="utf-8")
+        GEN_FILE.write_text(code, encoding="utf-8")
+
     all_images  : list[Image.Image] = []
     all_scores  : list[int]         = []
 
@@ -262,20 +401,28 @@ def main() -> None:
 
         score    = int(result.get("score", 0))
         critique = result.get("critique", "")
+        if isinstance(critique, list):
+            critique = " ".join(str(c) for c in critique)
         new_code = result.get("improved_code", "")
         all_scores.append(score)
 
         print(f"score {score}/10")
-        print(f"  {critique[:110]}...")
+        print(f"  {str(critique)[:110]}...")
         for issue in result.get("issues", [])[:3]:
             print(f"    • {issue}")
 
         save_iteration(img, i, score)
 
-        if new_code.strip():
-            GEN_FILE.write_text(new_code, encoding="utf-8")
-            code = new_code
-            print("  generator.py atualizado ✓")
+        if new_code.strip() and validate_code(new_code):
+            # Only update if new code is actually better (or this is the first improvement)
+            if score >= (all_scores[-2] if len(all_scores) >= 2 else 0) or i == 0:
+                GEN_FILE.write_text(new_code, encoding="utf-8")
+                code = new_code
+                print("  generator.py atualizado ✓")
+            else:
+                print(f"  Score {score} < {all_scores[-2]} — mantendo código anterior")
+        elif new_code.strip():
+            print("  AVISO: código gerado inválido — mantendo anterior")
 
         if score >= args.score:
             print(f"\n  Score {score} ≥ {args.score} — concluído! ✓"); break
