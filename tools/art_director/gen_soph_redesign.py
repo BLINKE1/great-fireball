@@ -25,21 +25,21 @@ HAIR    = (65,  125, 220, 255)   # azul médio
 HAIR_D  = (35,  80,  175, 255)   # azul escuro (profundidade)
 HAIR_H  = (130, 185, 255, 255)   # azul claro (reflexo)
 EYE     = (30,  20,  55,  255)
-CAPE    = (80,  40,  140, 255)   # capa: roxo médio
-CAPE_D  = (45,  20,  85,  255)   # capa: sombra
-CAPE_L  = (110, 60,  170, 255)   # capa: luz
-SUIT    = (30,  12,  55,  255)   # bodysuit escuro (Raven)
-SUIT_H  = (55,  25,  90,  255)   # bodysuit highlight
+CAPE    = (25,  20,  45,  255)   # capa: preto-azulado escuro
+CAPE_D  = (12,  10,  25,  255)   # capa: sombra quase preta
+CAPE_L  = (45,  35,  75,  255)   # capa: luz (reflexo sutil)
+SUIT    = (18,  14,  30,  255)   # bodysuit: quase preto
+SUIT_H  = (40,  30,  60,  255)   # bodysuit highlight
 GOLD    = (210, 165, 30,  255)
 GOLD_D  = (155, 115, 10,  255)
-BOOT    = (70,  45,  25,  255)   # bota marrom escura
+BOOT    = (70,  45,  25,  255)   # bota marrom escura (mantida)
 BOOT_D  = (45,  25,  10,  255)
 STAFF_C = (95,  65,  35,  255)   # cabo do cajado (madeira escura)
 STAFF_H = (145, 105, 55,  255)   # reflexo do cabo
-ORB     = (110, 50,  210, 255)   # orbe roxo brilhante
-ORB_H   = (190, 140, 255, 255)   # orbe highlight
-ORB_D   = (60,  20,  120, 255)   # orbe sombra
-GLASS   = (80,  70,  100, 255)   # armação dos óculos
+ORB     = (40,  120, 220, 255)   # orbe azul brilhante
+ORB_H   = (140, 210, 255, 255)   # orbe highlight azul claro
+ORB_D   = (20,  60,  140, 255)   # orbe sombra azul escuro
+GLASS   = (60,  55,  80,  255)   # armação dos óculos
 
 
 def px(img, x, y, c):
