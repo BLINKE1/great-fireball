@@ -17,7 +17,32 @@ projeto — sem dependência externa, sem questões de licença.
 
 ## Assets de terceiros
 
-> Nenhum asset de terceiro integrado ainda.
+### Kenney Asset Pack 1 — RPG Sounds & UI Sounds
+- **Autor:** Kenney (kenney.nl)
+- **Fonte:** https://github.com/iwenzhou/kenney (mirror CC0 completo)
+- **Licença:** CC0 1.0 Universal — uso comercial livre, sem atribuição obrigatória
+- **Data de integração:** 2026-05-29
+- **Arquivos (em assets/audio/):**
+  - `step.ogg` ← RPG/footstep00.ogg
+  - `land.ogg` ← RPG/footstep04.ogg
+  - `sword.ogg` ← RPG/knifeSlice.ogg
+  - `hit.ogg` ← RPG/metalPot1.ogg
+  - `hit_player.ogg` ← RPG/metalPot2.ogg
+  - `unlock.ogg` ← RPG/metalLatch.ogg
+  - `chest.ogg` ← RPG/bookOpen.ogg
+
+### Kenney Interface Sounds (Calinou/kenney-interface-sounds)
+- **Autor:** Kenney (kenney.nl), portado por Calinou
+- **Fonte:** https://github.com/Calinou/kenney-interface-sounds
+- **Licença:** CC0 1.0 Universal
+- **Data de integração:** 2026-05-29
+- **Arquivos (em assets/audio/):**
+  - `tick.wav` ← tick_001.wav
+  - `qte_alert.wav` ← bong_001.wav
+  - `orb_pickup.wav` ← pluck_001.wav
+  - `victory.wav` ← confirmation_001.wav
+  - `no_mana.wav` ← error_001.wav
+  - `glass_break.wav` ← glass_001.wav
 
 <!--
 Modelo de entrada (preencher ao integrar cada pacote):
