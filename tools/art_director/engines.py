@@ -204,10 +204,8 @@ class OpenRouterEngine:
             "messages": [{"role": "user", "content": content}],
         }
         headers = {
-            "Authorization":  f"Bearer {self.api_key}",
-            "Content-Type":   "application/json",
-            "HTTP-Referer":   "https://github.com/blinke1/great-fireball",
-            "X-Title":        "Great Fireball Art Director",
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type":  "application/json",
         }
         for attempt, wait in enumerate([0, 15, 30, 60]):
             if wait:
