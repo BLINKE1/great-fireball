@@ -1,9 +1,29 @@
 extends Node
 
-# Generates all game sprites at runtime as ImageTexture objects.
-# Access via SpriteSetup.get_texture("name").
+# Generates all game sprites at runtime as procedural fallbacks, then lets
+# real art override them by filename. Access via SpriteSetup.get_texture("name").
+#
+# OVERRIDE SYSTEM
+# After the procedural textures are built, _load_overrides() scans the asset
+# folders for a PNG whose name matches a texture key (e.g. "player_body.png").
+# If found, it replaces the procedural texture. This means dropping authored
+# art (from third parties or the assets-creator) into assets/sprites/ etc.
+# automatically swaps it into every scene — and if the file is missing, the
+# procedural version keeps the demo running. Nothing ever breaks.
+#
+# Search order (first match wins): see _OVERRIDE_DIRS below.
+
+const _OVERRIDE_DIRS: Array[String] = [
+	"res://assets/sprites/",
+	"res://assets/sprites/player/",
+	"res://assets/sprites/enemies/",
+	"res://assets/sprites/items/",
+	"res://assets/tilesets/",
+	"res://assets/ui/",
+]
 
 var _t: Dictionary = {}
+var _overridden: PackedStringArray = []  # keys swapped to authored art (for logging)
 
 func _ready() -> void:
 	_gen_player_body()
@@ -36,9 +56,37 @@ func _ready() -> void:
 	_gen_portal()
 	_gen_fire_goblin_archer()
 	_gen_fire_goblin_arrow()
+	_load_overrides()
 
-func get_texture(name: String) -> ImageTexture:
+func get_texture(name: String) -> Texture2D:
 	return _t.get(name)
+
+# ── Authored-art overrides ──────────────────────────────────────────────────────
+
+func _load_overrides() -> void:
+	for key in _t.keys():
+		for dir in _OVERRIDE_DIRS:
+			var path: String = dir + key + ".png"
+			var tex: Texture2D = _try_load_texture(path)
+			if tex != null:
+				_t[key] = tex
+				_overridden.append(key)
+				break
+	if not _overridden.is_empty():
+		print("[SpriteSetup] Authored art loaded for: ", ", ".join(_overridden))
+
+func _try_load_texture(path: String) -> Texture2D:
+	# Prefer the imported resource (handles compression / mipmaps set in editor).
+	if ResourceLoader.exists(path):
+		var res: Resource = ResourceLoader.load(path)
+		if res is Texture2D:
+			return res
+	# Fallback: raw image load, for PNGs dropped in but not yet imported.
+	if FileAccess.file_exists(path):
+		var img: Image = Image.new()
+		if img.load(path) == OK:
+			return ImageTexture.create_from_image(img)
+	return null
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -906,8 +954,8 @@ func _gen_magic_missile() -> void:
 	var img := Image.create(28, 12, false, Image.FORMAT_RGBA8)
 	for y in 12:
 		for x in 28:
-			var cy: float = abs(y - 5.5) / 5.5        # 0=center, 1=edge
-			var prog: float = float(x) / 27.0         # 0=tail, 1=tip
+			var cy: float = absf(float(y) - 5.5) / 5.5
+			var prog: float = float(x) / 27.0
 			var bright: float = (1.0 - cy * cy) * (0.3 + prog * 0.7)
 			if bright > 0.02:
 				var r: float = bright * 0.10
@@ -927,8 +975,8 @@ func _gen_sword_slash_sprite() -> void:
 	var img := Image.create(52, 8, false, Image.FORMAT_RGBA8)
 	for x in 52:
 		for y in 8:
-			var cx: float = abs(x - 25.5) / 25.5     # 0=center, 1=edge
-			var cy: float = abs(y - 3.5) / 3.5       # 0=center, 1=edge
+			var cx: float = absf(float(x) - 25.5) / 25.5
+			var cy: float = absf(float(y) - 3.5) / 3.5
 			var bright: float = (1.0 - cx * cx) * (1.0 - cy * cy * 0.6)
 			if bright > 0.04:
 				var r: float = minf(0.98 + bright * 0.30, 1.0)
@@ -944,8 +992,8 @@ func _gen_missile_spread() -> void:
 	var img := Image.create(28, 12, false, Image.FORMAT_RGBA8)
 	for y in 12:
 		for x in 28:
-			var cy: float    = abs(y - 5.5) / 5.5
-			var prog: float  = float(x) / 27.0
+			var cy: float = absf(float(y) - 5.5) / 5.5
+			var prog: float = float(x) / 27.0
 			var bright: float = (1.0 - cy * cy) * (0.25 + prog * 0.75)
 			if bright > 0.02:
 				var r: float = bright * 0.75
@@ -965,8 +1013,8 @@ func _gen_missile_piercing() -> void:
 	var img := Image.create(36, 10, false, Image.FORMAT_RGBA8)
 	for y in 10:
 		for x in 36:
-			var cy: float    = abs(y - 4.5) / 4.5
-			var prog: float  = float(x) / 35.0
+			var cy: float = absf(float(y) - 4.5) / 4.5
+			var prog: float = float(x) / 35.0
 			var bright: float = (1.0 - cy * cy * 1.2) * (0.2 + prog * 0.8)
 			if bright > 0.02:
 				var r: float = bright * 0.05

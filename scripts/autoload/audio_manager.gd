@@ -3,7 +3,13 @@ extends Node
 const SAMPLE_RATE = 22050
 const POOL_SIZE = 12
 
+# Authored audio overrides: drop a file named <key>.ogg or <key>.wav into
+# assets/audio/ and it replaces the procedural synth for that sound.
+const _AUDIO_DIR := "res://assets/audio/"
+const _AUDIO_EXTS := ["ogg", "wav"]
+
 var _pool: Array[AudioStreamPlayer] = []
+var _cache: Dictionary = {}  # key -> AudioStream (authored) or null (use procedural)
 
 func _ready() -> void:
 	for i in POOL_SIZE:
@@ -13,13 +19,60 @@ func _ready() -> void:
 		_pool.append(p)
 
 func play(sound: String, pitch: float = 1.0) -> void:
-	var stream = _build(sound)
+	var stream: AudioStream = _get_stream(sound)
 	if not stream:
 		return
-	var player = _free_player()
+	var player := _free_player()
 	player.stream = stream
 	player.pitch_scale = pitch
 	player.play()
+
+func _get_stream(sound: String) -> AudioStream:
+	if _cache.has(sound):
+		var cached = _cache[sound]
+		return cached if cached != null else _build(sound)
+	# Try authored file first
+	for ext: String in _AUDIO_EXTS:
+		var path: String = _AUDIO_DIR + sound + "." + ext
+		if ResourceLoader.exists(path):
+			var res: Resource = ResourceLoader.load(path)
+			if res is AudioStream:
+				_cache[sound] = res
+				return res
+		elif FileAccess.file_exists(path):
+			var stream := _load_raw(path, ext)
+			if stream:
+				_cache[sound] = stream
+				return stream
+	# Fall back to procedural synth
+	_cache[sound] = null
+	return _build(sound)
+
+func _load_raw(path: String, ext: String) -> AudioStream:
+	var data := FileAccess.get_file_as_bytes(path)
+	if data.is_empty():
+		return null
+	if ext == "wav":
+		var s := AudioStreamWAV.new()
+		# Parse minimal WAV header to extract PCM data and format
+		if data.size() > 44 and data.slice(0, 4) == "RIFF".to_ascii_buffer():
+			var channels: int  = data[22] | (data[23] << 8)
+			var rate: int      = data[24] | (data[25] << 8) | (data[26] << 16) | (data[27] << 24)
+			var bits: int      = data[34] | (data[35] << 8)
+			var pcm_start: int = 44
+			# Locate "data" chunk in case there are extra chunks
+			for i in range(36, min(data.size() - 8, 200)):
+				if data[i] == 100 and data[i+1] == 97 and data[i+2] == 116 and data[i+3] == 97:
+					pcm_start = i + 8; break
+			s.data      = data.slice(pcm_start)
+			s.mix_rate  = rate
+			s.stereo    = (channels == 2)
+			s.format    = AudioStreamWAV.FORMAT_16_BITS if bits == 16 else AudioStreamWAV.FORMAT_8_BITS
+			return s
+	elif ext == "ogg":
+		var s := AudioStreamOggVorbis.load_from_buffer(data)
+		return s
+	return null
 
 func _free_player() -> AudioStreamPlayer:
 	for p in _pool:
@@ -68,6 +121,8 @@ func _build(sound: String) -> AudioStreamWAV:
 		"shield_break":       return _wave(160.0,  0.40, "explosion", 0.60)
 		"burn":               return _wave(280.0,  0.55, "noise",     0.28)
 		"fire_arrow":         return _wave(480.0,  0.08, "up",        0.30)
+		"stone_emerge":       return _wave(72.0,   0.75, "explosion", 0.78)
+		"qte_alert":          return _wave(920.0,  0.18, "down",      0.50)
 	return null
 
 func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV:
@@ -77,8 +132,8 @@ func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	for i in n:
-		var t  = float(i) / SAMPLE_RATE
-		var p  = float(i) / n
+		var t: float = float(i) / SAMPLE_RATE
+		var p: float = float(i) / n
 		var env := pow(1.0 - p, 0.6)
 		var s  := 0.0
 		match shape:
