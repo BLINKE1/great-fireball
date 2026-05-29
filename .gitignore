@@ -4,3 +4,4 @@
 __pycache__/
 .env
 *.env
+assets/sprites/player/*_bak_*.png
