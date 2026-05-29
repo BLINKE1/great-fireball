@@ -246,6 +246,8 @@ def generate(mana: int) -> Image.Image:
         px(img, 30, 18, orb_h); px(img, 31, 17, orb_c)
         px(img, 30, 26, orb_h); px(img, 23, 26, orb_h)
 
+    face = img.crop((10, 4, 23, 17))
+    img.paste(face.transpose(Image.FLIP_LEFT_RIGHT), (10, 4))
     return img
 
 

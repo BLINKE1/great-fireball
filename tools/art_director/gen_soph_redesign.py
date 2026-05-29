@@ -230,6 +230,9 @@ def generate() -> Image.Image:
     px(img, 30, 26, ORB_H); px(img, 31, 27, ORB_D)
     px(img, 23, 26, ORB_H)
 
+    # Espelha só a região do rosto (x=10-22, y=4-16)
+    face = img.crop((10, 4, 23, 17))
+    img.paste(face.transpose(Image.FLIP_LEFT_RIGHT), (10, 4))
     return img
 
 

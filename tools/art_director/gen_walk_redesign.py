@@ -206,6 +206,8 @@ def make_frame(params):
     draw_upper(img, arm_l_dy=al, arm_r_dy=ar, hair_bob=hb)
     draw_legs(img, bx0, bx1, by_off, fx0, fx1, cape_edge_dx=cdx)
     draw_staff(img)
+    face = img.crop((10, 4, 23, 17))
+    img.paste(face.transpose(Image.FLIP_LEFT_RIGHT), (10, 4))
     return img
 
 
