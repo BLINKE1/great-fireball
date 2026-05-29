@@ -13,7 +13,7 @@ const BOSS_HP_MAX := 5
 const MISSILE_SPD := 530.0
 
 enum Phase { WALK_1, GOBLINS, WALK_2, BOSS_INTRO, BOSS_FIGHT, BOSS_DEATH, WALK_3, HORDE, END }
-enum BossAct { IDLE, CHARGE, ROAR }
+enum BossAct { IDLE, CHARGE, ROAR, VULNERABLE }
 
 var _phase:      Phase   = Phase.WALK_1
 var _t:          float   = 0.0
@@ -45,9 +45,12 @@ var _boss_flash: float   = 0.0
 var _boss_vis:  bool     = false
 var _boss_cvx:  float    = 0.0   # charge velocity x
 
-# Shake
+# Shake / hitstop / walk feel
 var _shake_t:   float = 0.0
 var _shake_i:   float = 0.0
+var _hitstop:   float = 0.0   # freeze frames on impactful hits
+var _walk_vel:  float = 0.0   # smoothed walk acceleration (0→1)
+var _bob_prev:  float = 0.0   # previous bob value for step sync
 
 # Blood / explosion
 var _blood:     Array = []
@@ -158,6 +161,18 @@ func _process(delta: float) -> void:
 	_t += delta; _ambient += delta
 	_shot_cd = maxf(_shot_cd - delta, 0.0)
 
+	# Hit-stop: freeze game logic for a few frames on strong impacts
+	if _hitstop > 0.0:
+		_hitstop = maxf(_hitstop - delta, 0.0)
+		_update_soph_visuals()
+		queue_redraw()
+		return
+
+	# Pulsing QTE prompt (breathes at ~1.4 Hz)
+	if _qte_lbl.modulate.a > 0.5:
+		var pulse: float = 0.93 + sinf(_t * TAU * 1.4) * 0.07
+		_qte_lbl.scale = Vector2(pulse, pulse)
+
 	# Debug: F1=goblins, F2=boss, F3=horde, F4=end
 	if Input.is_key_pressed(KEY_F1) and _phase != Phase.GOBLINS:
 		_set_phase(Phase.GOBLINS)
@@ -232,10 +247,11 @@ func _walk_inp() -> float:
 func _do_step(delta: float) -> void:
 	_walk_t += delta * 9.0
 	_soph.flip_h = true; _hair.flip_h = true
-	_step_t += delta
-	if _step_t > 0.34:
-		_step_t = 0.0
+	# Sync step sound to bob cycle: play when foot hits ground (bob crosses zero upward)
+	var bob_now: float = sinf(_walk_t)
+	if _bob_prev < 0.0 and bob_now >= 0.0:
 		AudioManager.play("step", 0.88 + randf_range(-0.06, 0.06))
+	_bob_prev = bob_now
 
 func _tick_goblins(delta: float) -> void:
 	var all_dead := true
@@ -305,9 +321,11 @@ func _tick_boss_fight(delta: float) -> void:
 			_boss_x += _boss_cvx * delta
 			if _boss_cvx > 0.0 and _boss_x >= SOPH_X + 20.0:
 				AudioManager.play("hit_player")
-				_soph.modulate = Color(1.5, 0.4, 0.4)
-				_hair.modulate  = Color(1.5, 0.4, 0.4)
-				get_tree().create_timer(0.18).timeout.connect(func():
+				_hitstop = 0.08  # hard hit-stop when Soph takes damage
+				_shake(0.22, 1.6)
+				_soph.modulate = Color(1.8, 0.3, 0.3)
+				_hair.modulate  = Color(1.8, 0.3, 0.3)
+				get_tree().create_timer(0.20).timeout.connect(func():
 					_soph.modulate = Color.WHITE; _hair.modulate = Color.WHITE)
 				_set_boss_act(BossAct.IDLE)
 				_boss_x = 140.0
@@ -316,6 +334,10 @@ func _tick_boss_fight(delta: float) -> void:
 				_set_boss_act(BossAct.IDLE)
 		BossAct.ROAR:
 			if _boss_t >= 1.2:
+				_set_boss_act(BossAct.VULNERABLE)
+		BossAct.VULNERABLE:
+			# Stagger window after ROAR — clearly telegraphs hit opportunity
+			if _boss_t >= 0.9:
 				_set_boss_act(BossAct.IDLE)
 
 	if Input.is_action_just_pressed("spell_magic_missile"):
@@ -371,13 +393,16 @@ func _tick_missiles(delta: float) -> void:
 			if not g.alive: continue
 			if Vector2(m.x - g.x, m.y - (g.y - 22.0)).length() < 20.0:
 				m.life = -1.0; g.alive = false
+				_hitstop = 0.04
 				_spawn_blood(Vector2(g.x, g.y - 20.0), 32, Color(0.15, 0.72, 0.18))
 				AudioManager.play("enemy_die")
-		# Hit boss
+		# Hit boss (not during charge; extra damage window during VULNERABLE)
 		if _boss_vis and _boss_hp > 0 and _boss_act != BossAct.CHARGE:
 			if Vector2(m.x - _boss_x, m.y - (_boss_y - 45.0)).length() < 40.0:
 				m.life = -1.0; _boss_hp -= 1; _boss_flash = 1.0
-				AudioManager.play("hit", 1.2); _shake(0.15, 0.5)
+				_hitstop = 0.055
+				var hit_pitch: float = 1.2 + (0.15 if _boss_act == BossAct.VULNERABLE else 0.0)
+				AudioManager.play("hit", hit_pitch); _shake(0.18, 0.6)
 				_update_boss_bar()
 				if _boss_hp <= 0:
 					AudioManager.play("boss_appear")
@@ -434,17 +459,29 @@ func _update_mana_hud() -> void:
 func _update_boss_bar() -> void:
 	var hearts := "♥".repeat(_boss_hp) + "♡".repeat(BOSS_HP_MAX - _boss_hp)
 	_boss_bar.text = "  " + hearts + "  "
+	# Color shifts green→yellow→red as HP drops
+	var hp_frac: float = float(max(_boss_hp, 0)) / float(BOSS_HP_MAX)
+	var bar_col: Color
+	if hp_frac > 0.6:
+		bar_col = Color(0.92, 0.22, 0.14)
+	elif hp_frac > 0.3:
+		bar_col = Color(0.92, 0.22, 0.14).lerp(Color(0.92, 0.65, 0.10), (0.6 - hp_frac) / 0.3)
+	else:
+		bar_col = Color(0.92, 0.65, 0.10).lerp(Color(1.0, 0.22, 0.05), (0.3 - hp_frac) / 0.3)
+	_boss_bar.add_theme_color_override("font_color", bar_col)
 
 func _update_soph_visuals() -> void:
 	var walking: bool = (_walk_inp() < 0.0 and
 		(_phase == Phase.WALK_1 or _phase == Phase.WALK_2 or _phase == Phase.WALK_3))
+	# Smooth acceleration / deceleration of walk bob
+	var spd: float = get_process_delta_time()
 	if walking:
-		var bob: float = sin(_walk_t) * 1.8
-		_soph.position = Vector2(SOPH_X, FLOOR_Y + bob)
-		_hair.position = Vector2(SOPH_X, FLOOR_Y + bob - 1.0)
+		_walk_vel = minf(_walk_vel + spd * 7.0, 1.0)
 	else:
-		_soph.position = Vector2(SOPH_X, FLOOR_Y)
-		_hair.position = Vector2(SOPH_X, FLOOR_Y - 1.0)
+		_walk_vel = maxf(_walk_vel - spd * 12.0, 0.0)
+	var bob: float = sinf(_walk_t) * 2.2 * _walk_vel
+	_soph.position = Vector2(SOPH_X, FLOOR_Y + bob)
+	_hair.position = Vector2(SOPH_X, FLOOR_Y + bob - 1.0)
 
 func _set_phase(p: Phase) -> void:
 	_phase = p; _t = 0.0; _walk_dist = 0.0
@@ -581,9 +618,21 @@ func _draw_goblins_3() -> void:
 
 func _draw_boss() -> void:
 	if not _boss_vis: return
-	var bc: Color = Color(0.25, 0.65, 0.22)
+	# Tint shifts green → yellow → red as HP depletes
+	var hp_frac: float = float(max(_boss_hp, 0)) / float(BOSS_HP_MAX)
+	var bc: Color
+	if hp_frac > 0.6:
+		bc = Color(0.25, 0.65, 0.22)
+	elif hp_frac > 0.3:
+		bc = Color(0.25, 0.65, 0.22).lerp(Color(0.72, 0.58, 0.10), (0.6 - hp_frac) / 0.3)
+	else:
+		bc = Color(0.72, 0.58, 0.10).lerp(Color(0.78, 0.18, 0.10), (0.3 - hp_frac) / 0.3)
 	if _boss_flash > 0.0:
 		bc = bc.lerp(Color.WHITE, _boss_flash)
+	# VULNERABLE: yellow strobe — clear window for the player to hit
+	if _boss_act == BossAct.VULNERABLE:
+		var strobe: float = 0.55 + 0.45 * sinf(_boss_t * TAU * 5.0)
+		bc = bc.lerp(Color(1.0, 0.92, 0.20), strobe * 0.65)
 	_draw_boss_goblin(Vector2(_boss_x, _boss_y), 5.0, bc)
 
 func _draw_goblin_at(pos: Vector2, sc: float, flip: bool, tint: Color) -> void:

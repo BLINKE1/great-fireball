@@ -1,9 +1,29 @@
 extends Node
 
-# Generates all game sprites at runtime as ImageTexture objects.
-# Access via SpriteSetup.get_texture("name").
+# Generates all game sprites at runtime as procedural fallbacks, then lets
+# real art override them by filename. Access via SpriteSetup.get_texture("name").
+#
+# OVERRIDE SYSTEM
+# After the procedural textures are built, _load_overrides() scans the asset
+# folders for a PNG whose name matches a texture key (e.g. "player_body.png").
+# If found, it replaces the procedural texture. This means dropping authored
+# art (from third parties or the assets-creator) into assets/sprites/ etc.
+# automatically swaps it into every scene — and if the file is missing, the
+# procedural version keeps the demo running. Nothing ever breaks.
+#
+# Search order (first match wins): see _OVERRIDE_DIRS below.
+
+const _OVERRIDE_DIRS: Array[String] = [
+	"res://assets/sprites/",
+	"res://assets/sprites/player/",
+	"res://assets/sprites/enemies/",
+	"res://assets/sprites/items/",
+	"res://assets/tilesets/",
+	"res://assets/ui/",
+]
 
 var _t: Dictionary = {}
+var _overridden: PackedStringArray = []  # keys swapped to authored art (for logging)
 
 func _ready() -> void:
 	_gen_player_body()
@@ -36,9 +56,37 @@ func _ready() -> void:
 	_gen_portal()
 	_gen_fire_goblin_archer()
 	_gen_fire_goblin_arrow()
+	_load_overrides()
 
-func get_texture(name: String) -> ImageTexture:
+func get_texture(name: String) -> Texture2D:
 	return _t.get(name)
+
+# ── Authored-art overrides ──────────────────────────────────────────────────────
+
+func _load_overrides() -> void:
+	for key in _t.keys():
+		for dir in _OVERRIDE_DIRS:
+			var path: String = dir + key + ".png"
+			var tex: Texture2D = _try_load_texture(path)
+			if tex != null:
+				_t[key] = tex
+				_overridden.append(key)
+				break
+	if not _overridden.is_empty():
+		print("[SpriteSetup] Authored art loaded for: ", ", ".join(_overridden))
+
+func _try_load_texture(path: String) -> Texture2D:
+	# Prefer the imported resource (handles compression / mipmaps set in editor).
+	if ResourceLoader.exists(path):
+		var res: Resource = ResourceLoader.load(path)
+		if res is Texture2D:
+			return res
+	# Fallback: raw image load, for PNGs dropped in but not yet imported.
+	if FileAccess.file_exists(path):
+		var img: Image = Image.new()
+		if img.load(path) == OK:
+			return ImageTexture.create_from_image(img)
+	return null
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
