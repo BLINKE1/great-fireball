@@ -159,11 +159,11 @@ func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV
 				env = pow(1.0 - p, 0.5)
 			"heartbeat":
 				# Lub-dub: first thump at t=0, second at t=0.10
-				var lub := pow(maxf(1.0 - p / 0.35, 0.0), 2.2)
-				var dub_t := t - 0.10
-				var dub := 0.0
+				var lub: float = pow(maxf(1.0 - p / 0.35, 0.0), 2.2)
+				var dub_t: float = t - 0.10
+				var dub: float = 0.0
 				if dub_t >= 0.0:
-					var dp := dub_t / (dur - 0.10)
+					var dp: float = dub_t / (dur - 0.10)
 					dub = pow(maxf(1.0 - dp / 0.38, 0.0), 2.0) * 0.65
 				s = sin(TAU * freq * t) * (lub + dub)
 				env = 1.0

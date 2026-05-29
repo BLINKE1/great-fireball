@@ -50,9 +50,9 @@ const MissileCurved   = preload("res://scenes/spells/missile_curved.tscn")
 const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
 
-@onready var sprite: Sprite2D = $Sprite2D
-@onready var hair: Sprite2D   = $Hair
-@onready var mana: Node       = $Mana
+@onready var sprite: AnimatedSprite2D = $Sprite2D
+@onready var hair: Sprite2D            = $Hair
+@onready var mana: Node                = $Mana
 @onready var hp: Node         = $HP
 @onready var camera: Camera2D = $Camera2D
 
@@ -115,11 +115,10 @@ func _ready() -> void:
 	add_to_group("player")
 	spawn_position = global_position
 
-	var body_tex := SpriteSetup.get_texture("player_body")
-	if body_tex:
-		sprite.texture = body_tex
-		sprite.modulate = Color.WHITE
-		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.sprite_frames = _build_soph_frames()
+	sprite.play("idle")
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
 	var hair_tex := SpriteSetup.get_texture("player_hair")
 	if hair_tex:
 		hair.texture = hair_tex
@@ -378,8 +377,6 @@ func _handle_movement() -> void:
 	if direction != 0:
 		velocity.x = direction * SPEED
 		facing = direction
-		sprite.flip_h = direction < 0
-		hair.flip_h   = direction < 0
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 
@@ -570,9 +567,12 @@ func set_cutscene(active: bool) -> void:
 	is_cutscene = active
 
 func _spawn_dash_ghost() -> void:
-	if not sprite.texture: return
+	var frame_tex: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame) \
+		if sprite.sprite_frames else null
+	if not frame_tex:
+		return
 	var ghost := Sprite2D.new()
-	ghost.texture     = sprite.texture
+	ghost.texture     = frame_tex
 	ghost.flip_h      = sprite.flip_h
 	ghost.global_position = sprite.global_position
 	ghost.modulate    = Color(0.35, 0.80, 1.0, 0.55)
@@ -626,6 +626,13 @@ func _update_visuals() -> void:
 	sprite.scale = sq
 	hair.scale   = sq
 
+	# Flip to face direction
+	sprite.flip_h = facing < 0
+	hair.flip_h   = facing < 0
+
+	# Animation state
+	_update_anim()
+
 	if is_dashing:
 		sprite.modulate = Color(0.5, 0.85, 1.0, 1.0)
 		return
@@ -635,10 +642,64 @@ func _update_visuals() -> void:
 	if _burn_flash > 0.0:
 		sprite.modulate = Color(1.6, 0.55, 0.20, 1.0)
 		return
-	var c = base_modulate
+	var c := base_modulate
 	if iframe_timer > 0.0:
 		c.a = 0.4 if fmod(iframe_timer, 0.15) > 0.075 else 1.0
 	sprite.modulate = c
+
+func _update_anim() -> void:
+	var spd := absf(velocity.x)
+	var anim: String
+	if not is_on_floor():
+		anim = "fall" if velocity.y > 80.0 else "jump"
+	elif iframe_timer > 0.7:
+		anim = "hurt"
+	elif spd > 180.0:
+		anim = "run"
+	elif spd > 20.0:
+		anim = "walk"
+	else:
+		anim = "idle"
+	if sprite.animation != anim:
+		sprite.play(anim)
+
+func _build_soph_frames() -> SpriteFrames:
+	var sf := SpriteFrames.new()
+	# idle: 2 frames, 4 fps (slow breathe)
+	_add_anim(sf, "idle",  ["soph_idle_0", "soph_idle_1"], 4.0,  true)
+	# walk: 6 frames, 10 fps
+	_add_anim(sf, "walk",  ["soph_walk_0","soph_walk_1","soph_walk_2",
+	                          "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
+	# run: 4 frames, 14 fps
+	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2","soph_run_3"], 14.0, true)
+	# single-frame poses
+	_add_anim(sf, "jump",  ["soph_jump"],  8.0, false)
+	_add_anim(sf, "fall",  ["soph_fall"],  8.0, false)
+	_add_anim(sf, "hurt",  ["soph_hurt"],  8.0, false)
+	return sf
+
+func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:
+	if sf.has_animation(name):
+		sf.remove_animation(name)
+	sf.add_animation(name)
+	sf.set_animation_speed(name, fps)
+	sf.set_animation_loop(name, loop)
+	var base_dir := "res://assets/sprites/player/"
+	for key in keys:
+		var path: String = base_dir + key + ".png"
+		var tex: Texture2D
+		if ResourceLoader.exists(path):
+			tex = ResourceLoader.load(path) as Texture2D
+		if not tex:
+			# Fallback: load via FileAccess
+			var img := Image.new()
+			if FileAccess.file_exists(path) and img.load(path) == OK:
+				tex = ImageTexture.create_from_image(img)
+		if not tex:
+			# Ultimate fallback: use procedural body texture as a static stand-in
+			tex = SpriteSetup.get_texture("player_body")
+		if tex:
+			sf.add_frame(name, tex)
 
 func _on_mana_changed(ratio: float) -> void:
 	hair.material.set_shader_parameter("mana_ratio", ratio)

@@ -753,13 +753,13 @@ func _gen_wall_tile() -> void:
 func _gen_light_tex() -> void:
 	var S := 128
 	var img := Image.create(S, S, true, Image.FORMAT_RGBA8)
-	var cx := S / 2; var cy := S / 2; var r := float(S / 2)
+	var cx: int = S / 2; var cy: int = S / 2; var r: float = float(S / 2)
 	for y in range(S):
 		for x in range(S):
 			var dist := sqrt(float((x - cx) * (x - cx) + (y - cy) * (y - cy)))
 			var t := clampf(1.0 - dist / r, 0.0, 1.0)
-			var b := t * t * t
-			img.set_pixel(x, y, Color(b, b, b, b))
+			var bv: float = t * t * t
+			img.set_pixel(x, y, Color(bv, bv, bv, bv))
 	_store("light_tex", img)
 
 # ── Goblin Archer (28x40) ─────────────────────────────────────────────────────
