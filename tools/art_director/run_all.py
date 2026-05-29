@@ -18,9 +18,7 @@ Requer:
     pip install anthropic pillow gitpython
 """
 
-import anthropic
 import argparse
-import base64
 import json
 import os
 import re
@@ -31,6 +29,8 @@ from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
+from engines import build_engine, engine_help, ENGINE_KEYS, Engine
+
 try:
     from PIL import Image, ImageDraw
 except ImportError:
@@ -38,13 +38,12 @@ except ImportError:
 
 # ── Caminhos ──────────────────────────────────────────────────────────────────
 
-HERE      = Path(__file__).parent
-GEN_FILE  = HERE / "generator.py"
-OUT_DIR   = HERE / "iterations"
-REPO_ROOT = HERE.parent.parent
+HERE       = Path(__file__).parent
+GEN_FILE   = HERE / "generator.py"
+OUT_DIR    = HERE / "iterations"
+REPO_ROOT  = HERE.parent.parent
 SPRITE_DIR = REPO_ROOT / "assets" / "sprites" / "player"
-MODEL     = "claude-sonnet-4-6"
-ZOOM      = 6
+ZOOM       = 6
 
 # ── Definição de todos os frames ─────────────────────────────────────────────
 
@@ -223,7 +222,7 @@ def git_commit_sprites(files: list[Path], message: str) -> bool:
 
 # ── Fase 1: Refinar idle_0 ────────────────────────────────────────────────────
 
-def refine_base(client: anthropic.Anthropic, target_score: int,
+def refine_base(engine: Engine, target_score: int,
                 max_iter: int) -> tuple[str, Image.Image, int]:
     """Itera sobre idle_0 até score >= target. Retorna (código, imagem, score)."""
     from art_director import GOAL, CRITIQUE_PROMPT, iterate, save_iteration
@@ -235,7 +234,7 @@ def refine_base(client: anthropic.Anthropic, target_score: int,
     for i in range(max_iter):
         print(f"\n  Iteração {i} →", end=" ", flush=True)
         img = run_code(code)
-        result = iterate(client, code, img, i)
+        result = iterate(engine, code, img, i)
         score = int(result.get("score", 0))
         print(f"score {score}/10")
 
@@ -265,7 +264,7 @@ def refine_base(client: anthropic.Anthropic, target_score: int,
 
 # ── Fase 2: Gerar cada frame com style lock ───────────────────────────────────
 
-def generate_pose(client: anthropic.Anthropic, frame_name: str, frame_idx: int,
+def generate_pose(engine: Engine, frame_name: str, frame_idx: int,
                   pose_desc: str, base_code: str, palette: dict,
                   max_iter: int = 2) -> tuple[Image.Image, int]:
     """Gera um frame específico com o estilo travado. Retorna (imagem, score)."""
@@ -282,12 +281,9 @@ def generate_pose(client: anthropic.Anthropic, frame_name: str, frame_idx: int,
         frame_key=frame_key,
         pose_desc=pose_desc,
     )
-    resp = client.messages.create(
-        model=MODEL, max_tokens=8192,
-        messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}],
-    )
+    resp_text = engine.call(prompt)
     try:
-        data = extract_json(resp.content[0].text)
+        data = extract_json(resp_text)
         code = data.get("code", base_code)
         img  = run_code(code)
     except Exception as e:
@@ -305,21 +301,9 @@ def generate_pose(client: anthropic.Anthropic, frame_name: str, frame_idx: int,
             code=code,
             zoom=ZOOM,
         )
-        r2 = client.messages.create(
-            model=MODEL, max_tokens=8192,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {
-                        "type": "base64", "media_type": "image/png",
-                        "data": to_b64(img),
-                    }},
-                    {"type": "text", "text": refine_prompt},
-                ],
-            }],
-        )
+        r2_text = engine.call(refine_prompt, img)
         try:
-            rd = extract_json(r2.content[0].text)
+            rd = extract_json(r2_text)
             score    = int(rd.get("score", 0))
             new_code = rd.get("improved_code", "")
             if new_code.strip():
@@ -335,40 +319,59 @@ def generate_pose(client: anthropic.Anthropic, frame_name: str, frame_idx: int,
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Orquestrador autônomo de sprites da Soph")
-    parser.add_argument("--score",      type=int, default=7,
-                        help="Score mínimo para aprovar idle_0 (padrão: 7)")
-    parser.add_argument("--base-iter",  type=int, default=4,
-                        help="Iterações máximas no idle_0 (padrão: 4)")
-    parser.add_argument("--pose-iter",  type=int, default=2,
-                        help="Iterações máximas por pose (padrão: 2)")
-    parser.add_argument("--no-commit",  action="store_true",
-                        help="Pula o git commit/push automático")
+    parser = argparse.ArgumentParser(
+        description="Orquestrador autônomo de sprites da Soph",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=engine_help(),
+    )
+    parser.add_argument("--engine",     default="gemini",
+                        choices=["gemini", "anthropic", "claude", "ollama"],
+                        help="Motor de IA (padrão: gemini — grátis!)")
+    parser.add_argument("--api-key",    default=None)
+    parser.add_argument("--score",      type=int, default=7)
+    parser.add_argument("--base-iter",  type=int, default=4)
+    parser.add_argument("--pose-iter",  type=int, default=2)
+    parser.add_argument("--no-commit",  action="store_true")
     parser.add_argument("--only",       type=str, default=None,
                         help="Gera só um frame (ex: --only walk_1)")
     args = parser.parse_args()
 
-    # API key
-    api_key = load_env() or os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("\nDefina ANTHROPIC_API_KEY:")
-        print(f"  echo 'ANTHROPIC_API_KEY=sk-ant-...' > {HERE / '.env'}")
+    # Carrega chave: argumento > .env > env var
+    def _load_env(engine_name: str) -> str | None:
+        ef = HERE / ".env"
+        kn = ENGINE_KEYS.get(engine_name)
+        if not ef.exists() or not kn:
+            return None
+        for line in ef.read_text().splitlines():
+            if line.startswith(f"{kn}="):
+                return line.split("=", 1)[1].strip().strip('"')
+        return None
+
+    api_key = (args.api_key
+               or _load_env(args.engine)
+               or os.environ.get(ENGINE_KEYS.get(args.engine, "") or ""))
+
+    if not api_key and args.engine not in ("ollama",):
+        key_var = ENGINE_KEYS.get(args.engine, "API_KEY")
+        print(f"\nPrecisa de chave para '{args.engine}'.")
+        print(engine_help())
+        print(f"  echo '{key_var}=SUA_CHAVE' > {HERE / '.env'}")
         sys.exit(1)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    engine = build_engine(args.engine, api_key)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     start = datetime.now()
     print(f"\n{'═'*62}")
     print("  Orquestrador Autônomo — Sprites da Soph")
-    print(f"  Modelo  : {MODEL}")
+    print(f"  Motor   : {args.engine}  ({engine.model})")
     print(f"  Meta    : idle_0 score ≥ {args.score}  |  {args.base_iter} iter base + {args.pose_iter} iter/pose")
     print(f"  Frames  : {len(FRAMES)} no total")
     print(f"{'═'*62}")
 
     # ── Fase 1: Refinar idle_0 ────────────────────────────────────────────────
     base_code, base_img, base_score = refine_base(
-        client, args.score, args.base_iter
+        engine, args.score, args.base_iter
     )
 
     # Salva idle_0 aprovado
@@ -396,7 +399,7 @@ def main() -> None:
 
         try:
             img, score = generate_pose(
-                client, name, idx, pose_desc,
+                engine, name, idx, pose_desc,
                 base_code, palette, args.pose_iter,
             )
             path = save_sprite(img, name, idx)
