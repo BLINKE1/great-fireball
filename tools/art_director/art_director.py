@@ -45,45 +45,89 @@ FINAL_DIR   = Path(__file__).parent.parent.parent / "assets" / "sprites" / "play
 MODEL       = "claude-sonnet-4-6"
 ZOOM        = 6   # zoom para revisão visual
 
-GOAL = (
-    "Soph — jovem maga feminina, cabelo azul médio ondulado, robe roxo escuro com "
-    "detalhes dourados, botas marrons, olhos grandes expressivos. "
-    "Sprite lateral para plataformer 2D, 32×64 px, fundo transparente. "
-    "A silhueta deve ser imediatamente legível como 'maga feminina'. "
-    "Pose idle em pé, peso distribuído naturalmente."
-)
+GOAL = """\
+PERSONAGEM: Soph — protagonista de um RPG plataformer 2D de fantasia.
+
+APARÊNCIA CANÔNICA:
+- Jovem maga (aparenta ~17-20 anos), estatura média-baixa, feminina
+- Cabelo AZUL médio, levemente ondulado, cai até o pescoço/ombros
+  (o cabelo azul é a marca visual mais importante — deve ser inconfundível)
+- Robe de maga: roxo escuro (#3C1A6E) com detalhes dourados na faixa/cinto
+  O robe é midi (vai até metade da canela), levemente acinturado
+- Botas de couro marrom escuro, simples
+- Olhos grandes e expressivos (traço de anime/chibi)
+- Expressão curiosa/determinada, não agressiva
+
+NARRATIVA (influencia o visual):
+  Soph NUNCA aprenderá Fireball — essa é a magia proibida do jogo.
+  Ela é irmã mais nova de dois guerreiros (cavaleiro e ladino) mas escolheu a magia.
+  Começa presa numa Torre e escapa com Air Hike (salto duplo mágico).
+  É admiradora do Mago Graduado misterioso que usa a Grande Bola de Fogo.
+  Personalidade: corajosa mas ainda aprendendo, levemente ingênua, curioso.
+
+REQUISITOS TÉCNICOS:
+- Canvas: 32×64 pixels, RGBA, fundo 100% transparente
+- Vista lateral para plataformer (virada para a DIREITA)
+- Pose: idle em pé, natural — pé direito levemente avançado ou peso numa perna
+- Pixel art — sem anti-aliasing nas bordas, paleta limitada (~12-16 cores)
+- Outline escuro (1px) em toda a silhueta para legibilidade
+- Cabeça ~16px de altura (proporção levemente chibi), corpo ~48px
+- O cabelo azul deve ocupar espaço visível e ter destaque real no topo"""
 
 CRITIQUE_PROMPT = """\
-Você é um art director de pixel art experiente revisando um sprite para um jogo 2D.
+Você é um art director sênior de pixel art para jogos 2D, especialista em sprites \
+de personagens para plataformer. Está revisando um sprite iterativamente.
 
-PERSONAGEM ALVO:
+══ PERSONAGEM-ALVO ══════════════════════════════════════════════
 {goal}
+═════════════════════════════════════════════════════════════════
 
-CANVAS: 32×64 pixels, RGBA, fundo transparente, vista lateral para plataformer.
-A imagem abaixo está ampliada {zoom}× para facilitar a revisão.
+CANVAS REAL: 32×64 px, RGBA transparente. A imagem abaixo está {zoom}× aumentada.
+IMPORTANTE: julgue o sprite considerando que será visto na tela no tamanho REAL (32×64).
+Legibilidade em tamanho pequeno é mais importante do que detalhes finos.
 
-CÓDIGO DE GERAÇÃO ATUAL:
+CÓDIGO ATUAL (iteração {iteration}):
 ```python
 {code}
 ```
 
-ITERAÇÃO: {iteration}
+CHECKLIST DE AVALIAÇÃO — analise cada ponto:
+1. SILHUETA: reconhece imediatamente como "maga feminina" em 32×64?
+2. CABELO AZUL: visível e distinto? É a marca visual #1 da Soph
+3. ROBE: lê como roupa mágica/fantasia, não como vestido comum?
+4. PROPORÇÕES: cabeça ~1/4 do corpo? Pernas visíveis abaixo do robe?
+5. OUTLINE: bordas têm 1px escuro separando a figura do fundo?
+6. PALETA: cores limpas, contraste suficiente entre regiões?
+7. POSE: natural, em pé, virada para a direita?
+8. PIXEL ART: sem gradientes difusos, pixels intencionais?
 
-Analise o sprite gerado com atenção. Depois responda com um JSON (sem markdown):
+Responda com JSON puro (sem markdown, sem texto fora do JSON):
 {{
-  "critique": "observações específicas — o que está bom e o que precisa melhorar",
-  "issues": ["problema 1", "problema 2", ...],
-  "score": <inteiro 0–10, onde 10 = sprite profissional perfeito>,
-  "improved_code": "<código Python completo e executável>"
+  "critique": "análise específica e honesta de cada ponto do checklist",
+  "issues": [
+    "problema concreto com coordenadas ou cores específicas",
+    "..."
+  ],
+  "score": <inteiro 0-10>,
+  "score_breakdown": {{
+    "silhueta": <0-10>,
+    "cabelo_azul": <0-10>,
+    "proporcoes": <0-10>,
+    "outline": <0-10>,
+    "leitura_fantasía": <0-10>
+  }},
+  "improved_code": "<código Python COMPLETO e executável, com todos os imports>"
 }}
 
-Regras para improved_code:
-- Arquivo Python completo, importações incluídas
-- Define generate() -> PIL.Image  (32×64, RGBA, fundo transparente)
-- Corrige ESPECIFICAMENTE os problemas identificados
-- Mantém o que já está funcionando bem
-- Use coordenadas precisas — cada pixel conta em 32×64
-- Responda SOMENTE o JSON, sem texto adicional."""
+REGRAS PARA improved_code:
+- Python completo com imports no topo
+- Define generate() -> PIL.Image  (exatamente 32×64, RGBA, fundo transparente)
+- Cada melhoria deve ser justificada pelas issues listadas
+- Mantenha o que já está funcionando — não regride o que está bom
+- Coordenadas precisas: desenhe na grade 32×64, cada pixel deliberado
+- Outline: toda borda da silhueta com 1px escuro
+- Cabelo azul: mínimo 4×10 px visíveis no topo/costas do crânio
+- NÃO adicione detalhes que não leem bem em 32×64 real"""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
