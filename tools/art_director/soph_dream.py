@@ -85,6 +85,19 @@ def _draw_base(im):
     d.polygon([(342,160),(330,270),(286,210),(268,120),(330,92)], fill=HAIR)
     d.polygon([(196,104),(286,104),(330,170),(252,132),(212,150)], fill=HAIR)
 
+    # ════ BRILHO DO CABELO (shine de anime + mechas glossy) ══════════════════
+    d.arc((176,112,300,184), 200, 340, fill=HAIR_H, width=7)        # shine no topo
+    d.line([(150,168),(118,330),(126,520)], fill=HAIR_H, width=6)   # gloss cauda esq
+    d.line([(176,520),(168,680)], fill=HAIR_H, width=4)
+    d.line([(198,136),(206,206)], fill=HAIR_H, width=5)            # franja esq
+    d.line([(300,150),(292,214)], fill=HAIR_H, width=5)            # franja dir
+    d.line([(150,300),(146,520)], fill=HAIR_DD, width=4)           # sombra interna
+
+    # ════ DOBRAS DE LUZ NA CAPA (volume) ═════════════════════════════════════
+    d.line([(232,420),(244,600)], fill=CAPE_H, width=3)            # dobra central
+    d.line([(300,440),(312,640)], fill=CAPE_H, width=3)            # dobra frontal-dir
+    d.line([(150,520),(176,760)], fill=CAPE_H, width=2)           # dobra asa esq
+
     return d
 
 
@@ -141,25 +154,35 @@ def _shaded():
 
 def _draw_face(im):
     d = ImageDraw.Draw(im, "RGBA")
-    # blush
-    d.ellipse((168,250,210,288), fill=(240,150,150,120))
-    d.ellipse((268,250,310,288), fill=(240,150,150,120))
-    # olhos grandes
-    for ex in (180, 262):
-        d.ellipse((ex,190,ex+44,250), fill=(255,255,255,255), outline=OUT, width=3)
-        d.ellipse((ex+8,196,ex+40,248), fill=HAIR)
-        d.ellipse((ex+14,206,ex+38,246), fill=(26,20,48,255))
-        d.ellipse((ex+18,206,ex+30,222), fill=(235,245,255,235))   # catchlight
-    # nariz + boca
-    d.line([(238,262),(244,272),(236,274)], fill=SKIN_S, width=3)
-    d.arc((218,278,266,310), 10, 170, fill=(170,92,92,255), width=4)
-    # ── ÓCULOS redondos (aro escuro + vidro translúcido + reflexo) ──
-    for gx in (170, 252):
-        d.ellipse((gx,182,gx+62,254), fill=(150,195,225,55), outline=GLASS, width=5)
-    d.line([(232,214),(252,214)], fill=GLASS, width=5)              # ponte
-    d.line([(170,210),(150,200)], fill=GLASS, width=5)             # haste
-    d.line([(182,194),(196,200)], fill=(220,235,255,150), width=4) # reflexo
-    d.line([(264,194),(278,200)], fill=(220,235,255,150), width=4)
+    # ── Sobrancelhas suaves (azuladas) ──
+    d.line([(176,196),(214,190)], fill=(46,70,150,220), width=5)
+    d.line([(266,190),(304,196)], fill=(46,70,150,220), width=5)
+    # ── Blush ──
+    d.ellipse((160,248,206,286), fill=(242,148,150,130))
+    d.ellipse((274,248,320,286), fill=(242,148,150,130))
+    # ── OLHOS grandes e brilhantes (muita esclera + íris azul clara + brilhos) ──
+    for (ex0, ex1) in [(170,224), (256,310)]:
+        cx = (ex0 + ex1) // 2
+        d.ellipse((ex0,204,ex1,274), fill=(255,255,255,255))                # esclera ampla
+        d.ellipse((cx-17,218,cx+17,270), fill=HAIR_D)                       # íris (aro escuro)
+        d.ellipse((cx-15,224,cx+15,270), fill=HAIR)                         # íris (corpo azul)
+        d.ellipse((cx-13,238,cx+13,270), fill=(120,185,255,255))           # íris (base clara)
+        d.ellipse((cx-8,234,cx+8,262), fill=(20,14,40,255))                # pupila pequena
+        d.ellipse((cx-13,220,cx+1,238), fill=(255,255,255,255))           # brilho grande
+        d.ellipse((cx+5,252,cx+13,262), fill=(205,228,255,240))           # brilho pequeno
+        d.arc((ex0,198,ex1,278), 192, 348, fill=OUT, width=6)              # cílio superior
+        d.line([(ex0+2,210),(ex0-8,202)], fill=OUT, width=5)              # cílio do canto externo
+    # ── Nariz + boca doce ──
+    d.line([(238,258),(244,270),(235,272)], fill=SKIN_S, width=3)
+    d.arc((216,276,264,312), 15, 165, fill=(176,94,94,255), width=5)        # sorriso
+    d.arc((226,286,254,308), 20, 160, fill=(228,150,150,200), width=4)      # lábio inferior
+    # ── ÓCULOS redondos: aro fino + lente TRANSPARENTE + leve reflexo glossy ──
+    for gx in (162, 248):
+        d.ellipse((gx,194,gx+70,280), fill=(205,232,250,18), outline=GLASS, width=4)
+    d.arc((168,200,226,274), 205, 245, fill=(255,255,255,120), width=4)     # reflexo sutil esq
+    d.arc((254,200,312,274), 205, 245, fill=(255,255,255,120), width=4)     # reflexo sutil dir
+    d.line([(228,224),(250,224)], fill=GLASS, width=4)                      # ponte
+    d.line([(162,226),(144,216)], fill=GLASS, width=4)                      # haste
 
 
 def _draw_staff_glow(im):
