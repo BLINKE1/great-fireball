@@ -112,6 +112,7 @@ var _look_ahead: float      = 0.0
 var _squash: Vector2 = Vector2.ONE
 
 var _mana_level: int = 5
+var _mana_ratio: float = 1.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -644,6 +645,11 @@ func _update_visuals() -> void:
 	var c := base_modulate
 	if iframe_timer > 0.0:
 		c.a = 0.4 if fmod(iframe_timer, 0.15) > 0.075 else 1.0
+	# Mana dim: non-idle anims fade toward a desaturated dark tint as mana drains.
+	# Idle uses baked per-level art (soph_mana_1..5), so skip there to avoid double-darkening.
+	if not sprite.animation.begins_with("idle_"):
+		var target := Color(c.r * 0.55, c.g * 0.55, c.b * 0.70, c.a)
+		c = c.lerp(target, 1.0 - _mana_ratio)
 	sprite.modulate = c
 
 func _update_anim() -> void:
@@ -668,7 +674,7 @@ func _build_soph_frames() -> SpriteFrames:
 	_add_anim(sf, "idle",  ["soph_idle_0", "soph_idle_1"], 4.0,  true)
 	# walk: 6 frames, 10 fps
 	_add_anim(sf, "walk",  ["soph_walk_0","soph_walk_1","soph_walk_2",
-	                          "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
+							  "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
 	# run: 4 frames, 14 fps
 	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2","soph_run_3"], 14.0, true)
 	# single-frame poses
@@ -704,6 +710,7 @@ func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bo
 			sf.add_frame(name, tex)
 
 func _on_mana_changed(ratio: float) -> void:
+	_mana_ratio = ratio
 	_mana_level = clampi(ceili(ratio * 5.0), 1, 5)
 	if sprite.animation.begins_with("idle_"):
 		sprite.play("idle_%d" % _mana_level)
