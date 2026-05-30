@@ -433,8 +433,12 @@ def main() -> None:
         strip.save(OUT_DIR / "progress_strip.png")
         print(f"\n  Progress strip → {OUT_DIR / 'progress_strip.png'}")
 
-    if all_images and not args.dry_run:
+    # Só exporta o sprite final se houve ao menos uma iteração com score da API.
+    # Em falha de rede/auth (all_scores vazio) preservamos o sprite atual do jogo.
+    if all_scores and not args.dry_run:
         export_final(all_images[-1])
+    elif not args.dry_run:
+        print("  Nenhuma iteração bem-sucedida — sprite do jogo preservado (nada exportado).")
 
     print(f"\n{'═'*58}\n  Concluído.\n{'═'*58}\n")
 

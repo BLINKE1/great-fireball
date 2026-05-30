@@ -23,6 +23,17 @@ except ImportError:
     pass
 
 
+# ── Configuração de rede (evita travamentos) ──────────────────────────────────
+
+# Timeout máximo por requisição HTTP. Sem isto, uma chamada pode pendurar
+# indefinidamente (foi a causa do "travamento" relatado).
+HTTP_TIMEOUT = 90
+
+# Esperas de backoff entre tentativas em caso de rate-limit (429) / indisponível (503).
+# Mantido enxuto para falhar rápido em vez de empilhar vários minutos parado.
+RETRY_WAITS = [0, 5, 15, 30]
+
+
 # ── Protocolo comum ───────────────────────────────────────────────────────────
 
 class Engine(Protocol):
@@ -66,20 +77,52 @@ class GeminiEngine:
         url  = self._BASE.format(model=self.model)
         body = {
             "contents": [{"parts": parts}],
-            "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.4},
+            "generationConfig": {
+                "maxOutputTokens": 8192,
+                "temperature": 0.4,
+                # Desliga o "thinking" do Gemini 2.5: para gerar código/crítica de
+                # pixel art não é necessário, e evita que o orçamento de tokens seja
+                # consumido pelo raciocínio, devolvendo uma resposta SEM 'parts'.
+                "thinkingConfig": {"thinkingBudget": 0},
+            },
         }
-        # Retry com backoff em caso de rate-limit (429) ou indisponibilidade (503)
-        for attempt, wait in enumerate([0, 15, 30, 60]):
+        # Retry com backoff em caso de rate-limit (429) ou indisponibilidade (503).
+        # Erros de auth (401/403) NÃO são retentados — caem direto em raise_for_status.
+        for attempt, wait in enumerate(RETRY_WAITS):
             if wait:
-                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/4)...", end=" ", flush=True)
+                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/{len(RETRY_WAITS)})...", end=" ", flush=True)
                 time.sleep(wait)
-            resp = self._req.post(url, params={"key": self.api_key}, json=body, timeout=120)
-            if resp.status_code in (429, 503) and attempt < 3:
+            try:
+                resp = self._req.post(url, params={"key": self.api_key},
+                                      json=body, timeout=HTTP_TIMEOUT)
+            except self._req.exceptions.RequestException as e:
+                if attempt < len(RETRY_WAITS) - 1:
+                    print(f"\n  Falha de rede: {type(e).__name__} — re-tentando...", end=" ", flush=True)
+                    continue
+                raise
+            if resp.status_code in (429, 503) and attempt < len(RETRY_WAITS) - 1:
                 continue
             resp.raise_for_status()
             data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+            return self._extract_text(data)
         resp.raise_for_status()  # lança se esgotou as tentativas
+
+    @staticmethod
+    def _extract_text(data: dict) -> str:
+        """Extrai o texto da resposta, com erro claro se vier vazia/bloqueada."""
+        candidates = data.get("candidates") or []
+        if not candidates:
+            fb = data.get("promptFeedback", {})
+            raise ValueError(f"Gemini não retornou candidatos (feedback: {fb})")
+        cand = candidates[0]
+        parts = cand.get("content", {}).get("parts")
+        if not parts:
+            reason = cand.get("finishReason", "?")
+            raise ValueError(
+                f"Gemini retornou resposta sem texto (finishReason={reason}). "
+                f"Se for MAX_TOKENS, aumente maxOutputTokens ou reduza o prompt."
+            )
+        return parts[0]["text"]
 
 
 # ── Anthropic Claude ──────────────────────────────────────────────────────────
@@ -98,7 +141,10 @@ class AnthropicEngine:
             import anthropic
         except ImportError:
             raise ImportError("pip install anthropic")
-        self._client = anthropic.Anthropic(api_key=api_key)
+        # max_retries=2 + timeout explícito evitam que a chamada pendure ~10min (default).
+        self._client = anthropic.Anthropic(
+            api_key=api_key, timeout=HTTP_TIMEOUT, max_retries=2
+        )
         self.model   = model or self.model
 
     def _to_b64(self, img: "Image.Image") -> str:
@@ -123,6 +169,7 @@ class AnthropicEngine:
             model=self.model,
             max_tokens=8192,
             messages=[{"role": "user", "content": content}],
+            timeout=HTTP_TIMEOUT,
         )
         return response.content[0].text
 
@@ -145,6 +192,8 @@ class OllamaEngine:
             self._ollama = _ollama
         except ImportError:
             raise ImportError("pip install ollama")
+        # Client com timeout — sem isto a chamada pendura se o modelo local nunca responde.
+        self._client = _ollama.Client(timeout=HTTP_TIMEOUT)
         self.model = model or self.model
 
     def _to_bytes(self, img: "Image.Image") -> bytes:
@@ -156,7 +205,7 @@ class OllamaEngine:
         msg: dict = {"role": "user", "content": prompt}
         if image is not None:
             msg["images"] = [self._to_bytes(image)]
-        response = self._ollama.chat(
+        response = self._client.chat(
             model=self.model,
             messages=[msg],
         )
@@ -207,12 +256,19 @@ class OpenRouterEngine:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type":  "application/json",
         }
-        for attempt, wait in enumerate([0, 15, 30, 60]):
+        for attempt, wait in enumerate(RETRY_WAITS):
             if wait:
-                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/4)...", end=" ", flush=True)
+                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/{len(RETRY_WAITS)})...", end=" ", flush=True)
                 time.sleep(wait)
-            resp = self._req.post(self._BASE, headers=headers, json=body, timeout=120)
-            if resp.status_code in (429, 503) and attempt < 3:
+            try:
+                resp = self._req.post(self._BASE, headers=headers,
+                                      json=body, timeout=HTTP_TIMEOUT)
+            except self._req.exceptions.RequestException as e:
+                if attempt < len(RETRY_WAITS) - 1:
+                    print(f"\n  Falha de rede: {type(e).__name__} — re-tentando...", end=" ", flush=True)
+                    continue
+                raise
+            if resp.status_code in (429, 503) and attempt < len(RETRY_WAITS) - 1:
                 continue
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"]
