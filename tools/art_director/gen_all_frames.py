@@ -34,18 +34,19 @@ def build():
     frames["soph_idle_1"] = shift_up(idle0, 1)            # respiração (+1px)
 
     # ── walk (6 frames) — agora virada p/ direita ──────────────────────────────
-    # (back, front, l_dy, r_dy, hair_bob, knee_dy)
+    # (back, front, l_dy, r_dy, hair_bob, knee_dy, sway, hem_sway)
+    # sway = pêndulo do cabelo/capa, defasado do passo (trailing)
     walk = [
-        ((10, 14), (17, 21), -1, +1,  0, 0),   # 0 contato pé de trás
-        ((12, 16), (15, 19), -1, -1, -1, 1),   # 1 passagem (alto)
-        ((10, 14), (17, 21), +1, -1,  0, 0),   # 2 contato pé da frente
-        ((12, 16), (15, 19), -1, -1, -1, 1),   # 3 passagem
-        ((10, 14), (17, 21), -1, +1,  0, 0),   # 4 = 0
-        ((12, 16), (15, 19), -1, -1, -1, 1),   # 5 = 1
+        ((10, 14), (17, 21), -1, +1,  0, 0, +1, +1),   # 0 contato pé de trás
+        ((12, 16), (15, 19), -1, -1, -1, 1, +2, +1),   # 1 passagem (alto)
+        ((10, 14), (17, 21), +1, -1,  0, 0,  0,  0),   # 2 contato pé da frente
+        ((12, 16), (15, 19), -1, -1, -1, 1, -2, -1),   # 3 passagem
+        ((10, 14), (17, 21), -1, +1,  0, 0, -1, -1),   # 4 = 0
+        ((12, 16), (15, 19), -1, -1, -1, 1,  0,  0),   # 5 ponte de volta
     ]
-    for i, (bk, fr, l, r, hb, kd) in enumerate(walk):
+    for i, (bk, fr, l, r, hb, kd, sw, hsw) in enumerate(walk):
         frames[f"soph_walk_{i}"] = S.compose(
-            mana=5, l_dy=l, r_dy=r, hair_bob=hb, knee_dy=kd,
+            mana=5, l_dy=l, r_dy=r, hair_bob=hb, knee_dy=kd, sway=sw, hem_sway=hsw,
             legs={"back": bk, "front": fr},
             boots={"back": (bk[0]-1, bk[1]), "front": (fr[0]-1, fr[1]+1),
                    "back_y": 50+kd, "front_y": 50},
@@ -53,14 +54,14 @@ def build():
 
     # ── run (4 frames) — passada maior, leve inclinação ────────────────────────
     run = [
-        (( 9, 13), (18, 22), -3, +2,  0, 0),   # 0 contato amplo
-        ((12, 16), (15, 19), -1, -1, -1, 2),   # 1 passagem alta
-        (( 9, 13), (18, 22), +2, -3,  0, 0),   # 2 contato oposto
-        ((12, 16), (15, 19), -1, -1, -1, 2),   # 3 passagem
+        (( 9, 13), (18, 22), -3, +2,  0, 0, +2, +1),   # 0 contato amplo
+        ((12, 16), (15, 19), -1, -1, -1, 2, +1,  0),   # 1 passagem alta
+        (( 9, 13), (18, 22), +2, -3,  0, 0, -2, -1),   # 2 contato oposto
+        ((12, 16), (15, 19), -1, -1, -1, 2, -1,  0),   # 3 passagem
     ]
-    for i, (bk, fr, l, r, hb, kd) in enumerate(run):
+    for i, (bk, fr, l, r, hb, kd, sw, hsw) in enumerate(run):
         frames[f"soph_run_{i}"] = S.compose(
-            mana=5, l_dy=l, r_dy=r, hair_bob=hb, knee_dy=kd,
+            mana=5, l_dy=l, r_dy=r, hair_bob=hb, knee_dy=kd, sway=sw, hem_sway=hsw,
             legs={"back": bk, "front": fr},
             boots={"back": (bk[0]-1, bk[1]), "front": (fr[0]-1, fr[1]+1),
                    "back_y": 50+kd, "front_y": 50},

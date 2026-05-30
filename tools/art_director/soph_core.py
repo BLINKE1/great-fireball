@@ -122,27 +122,36 @@ def _mhline(img, x0, x1, y, base, mana):
 
 
 # ── Partes do corpo ─────────────────────────────────────────────────────────--
-def draw_hair(img, mana=5, bob=0):
+def draw_hair(img, mana=5, bob=0, sway=0):
+    """sway: deslocamento horizontal da PONTA do cabelo (pêndulo, p/ animação)."""
     b = bob
+    s = sway                                            # ponta (y>=33) desloca s
+    h = sway // 2 if sway else 0                        # meio (y26-32) desloca metade
+    # ── Topo / franja (fixos) ──
     _mrect(img,  7,  0 + b, 21,  2 + b, HAIR,   mana)
     _mrect(img,  6,  1 + b, 22,  4 + b, HAIR,   mana)
     _mrect(img, 18,  0 + b, 23,  7 + b, HAIR,   mana)   # franja frontal (direita)
     _mrect(img,  4,  2 + b,  9, 10 + b, HAIR,   mana)
-    _mrect(img,  4, 10 + b,  8, 22 + b, HAIR,   mana)
-    _mrect(img,  4, 22 + b,  7, 32 + b, HAIR,   mana)
-    _mrect(img,  4, 32 + b,  6, 40 + b, HAIR_D, mana)   # ponta escura
-    _mvline(img, 4,  2 + b, 40 + b, HAIR_D, mana)
-    _mvline(img, 5,  2 + b, 35 + b, HAIR_D, mana)
+    _mrect(img,  4, 10 + b,  8, 26 + b, HAIR,   mana)
+    # ── Cauda baixa (com sway) ──
+    _mrect(img,  4 + h, 26 + b,  7 + h, 32 + b, HAIR,   mana)
+    _mrect(img,  4 + s, 32 + b,  6 + s, 40 + b, HAIR_D, mana)   # ponta escura
+    _mvline(img, 4,  2 + b, 25 + b, HAIR_D, mana)
+    _mvline(img, 4 + h, 26 + b, 32 + b, HAIR_D, mana)
+    _mvline(img, 4 + s, 33 + b, 40 + b, HAIR_D, mana)
+    _mvline(img, 5,  2 + b, 25 + b, HAIR_D, mana)
+    _mvline(img, 5 + h, 26 + b, 35 + b, HAIR_D, mana)
     _mhline(img, 9, 18,  1 + b, HAIR_H, mana)           # reflexo no topo
-    _mvline(img, 7,  5 + b, 30 + b, HAIR_H, mana)       # mecha de brilho na cauda
+    _mvline(img, 7,  5 + b, 25 + b, HAIR_H, mana)       # mecha de brilho (alto)
+    _mvline(img, 7 + h, 26 + b, 30 + b, HAIR_H, mana)   # mecha (baixo, com sway)
     _mhline(img, 19, 22, 3 + b, HAIR_H, mana)           # brilho na franja frontal
-    px(img, 5, 39 + b, hair_c(39 + b, HAIR_D, mana))    # fios soltos na ponta
-    px(img, 6, 41 + b, hair_c(40, HAIR_D, mana))
-    # outline (fixo)
+    px(img, 5 + s, 39 + b, hair_c(39 + b, HAIR_D, mana))   # fios soltos na ponta
+    px(img, 6 + s, 41 + b, hair_c(40, HAIR_D, mana))
+    # ── Outline ──
     hline(img,  7, 21,  0 + b, OUTLINE)
     px(img,  6,  1 + b, OUTLINE); px(img,  5,  2 + b, OUTLINE)
     px(img,  3,  5 + b, OUTLINE); px(img,  3, 10 + b, OUTLINE)
-    px(img,  3, 22 + b, OUTLINE); px(img,  3, 32 + b, OUTLINE)
+    px(img,  3 + h, 26 + b, OUTLINE); px(img,  3 + s, 33 + b, OUTLINE)
     px(img, 22,  0 + b, OUTLINE); px(img, 23,  1 + b, OUTLINE)
     px(img, 24,  3 + b, OUTLINE)
 
@@ -192,7 +201,7 @@ def draw_neck(img):
     vline(img, 13, 17, 19, OUTLINE); vline(img, 18, 17, 19, OUTLINE)
 
 
-def draw_cape(img, lower_y=56):
+def draw_cape(img, lower_y=56, hem_sway=0):
     # ── Gola/ombros inclinados (trapézio: estreito no pescoço → largo nos ombros)
     rect(img, 10, 19, 21, 19, CAPE)
     rect(img,  8, 20, 23, 20, CAPE)
@@ -200,9 +209,11 @@ def draw_cape(img, lower_y=56):
     hline(img, 11, 20, 18, OUTLINE)                      # linha da gola
 
     # ── Asa esquerda (costas) — leve billow + hem afunilado/pontudo ───────────
-    rect(img,  4, 22, 13, lower_y, CAPE)
-    rect(img,  5, lower_y + 1, 12, lower_y + 2, CAPE)
-    rect(img,  7, lower_y + 3, 10, lower_y + 3, CAPE)
+    hs = hem_sway                                        # balanço da barra (animação)
+    rect(img,  4, 22, 13, lower_y - 4, CAPE)
+    rect(img,  4 + hs // 2 if hs else 4, lower_y - 3, 13, lower_y, CAPE)
+    rect(img,  5 + hs, lower_y + 1, 12 + hs, lower_y + 2, CAPE)
+    rect(img,  7 + hs, lower_y + 3, 10 + hs, lower_y + 3, CAPE)
     # dobra interna escura (separa a asa do corpo)
     vline(img, 11, 24, lower_y, CAPE_D); vline(img, 12, 24, lower_y, CAPE_D)
     rect(img,  4, 42,  6, lower_y, CAPE_D)               # sombra externa baixa
@@ -224,10 +235,10 @@ def draw_cape(img, lower_y=56):
     vline(img,  3, 22, lower_y + 1, OUTLINE)
     vline(img, 25, 21, 38, OUTLINE)
     hline(img, 18, 25, 38, OUTLINE)
-    # contorno do hem afunilado (esquerda)
-    px(img,  4, lower_y + 1, OUTLINE); px(img,  5, lower_y + 3, OUTLINE)
-    hline(img, 6, 10, lower_y + 4, OUTLINE)
-    px(img, 11, lower_y + 3, OUTLINE); px(img, 12, lower_y + 3, OUTLINE)
+    # contorno do hem afunilado (esquerda, segue o balanço)
+    px(img,  4 + hs, lower_y + 1, OUTLINE); px(img,  5 + hs, lower_y + 3, OUTLINE)
+    hline(img, 6 + hs, 10 + hs, lower_y + 4, OUTLINE)
+    px(img, 11 + hs, lower_y + 3, OUTLINE); px(img, 12 + hs, lower_y + 3, OUTLINE)
     px(img, 13, lower_y + 1, OUTLINE)
 
 
@@ -328,12 +339,12 @@ def mirror_face(img):
 # ── Montagem de um frame ────────────────────────────────────────────────────--
 def compose(mana=5, hair_bob=0, arms="down", l_dy=0, r_dy=0,
             legs=None, boots=None, knee_dy=0, cape_lower=56,
-            staff=True) -> Image.Image:
+            staff=True, sway=0, hem_sway=0) -> Image.Image:
     img = Image.new("RGBA", (W, H), T)
-    draw_hair(img, mana=mana, bob=hair_bob)
+    draw_hair(img, mana=mana, bob=hair_bob, sway=sway)
     draw_face(img, mana=mana)
     draw_neck(img)
-    draw_cape(img, lower_y=cape_lower)
+    draw_cape(img, lower_y=cape_lower, hem_sway=hem_sway)
     draw_bodysuit(img)
     draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy)
     draw_belt(img)
