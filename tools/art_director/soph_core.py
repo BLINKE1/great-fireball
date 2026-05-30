@@ -48,6 +48,17 @@ ORB_D    = (20,  60,  140, 255)
 GLASS    = (60,  55,  80,  255)
 LENS     = (205, 222, 240, 255)   # vidro claro dos óculos
 WHITE    = (255, 255, 255, 255)
+# Acentos de design (luz de cima-esquerda, focal no rosto/orbe)
+CAPE_L   = (70,  90,  150, 255)   # rim-light frio (luz da lua) na borda da capa
+CAPE_GLOW= (45,  70,  130, 255)   # glow azul do orbe lambendo a capa (luz motivada)
+LINING   = (120, 55,  140, 255)   # forro roxo (acento complementar do quase-preto)
+LINING_D = (78,  34,  95,  255)
+SUIT_SH  = (10,  8,   18,  255)   # sombra de forma no bodysuit (lado direito)
+BROW     = (45,  60,  120, 255)   # sobrancelha azulada suave
+BLUSH    = (232, 158, 150, 255)
+MOUTH    = (170, 95,  85,  255)
+SCLERA   = (250, 250, 255, 255)   # branco dos olhos
+SCLERA_D = (175, 178, 200, 255)   # branco apagado (mana baixa)
 
 
 # ── Primitivas ────────────────────────────────────────────────────────────────
@@ -123,6 +134,10 @@ def draw_hair(img, mana=5, bob=0):
     _mvline(img, 4,  2 + b, 40 + b, HAIR_D, mana)
     _mvline(img, 5,  2 + b, 35 + b, HAIR_D, mana)
     _mhline(img, 9, 18,  1 + b, HAIR_H, mana)           # reflexo no topo
+    _mvline(img, 7,  5 + b, 30 + b, HAIR_H, mana)       # mecha de brilho na cauda
+    _mhline(img, 19, 22, 3 + b, HAIR_H, mana)           # brilho na franja frontal
+    px(img, 5, 39 + b, hair_c(39 + b, HAIR_D, mana))    # fios soltos na ponta
+    px(img, 6, 41 + b, hair_c(40, HAIR_D, mana))
     # outline (fixo)
     hline(img,  7, 21,  0 + b, OUTLINE)
     px(img,  6,  1 + b, OUTLINE); px(img,  5,  2 + b, OUTLINE)
@@ -133,41 +148,43 @@ def draw_hair(img, mana=5, bob=0):
 
 
 def draw_face(img, mana=5):
+    full = mana >= 3                                     # mana cheia → olhos vivos
+    # ── Pele + formato (cantos arredondados, luz de cima-esquerda) ────────────
     rect(img, 10,  4, 22, 16, SKIN)
     hline(img, 11, 21,  4, OUTLINE); hline(img, 11, 21, 16, OUTLINE)
     vline(img, 10,  5, 15, OUTLINE); vline(img, 22,  5, 15, OUTLINE)
-    px(img, 11, 5, SKIN); px(img, 21, 5, SKIN)
+    px(img, 11, 5, SKIN); px(img, 21, 5, SKIN)           # cantos arredondados
     px(img, 11, 15, SKIN); px(img, 21, 15, SKIN)
-    hline(img, 12, 20, 15, SKIN_S)                      # sombra do queixo
-    hline(img, 12, 14,  8, OUTLINE); hline(img, 17, 19,  8, OUTLINE)  # sobrancelhas
+    px(img, 15, 15, SKIN_S); px(img, 16, 15, SKIN_S)     # leve sombra do queixo (simétrica)
+    px(img, 16, 12, SKIN_S)                              # narizinho discreto
 
-    # Olhos (apagam com mana baixa)
-    eye_c = EYE if mana >= 3 else ((20, 15, 30, 255) if mana == 2 else (12, 10, 18, 255))
-    px(img, 11, 11, eye_c); px(img, 12, 11, eye_c)
-    px(img, 19, 11, eye_c); px(img, 20, 11, eye_c)
+    # ── Olhos expressivos (pupila + íris azul + brilho) ───────────────────────
+    iris = HAIR if full else HAIR_D
+    pup  = EYE if full else (12, 10, 18, 255)
+    # olho esquerdo (x12-13, y10-11) e direito (x18-19, y10-11)
+    for ex in (12, 18):
+        px(img, ex, 10, iris); px(img, ex + 1, 10, pup)
+        px(img, ex, 11, pup);  px(img, ex + 1, 11, iris)
+        if full:
+            px(img, ex, 10, WHITE)                       # catchlight no canto sup-esq
+    # ── Óculos REDONDOS delicados: aro fino contornando cada olho ─────────────
+    # lente esquerda — anel ao redor de (12-13,10-11)
+    px(img, 12, 9, GLASS);  px(img, 13, 9, GLASS)        # topo
+    px(img, 11, 10, GLASS); px(img, 14, 10, GLASS)       # laterais
+    px(img, 11, 11, GLASS); px(img, 14, 11, GLASS)
+    px(img, 12, 12, GLASS); px(img, 13, 12, GLASS)       # base
+    # lente direita — anel ao redor de (18-19,10-11)
+    px(img, 18, 9, GLASS);  px(img, 19, 9, GLASS)
+    px(img, 17, 10, GLASS); px(img, 20, 10, GLASS)
+    px(img, 17, 11, GLASS); px(img, 20, 11, GLASS)
+    px(img, 18, 12, GLASS); px(img, 19, 12, GLASS)
+    px(img, 15, 10, GLASS); px(img, 16, 10, GLASS)       # ponte
+    px(img,  9, 10, GLASS)                               # haste para a orelha
 
-    # Óculos REDONDOS: aro GLASS + lente clara, com os olhos visíveis atrás
-    _lens(img, 10, 9, 13, 12)
-    _lens(img, 18, 9, 21, 12)
-    hline(img, 14, 17, 10, GLASS)                       # ponte
-    px(img,  9, 10, GLASS)                              # haste
-    if mana >= 3:                                       # brilho da lente
-        px(img, 11, 10, WHITE); px(img, 19, 10, WHITE)
-    # boca pequena (olhar sereno, levemente p/ baixo)
-    px(img, 15, 14, SKIN_S); px(img, 16, 14, SKIN_S)
-
-
-def _lens(img, x0, y0, x1, y1):
-    """Aro do óculos (GLASS) preservando os olhos já desenhados no interior."""
-    # preenche vidro claro só onde não há olho (EYE-ish)
-    for yy in range(y0, y1 + 1):
-        for xx in range(x0, x1 + 1):
-            cur = img.getpixel((xx, yy))
-            is_eye = cur[2] > cur[0] and cur[2] < 80 and cur[3] == 255 and cur[1] < 60
-            if not is_eye:
-                px(img, xx, yy, LENS)
-    hline(img, x0, x1, y0, GLASS); hline(img, x0, x1, y1, GLASS)
-    vline(img, x0, y0, y1, GLASS); vline(img, x1, y0, y1, GLASS)
+    # ── Sorrisinho suave + blush nas bochechas ────────────────────────────────
+    px(img, 15, 14, MOUTH); px(img, 16, 14, MOUTH)
+    px(img, 14, 14, SKIN_S); px(img, 17, 14, SKIN_S)     # cantos do sorriso (subindo)
+    px(img, 10, 13, BLUSH); px(img, 21, 13, BLUSH)
 
 
 def draw_neck(img):
@@ -176,23 +193,54 @@ def draw_neck(img):
 
 
 def draw_cape(img, lower_y=56):
-    rect(img,  7, 19, 24, 22, CAPE)
-    hline(img,  7, 24, 19, OUTLINE)
-    vline(img,  3, 19, lower_y, OUTLINE)
-    vline(img, 25, 19, 36, OUTLINE)
+    # ── Gola/ombros inclinados (trapézio: estreito no pescoço → largo nos ombros)
+    rect(img, 10, 19, 21, 19, CAPE)
+    rect(img,  8, 20, 23, 20, CAPE)
+    rect(img,  7, 21, 24, 23, CAPE)
+    hline(img, 11, 20, 18, OUTLINE)                      # linha da gola
+
+    # ── Asa esquerda (costas) — leve billow + hem afunilado/pontudo ───────────
     rect(img,  4, 22, 13, lower_y, CAPE)
-    rect(img,  4, 22,  6, lower_y, CAPE_D)
-    for i in range(10):
-        px(img, 4 + i, lower_y + i // 2, OUTLINE)        # hem diagonal
-    rect(img, 18, 22, 24, 36, CAPE)
-    vline(img, 25, 22, 36, OUTLINE)
-    hline(img, 18, 25, 36, OUTLINE)
+    rect(img,  5, lower_y + 1, 12, lower_y + 2, CAPE)
+    rect(img,  7, lower_y + 3, 10, lower_y + 3, CAPE)
+    # dobra interna escura (separa a asa do corpo)
+    vline(img, 11, 24, lower_y, CAPE_D); vline(img, 12, 24, lower_y, CAPE_D)
+    rect(img,  4, 42,  6, lower_y, CAPE_D)               # sombra externa baixa
+    # rim-light frio na borda externa (luz de cima-esquerda)
+    vline(img,  4, 24, 31, CAPE_L); px(img, 5, 22, CAPE_L); px(img, 5, 23, CAPE_L)
+
+    # ── Painel frontal (direita) — forro ROXO aparecendo na abertura ──────────
+    rect(img, 18, 22, 24, 37, CAPE)
+    vline(img, 18, 24, 35, LINING)                       # forro (acento de cor)
+    vline(img, 19, 25, 34, LINING_D)
+    rect(img, 19, 38, 23, 38, CAPE)                      # leve hem
+    px(img, 24, 30, CAPE_D)                              # dobra na frente
+    # glow azul do orbe lambendo a capa (luz motivada pela magia)
+    px(img, 23, 23, CAPE_GLOW); px(img, 24, 23, CAPE_GLOW)
+    px(img, 23, 24, CAPE_GLOW); px(img, 24, 25, CAPE_GLOW)
+    px(img, 22, 22, CAPE_GLOW)
+
+    # ── Outlines externos ─────────────────────────────────────────────────────
+    vline(img,  3, 22, lower_y + 1, OUTLINE)
+    vline(img, 25, 21, 38, OUTLINE)
+    hline(img, 18, 25, 38, OUTLINE)
+    # contorno do hem afunilado (esquerda)
+    px(img,  4, lower_y + 1, OUTLINE); px(img,  5, lower_y + 3, OUTLINE)
+    hline(img, 6, 10, lower_y + 4, OUTLINE)
+    px(img, 11, lower_y + 3, OUTLINE); px(img, 12, lower_y + 3, OUTLINE)
+    px(img, 13, lower_y + 1, OUTLINE)
 
 
 def draw_bodysuit(img):
     rect(img, 13, 20, 19, 42, SUIT)
-    vline(img, 15, 23, 40, SUIT_H); vline(img, 16, 23, 40, SUIT_H)
+    vline(img, 14, 23, 40, SUIT_H)                       # highlight (lado da luz)
+    vline(img, 18, 24, 40, SUIT_SH)                      # sombra de forma (direita)
     hline(img, 13, 19, 20, OUTLINE)
+    px(img, 13, 38, SUIT_SH); px(img, 19, 38, SUIT_SH)   # leve cintura
+    # Broche-gema mágica no peito (acento focal azul + engaste dourado)
+    px(img, 15, 21, GOLD)
+    px(img, 15, 22, ORB_D); px(img, 16, 22, ORB)
+    px(img, 15, 23, ORB);   px(img, 16, 23, ORB_H)
 
 
 def draw_belt(img):
@@ -254,14 +302,21 @@ def draw_staff(img, mana=5):
              (40, 100, 160, 255) if mana == 2 else (20, 50, 90, 255))
     line(img,  6, 44, 25, 22, STAFF_C, hi=STAFF_H)
     line(img,  6, 45, 25, 23, STAFF_C)
+    # Engaste/prongs de madeira segurando o orbe (como no rascunho)
+    px(img, 23, 24, STAFF_C); px(img, 24, 25, STAFF_C); px(img, 22, 22, STAFF_C)
+    px(img, 30, 24, STAFF_C); px(img, 29, 26, STAFF_C); px(img, 31, 22, STAFF_C)
+    # Orbe
     rect(img, 24, 19, 29, 25, orb_c)
     hline(img, 24, 29, 19, OUTLINE); hline(img, 24, 29, 25, OUTLINE)
     vline(img, 23, 19, 25, OUTLINE); vline(img, 30, 19, 25, OUTLINE)
+    rect(img, 27, 23, 29, 25, ORB_D)                     # sombra (canto inf-dir)
     px(img, 25, 20, orb_h); px(img, 26, 20, orb_h); px(img, 25, 21, orb_h)
-    rect(img, 27, 23, 29, 25, ORB_D)
-    if mana >= 3:
+    if mana >= 4:
+        px(img, 26, 21, WHITE)                           # núcleo brilhante (mana cheia)
+    if mana >= 3:                                        # raios/glow de energia
         px(img, 30, 18, orb_h); px(img, 31, 17, orb_c)
         px(img, 30, 26, orb_h); px(img, 23, 26, orb_h)
+        px(img, 22, 20, orb_h); px(img, 32, 21, orb_c)
 
 
 def mirror_face(img):
