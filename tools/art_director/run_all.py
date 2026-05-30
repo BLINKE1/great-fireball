@@ -19,6 +19,7 @@ Requer:
 """
 
 import argparse
+import base64
 import json
 import os
 import re
@@ -243,7 +244,7 @@ def refine_base(engine: Engine, target_score: int,
         for issue in result.get("issues", [])[:3]:
             print(f"    • {issue}")
 
-        save_iteration(img, i, score, critique)
+        save_iteration(img, i, score)
 
         if score > best_score:
             best_score = score
@@ -424,7 +425,7 @@ def main() -> None:
             f"Auto-generate Soph sprites via art_director loop\n\n"
             f"Base idle_0 score: {base_score}/10  |  Avg all frames: {avg:.1f}/10\n"
             f"Frames gerados: {len(saved_files)}\n"
-            f"Modelo: {MODEL}\n\n"
+            f"Modelo: {engine.model}\n\n"
             f"https://claude.ai/code/session_01G57VgqWyuu32miPAJbhE6J"
         )
         if git_commit_sprites(saved_files, msg):
