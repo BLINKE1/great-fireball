@@ -77,7 +77,14 @@ class GeminiEngine:
         url  = self._BASE.format(model=self.model)
         body = {
             "contents": [{"parts": parts}],
-            "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.4},
+            "generationConfig": {
+                "maxOutputTokens": 8192,
+                "temperature": 0.4,
+                # Desliga o "thinking" do Gemini 2.5: para gerar código/crítica de
+                # pixel art não é necessário, e evita que o orçamento de tokens seja
+                # consumido pelo raciocínio, devolvendo uma resposta SEM 'parts'.
+                "thinkingConfig": {"thinkingBudget": 0},
+            },
         }
         # Retry com backoff em caso de rate-limit (429) ou indisponibilidade (503).
         # Erros de auth (401/403) NÃO são retentados — caem direto em raise_for_status.
@@ -97,8 +104,25 @@ class GeminiEngine:
                 continue
             resp.raise_for_status()
             data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+            return self._extract_text(data)
         resp.raise_for_status()  # lança se esgotou as tentativas
+
+    @staticmethod
+    def _extract_text(data: dict) -> str:
+        """Extrai o texto da resposta, com erro claro se vier vazia/bloqueada."""
+        candidates = data.get("candidates") or []
+        if not candidates:
+            fb = data.get("promptFeedback", {})
+            raise ValueError(f"Gemini não retornou candidatos (feedback: {fb})")
+        cand = candidates[0]
+        parts = cand.get("content", {}).get("parts")
+        if not parts:
+            reason = cand.get("finishReason", "?")
+            raise ValueError(
+                f"Gemini retornou resposta sem texto (finishReason={reason}). "
+                f"Se for MAX_TOKENS, aumente maxOutputTokens ou reduza o prompt."
+            )
+        return parts[0]["text"]
 
 
 # ── Anthropic Claude ──────────────────────────────────────────────────────────
