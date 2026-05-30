@@ -231,6 +231,26 @@ def _draw_staff_glow(im):
     # cabo reaparece por cima das palmas → leitura de "segurando"
     d.line([(150,720),(372,360)], fill=STAFF, width=6)
     d.line([(150,720),(372,360)], fill=STAFF_H, width=2)
+
+    # ── AURA MÁGICA: partículas de energia subindo/girando ao redor do orbe ──
+    import math, random
+    rng = random.Random(7)
+    spark = Image.new("RGBA", (WK, HK_), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(spark)
+    ocx, ocy = 384, 354
+    for i in range(26):
+        ang = rng.uniform(0, 2 * math.pi)
+        dist = rng.uniform(34, 96)
+        px_ = ocx + math.cos(ang) * dist
+        py_ = ocy + math.sin(ang) * dist - dist * 0.4    # tende a subir
+        r = rng.uniform(1.5, 5.0)
+        a = int(180 * (1 - dist / 110))
+        col = (190, 230, 255, max(40, a)) if rng.random() > 0.4 else (110, 180, 255, max(40, a))
+        sd.ellipse((px_-r, py_-r, px_+r, py_+r), fill=col)
+    # leve trilha de brilho subindo
+    glow2 = spark.filter(ImageFilter.GaussianBlur(3))
+    im = ImageChops.add(im, glow2)
+    im = Image.alpha_composite(im, spark)
     return im
 
 
@@ -243,6 +263,31 @@ def render(target_h=None):
     return im
 
 
+def render_beauty():
+    """Render de apresentacao: personagem sobre fundo atmosferico (glow + vinheta)."""
+    char = _shaded()
+    # Fundo: degrade radial frio + glow azul atras do orbe + vinheta escura
+    bg = Image.new("RGBA", (WK, HK_), (20, 20, 34, 255))
+    grad = Image.new("L", (WK, HK_), 0)
+    gd = ImageDraw.Draw(grad)
+    gd.ellipse((-120, -40, WK + 120, HK_ * 0.7), fill=70)     # halo central alto
+    grad = grad.filter(ImageFilter.GaussianBlur(120))
+    amb = Image.composite(Image.new("RGBA", (WK, HK_), (50, 70, 130, 255)),
+                          bg, grad)
+    bg = Image.alpha_composite(bg, amb)
+    # glow azul atras do orbe
+    og = Image.new("RGBA", (WK, HK_), (0, 0, 0, 0))
+    ImageDraw.Draw(og).ellipse((300, 270, 470, 440), fill=(60, 130, 230, 255))
+    bg = ImageChops.add(bg, og.filter(ImageFilter.GaussianBlur(70)))
+    # vinheta
+    vig = Image.new("L", (WK, HK_), 0)
+    ImageDraw.Draw(vig).ellipse((-60, -60, WK + 60, HK_ + 60), fill=255)
+    vig = vig.filter(ImageFilter.GaussianBlur(90))
+    dark = Image.new("RGBA", (WK, HK_), (8, 8, 16, 255))
+    bg = Image.composite(bg, dark, vig)
+    return Image.alpha_composite(bg, char)
+
+
 def main():
     out = HERE / "iterations"
     out.mkdir(parents=True, exist_ok=True)
@@ -250,7 +295,8 @@ def main():
     big.save(out / "soph_dream_big.png")
     for h in (256, 128, 64):
         render(h).save(out / f"soph_dream_{h}.png")
-    print("  dream → soph_dream_big.png + 256/128/64")
+    render_beauty().save(out / "soph_dream_beauty.png")
+    print("  dream → soph_dream_big.png + beauty + 256/128/64")
 
 
 if __name__ == "__main__":
