@@ -145,44 +145,58 @@ def _shaded():
     im = Image.alpha_composite(outl, im)
 
     # ── ROSTO: olhos, óculos, boca (desenhados nítidos por cima) ──
-    _draw_face(im)
+    im = _draw_face(im)
 
     # ── CAJADO + ORBE com GLOW real ──
     im = _draw_staff_glow(im)
     return im
 
 
+def _overlay(im, draw_fn):
+    """Desenha numa camada separada e compõe com alpha (PIL nao faz blend em shapes)."""
+    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    draw_fn(ImageDraw.Draw(layer))
+    return Image.alpha_composite(im, layer)
+
+
 def _draw_face(im):
-    d = ImageDraw.Draw(im, "RGBA")
-    # ── Sobrancelhas suaves (azuladas) ──
-    d.line([(176,196),(214,190)], fill=(46,70,150,220), width=5)
-    d.line([(266,190),(304,196)], fill=(46,70,150,220), width=5)
-    # ── Blush ──
-    d.ellipse((160,248,206,286), fill=(242,148,150,130))
-    d.ellipse((274,248,320,286), fill=(242,148,150,130))
-    # ── OLHOS grandes e brilhantes (muita esclera + íris azul clara + brilhos) ──
+    d = ImageDraw.Draw(im)
+    # ── Sobrancelhas suaves (azuladas) ── (opacas, ok desenhar direto)
+    d.line([(176,196),(214,190)], fill=(46,70,150), width=5)
+    d.line([(266,190),(304,196)], fill=(46,70,150), width=5)
+    # ── Blush (semi-transparente → camada) ──
+    im = _overlay(im, lambda o: (
+        o.ellipse((160,250,206,288), fill=(242,148,150,120)),
+        o.ellipse((274,250,320,288), fill=(242,148,150,120))))
+    d = ImageDraw.Draw(im)
+    # ── OLHOS grandes e brilhantes (opacos) ──
     for (ex0, ex1) in [(170,224), (256,310)]:
         cx = (ex0 + ex1) // 2
-        d.ellipse((ex0,204,ex1,274), fill=(255,255,255,255))                # esclera ampla
-        d.ellipse((cx-17,218,cx+17,270), fill=HAIR_D)                       # íris (aro escuro)
-        d.ellipse((cx-15,224,cx+15,270), fill=HAIR)                         # íris (corpo azul)
-        d.ellipse((cx-13,238,cx+13,270), fill=(120,185,255,255))           # íris (base clara)
-        d.ellipse((cx-8,234,cx+8,262), fill=(20,14,40,255))                # pupila pequena
-        d.ellipse((cx-13,220,cx+1,238), fill=(255,255,255,255))           # brilho grande
-        d.ellipse((cx+5,252,cx+13,262), fill=(205,228,255,240))           # brilho pequeno
-        d.arc((ex0,198,ex1,278), 192, 348, fill=OUT, width=6)              # cílio superior
-        d.line([(ex0+2,210),(ex0-8,202)], fill=OUT, width=5)              # cílio do canto externo
-    # ── Nariz + boca doce ──
+        d.ellipse((ex0,204,ex1,274), fill=(255,255,255))                   # esclera ampla
+        d.ellipse((cx-17,218,cx+17,270), fill=HAIR_D)                      # íris (aro escuro)
+        d.ellipse((cx-15,224,cx+15,270), fill=HAIR)                        # íris (corpo azul)
+        d.ellipse((cx-13,238,cx+13,270), fill=(120,185,255))              # íris (base clara)
+        d.ellipse((cx-8,234,cx+8,262), fill=(20,14,40))                   # pupila pequena
+        d.ellipse((cx-13,220,cx+1,238), fill=(255,255,255))              # brilho grande
+        d.ellipse((cx+5,252,cx+13,262), fill=(220,235,255))             # brilho pequeno
+        d.arc((ex0,198,ex1,278), 192, 348, fill=OUT, width=6)             # cílio superior
+        d.line([(ex0+2,210),(ex0-8,202)], fill=OUT, width=5)             # cílio do canto
+    # ── Nariz + boca doce (opacos) ──
     d.line([(238,258),(244,270),(235,272)], fill=SKIN_S, width=3)
-    d.arc((216,276,264,312), 15, 165, fill=(176,94,94,255), width=5)        # sorriso
-    d.arc((226,286,254,308), 20, 160, fill=(228,150,150,200), width=4)      # lábio inferior
-    # ── ÓCULOS redondos: aro fino + lente TRANSPARENTE + leve reflexo glossy ──
-    for gx in (162, 248):
-        d.ellipse((gx,194,gx+70,280), fill=(205,232,250,18), outline=GLASS, width=4)
-    d.arc((168,200,226,274), 205, 245, fill=(255,255,255,120), width=4)     # reflexo sutil esq
-    d.arc((254,200,312,274), 205, 245, fill=(255,255,255,120), width=4)     # reflexo sutil dir
-    d.line([(228,224),(250,224)], fill=GLASS, width=4)                      # ponte
-    d.line([(162,226),(144,216)], fill=GLASS, width=4)                      # haste
+    d.arc((216,276,264,312), 15, 165, fill=(176,94,94), width=5)           # sorriso
+    # ── ÓCULOS: lente bem transparente em camada (não apaga os olhos!) ──
+    im = _overlay(im, lambda o: (
+        o.ellipse((162,194,232,280), fill=(210,235,252,30)),
+        o.ellipse((248,194,318,280), fill=(210,235,252,30)),
+        o.arc((168,200,226,274), 205, 245, fill=(255,255,255,110), width=4),
+        o.arc((254,200,312,274), 205, 245, fill=(255,255,255,110), width=4)))
+    d = ImageDraw.Draw(im)
+    # aros + ponte + haste (opacos, por cima)
+    d.ellipse((162,194,232,280), outline=GLASS, width=4)
+    d.ellipse((248,194,318,280), outline=GLASS, width=4)
+    d.line([(232,224),(248,224)], fill=GLASS, width=4)                     # ponte
+    d.line([(162,226),(144,216)], fill=GLASS, width=4)                     # haste
+    return im
 
 
 def _draw_staff_glow(im):
