@@ -49,10 +49,10 @@ def generate() -> Image.Image:
     L([(20,32),(14,58),(15,84)], HAIR_H, 2)
 
     # ══ CAPA — asa esquerda (costas), drape limpo com hem pontudo ══════════════
-    P([(28,48),(18,76),(18,106),(27,120),(36,113),(34,86),(32,58)], CAPE)
-    P([(28,54),(21,78),(21,104),(28,114),(32,98),(31,72)], CAPE_D)
-    P([(23,86),(21,102),(27,113),(28,98)], CAPE_DD)
-    L([(18,76),(18,94),(20,107)], CAPE_L, 1)               # rim-light frio
+    P([(28,48),(18,76),(19,104),(26,118),(33,110),(35,86),(32,58)], CAPE)
+    P([(28,54),(21,78),(22,102),(27,112),(31,98),(31,72)], CAPE_D)
+    P([(23,88),(22,102),(26,112),(28,98)], CAPE_DD)
+    L([(18,76),(18,94),(21,106)], CAPE_L, 1)               # rim-light frio
 
     # ══ PERNAS + BOTAS (desenhadas antes do corpo p/ ficarem atrás da capa) ════
     P([(26,86),(32,86),(32,108),(26,108)], SUIT)
@@ -79,11 +79,9 @@ def generate() -> Image.Image:
     E((30,55,35,60), ORB); d.point((31,56), fill=ORB_C); d.point((32,57), fill=ORB_H)
     L([(31,53),(33,54)], GOLD, 1)
 
-    # ══ BRAÇOS (terminam em mão de pele, integradas) ═══════════════════════════
-    P([(20,54),(26,56),(25,80),(19,80),(18,66)], SUIT)     # braço esq
-    E((18,78,25,86), SKIN)                                 # mão esq
-    P([(39,56),(45,54),(47,68),(45,82),(39,82)], SUIT)     # braço dir
-    E((39,78,46,86), SKIN)                                 # mão dir
+    # ══ BRAÇOS (posicionados p/ segurar o cajado; mãos desenhadas após a haste) ═
+    P([(21,55),(27,56),(28,80),(22,82),(20,66)], SUIT)     # braço de trás (desce)
+    P([(38,55),(45,55),(45,63),(39,70),(35,62)], SUIT)     # braço da frente (cruza)
 
     # ══ CINTURÃO ═══════════════════════════════════════════════════════════════
     d.rectangle((26,82,38,87), fill=GOLD)
@@ -134,6 +132,14 @@ def generate() -> Image.Image:
     d.ellipse((51,41,55,45), fill=ORB_D)
     for s,e in [((50,33),(51,30)),((57,40),(60,40)),((50,47),(51,50)),((43,39),(40,38))]:
         L([s,e], ORB_H, 1)
+
+    # ══ MÃOS segurando o cajado (por cima da haste → leitura de "segurando") ═══
+    E((22,79,30,88), SKIN)                                 # mão de baixo
+    d.pieslice((22,79,30,88), 20, 110, fill=SKIN_H)
+    L([(24,83),(28,83)], SKIN_S, 1)                        # dedos
+    E((34,61,42,70), SKIN)                                 # mão de cima
+    d.pieslice((34,61,42,70), 20, 110, fill=SKIN_H)
+    L([(36,65),(40,65)], SKIN_S, 1)
 
     # ══ CONTORNO ÚNICO (dilata a silhueta e pinta atrás) ═══════════════════════
     alpha = img.split()[3]
