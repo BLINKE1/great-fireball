@@ -111,18 +111,17 @@ var _look_ahead: float      = 0.0
 # Squash & stretch
 var _squash: Vector2 = Vector2.ONE
 
+var _mana_level: int = 5
+
 func _ready() -> void:
 	add_to_group("player")
 	spawn_position = global_position
 
 	sprite.sprite_frames = _build_soph_frames()
-	sprite.play("idle")
+	sprite.play("idle_5")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-	var hair_tex := SpriteSetup.get_texture("player_hair")
-	if hair_tex:
-		hair.texture = hair_tex
-		hair.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	hair.hide()  # full-body sprites include hair
 
 	base_modulate = sprite.modulate
 	mana.mana_changed.connect(_on_mana_changed)
@@ -659,7 +658,7 @@ func _update_anim() -> void:
 	elif spd > 20.0:
 		anim = "walk"
 	else:
-		anim = "idle"
+		anim = "idle_%d" % _mana_level
 	if sprite.animation != anim:
 		sprite.play(anim)
 
@@ -676,6 +675,9 @@ func _build_soph_frames() -> SpriteFrames:
 	_add_anim(sf, "jump",  ["soph_jump"],  8.0, false)
 	_add_anim(sf, "fall",  ["soph_fall"],  8.0, false)
 	_add_anim(sf, "hurt",  ["soph_hurt"],  8.0, false)
+	# mana-state idles (level 5 = full, level 1 = depleted)
+	for lvl in range(1, 6):
+		_add_anim(sf, "idle_%d" % lvl, ["soph_mana_%d" % lvl], 4.0, true)
 	return sf
 
 func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:
@@ -702,7 +704,9 @@ func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bo
 			sf.add_frame(name, tex)
 
 func _on_mana_changed(ratio: float) -> void:
-	hair.material.set_shader_parameter("mana_ratio", ratio)
+	_mana_level = clampi(ceili(ratio * 5.0), 1, 5)
+	if sprite.animation.begins_with("idle_"):
+		sprite.play("idle_%d" % _mana_level)
 
 func _on_died() -> void:
 	is_dead = true

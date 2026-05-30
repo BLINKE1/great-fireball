@@ -163,23 +163,81 @@ class OllamaEngine:
         return response["message"]["content"]
 
 
+# ── OpenRouter (free tier, múltiplos modelos com visão) ───────────────────────
+
+class OpenRouterEngine:
+    """
+    OpenRouter — acessa dezenas de modelos via uma API OpenAI-compatível.
+    Modelos free com visão: meta-llama/llama-3.2-11b-vision-instruct:free
+                            qwen/qwen-2-vl-7b-instruct:free
+    Chave grátis em: https://openrouter.ai/keys
+    Requer apenas: pip install requests
+    """
+    name  = "openrouter"
+    model = "meta-llama/llama-3.2-11b-vision-instruct:free"
+
+    _BASE = "https://openrouter.ai/api/v1/chat/completions"
+
+    def __init__(self, api_key: str, model: str | None = None):
+        try:
+            import requests as _req
+            self._req = _req
+        except ImportError:
+            raise ImportError("pip install requests")
+        self.api_key = api_key
+        self.model   = model or self.model
+
+    def call(self, prompt: str, image: "Image.Image | None" = None) -> str:
+        content: list = []
+        if image is not None:
+            buf = BytesIO()
+            image.save(buf, format="PNG")
+            b64 = base64.standard_b64encode(buf.getvalue()).decode()
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{b64}"},
+            })
+        content.append({"type": "text", "text": prompt})
+
+        body = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": content}],
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type":  "application/json",
+        }
+        for attempt, wait in enumerate([0, 15, 30, 60]):
+            if wait:
+                print(f"\n  Aguardando {wait}s (tentativa {attempt+1}/4)...", end=" ", flush=True)
+                time.sleep(wait)
+            resp = self._req.post(self._BASE, headers=headers, json=body, timeout=120)
+            if resp.status_code in (429, 503) and attempt < 3:
+                continue
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+        resp.raise_for_status()
+
+
 # ── Factory ───────────────────────────────────────────────────────────────────
 
 ENGINES = {
-    "gemini":    GeminiEngine,
-    "anthropic": AnthropicEngine,
-    "claude":    AnthropicEngine,   # alias
-    "ollama":    OllamaEngine,
+    "gemini":      GeminiEngine,
+    "anthropic":   AnthropicEngine,
+    "claude":      AnthropicEngine,   # alias
+    "ollama":      OllamaEngine,
+    "openrouter":  OpenRouterEngine,
 }
 
 ENGINE_KEYS = {
-    "gemini":    "GEMINI_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
-    "claude":    "ANTHROPIC_API_KEY",
-    "ollama":    None,
+    "gemini":      "GEMINI_API_KEY",
+    "anthropic":   "ANTHROPIC_API_KEY",
+    "claude":      "ANTHROPIC_API_KEY",
+    "ollama":      None,
+    "openrouter":  "OPENROUTER_API_KEY",
 }
 
-FREE_ENGINES = {"gemini", "ollama"}
+FREE_ENGINES = {"gemini", "ollama", "openrouter"}
 
 
 def build_engine(name: str, api_key: str | None = None,
@@ -194,9 +252,13 @@ def build_engine(name: str, api_key: str | None = None,
 def engine_help() -> str:
     return (
         "\nMotores disponíveis (--engine):\n"
-        "  gemini    — Grátis! Chave em aistudio.google.com/apikey (sem cartão)\n"
-        "              Variável: GEMINI_API_KEY\n"
-        "  anthropic — Melhor qualidade, pago. Variável: ANTHROPIC_API_KEY\n"
-        "  ollama    — Local, grátis. Instale Ollama + 'ollama pull llava'\n"
-        "              Não precisa de chave API\n"
+        "  gemini      — Grátis! Chave em aistudio.google.com/apikey (sem cartão)\n"
+        "                Variável: GEMINI_API_KEY\n"
+        "  openrouter  — Grátis! Vários modelos com visão. openrouter.ai/keys\n"
+        "                Variável: OPENROUTER_API_KEY\n"
+        "                Modelos: --model meta-llama/llama-3.2-11b-vision-instruct:free\n"
+        "                         --model qwen/qwen-2-vl-7b-instruct:free\n"
+        "  anthropic   — Melhor qualidade, pago. Variável: ANTHROPIC_API_KEY\n"
+        "  ollama      — Local, grátis. Instale Ollama + 'ollama pull llava'\n"
+        "                Não precisa de chave API\n"
     )

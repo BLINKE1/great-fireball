@@ -337,7 +337,7 @@ def main() -> None:
         epilog=engine_help(),
     )
     parser.add_argument("--engine",     default="gemini",
-                        choices=["gemini", "anthropic", "claude", "ollama"],
+                        choices=["gemini", "anthropic", "claude", "ollama", "openrouter"],
                         help="Motor de IA (padrão: gemini — grátis!)")
     parser.add_argument("--api-key",    default=None,
                         help="Chave da API (ou use variável de ambiente / .env)")
@@ -355,7 +355,7 @@ def main() -> None:
                or load_env(args.engine)
                or os.environ.get(ENGINE_KEYS.get(args.engine, "") or ""))
 
-    if not api_key and args.engine not in ("ollama",) and not args.dry_run:
+    if not api_key and args.engine not in ("ollama",) and not args.dry_run:  # noqa: SIM102
         key_var = ENGINE_KEYS.get(args.engine, "API_KEY")
         env_file = HERE / ".env"
         print(f"\nPrecisa de uma chave para o motor '{args.engine}'.")
