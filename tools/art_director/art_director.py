@@ -53,24 +53,25 @@ ZOOM      = 6
 GOAL = """\
 PERSONAGEM: Soph — protagonista de um RPG plataformer 2D de fantasia.
 
-APARÊNCIA CANÔNICA:
-- Jovem maga (aparenta ~17-20 anos), estatura média-baixa, feminina
-- Cabelo AZUL médio, levemente ondulado, cai até o pescoço/ombros
-  (o cabelo azul é a marca visual mais importante — deve ser inconfundível)
-- Robe de maga: roxo escuro com detalhes dourados na faixa/cinto
-  O robe é midi (vai até metade da canela), levemente acinturado
-- Botas de couro marrom escuro, simples
-- Olhos grandes e expressivos (traço de anime/chibi)
-- Expressão curiosa/determinada
+APARÊNCIA CANÔNICA (design Ravena/Teen Titans):
+- Jovem maga (~17-20 anos), estatura média-baixa, feminina
+- Cabelo LONGO E AZUL fluindo pelas costas (vai além da cintura)
+  O cabelo é a marca visual mais forte — deve ser inconfundível
+- Óculos de armação fina (visão lateral: dois retângulos sobrepostos ao rosto)
+- Capa escura (roxo quase preto) sobre ombros até joelhos, abertura frontal
+- Bodysuit preto-azulado sob a capa (visível no centro entre as abas)
+- Cinturão dourado na cintura
+- Cajado diagonal com orbe AZUL BRILHANTE na ponta superior direita
+- Botas de couro escuro até o joelho
 
 REQUISITOS TÉCNICOS:
 - Canvas: 32×64 pixels, RGBA, fundo 100% transparente
-- Vista lateral para plataformer (virada para a DIREITA)
+- Vista lateral (virada para a DIREITA — o generate() espelha no final)
+- O personagem é DESENHADO virado para a ESQUERDA, depois transposto
 - Pose idle natural — peso levemente numa perna
-- Pixel art — sem anti-aliasing, paleta limitada (~12-16 cores)
+- Pixel art — sem anti-aliasing, paleta limitada (~14-18 cores)
 - Outline escuro (1px) em toda a silhueta
-- Cabeça ~16px de altura (proporção levemente chibi)
-- Cabelo azul deve ocupar espaço visível no topo"""
+- Cabeça ~12-14px de altura (proporção levemente chibi)"""
 
 CRITIQUE_PROMPT = """\
 Você é um art director sênior de pixel art para jogos 2D.
@@ -88,13 +89,13 @@ CÓDIGO ATUAL (iteração {iteration}):
 ```
 
 CHECKLIST:
-1. SILHUETA: lê como "maga feminina" em 32×64?
-2. CABELO AZUL: visível e distinto? (marca visual #1)
-3. ROBE: parece roupa mágica/fantasia?
-4. PROPORÇÕES: cabeça ~1/4 do total? Pernas visíveis?
-5. OUTLINE: 1px escuro separa figura do fundo?
-6. PALETA: contraste limpo entre regiões?
-7. PIXEL ART: pixels intencionais, sem blur?
+1. SILHUETA: lê como "maga com capa e cajado" em 32×64?
+2. CABELO AZUL LONGO: visível e distinto, flui pelas costas? (marca visual #1)
+3. ÓCULOS: armação fina visível no rosto (dois retângulos)?
+4. CAPA + BODYSUIT: capa cobre ombros→joelhos, abertura mostra bodysuit central?
+5. CAJADO + ORBE: diagonal, orbe azul brilhante na ponta superior?
+6. OUTLINE: 1px escuro separa figura do fundo?
+7. PALETA: cinturão dourado destaca sobre os tons escuros?
 
 Responda SOMENTE JSON puro (sem markdown, SEM campo de código):
 {{
@@ -128,17 +129,20 @@ CORPO ATUAL da função generate():
 As seguintes variáveis já estão definidas no escopo global (NÃO redefina):
   W=32, H=64, T=(transparente)
   OUTLINE, SKIN, SKIN_S, HAIR, HAIR_D, HAIR_H, EYE
-  ROBE, ROBE_D, ROBE_L, GOLD, GOLD_D, BOOT, BOOT_D
+  CAPE, CAPE_D, SUIT, SUIT_H, GOLD, GOLD_D, BOOT, BOOT_D
+  STAFF_C, STAFF_H, ORB, ORB_H, ORB_D, GLASS
   px(img,x,y,c), hline(img,x0,x1,y,c), vline(img,x,y0,y1,c), rect(img,x0,y0,x1,y1,c)
+  line(img,x0,y0,x1,y1,c,hi=None)  ← Bresenham diagonal, hi=cor do highlight acima
 
 Escreva APENAS o corpo da função generate() — sem assinatura def, sem variáveis de paleta,
 sem importações, sem explicações.
 
-IMPORTANTE: desenhe o personagem COMPLETO (cabeça + cabelo + rosto + pescoço + robe + braços + pernas + botas).
-Não omita partes — cada seção deve ter pixels. O código deve começar com:
+IMPORTANTE: desenhe o personagem COMPLETO (cabelo + rosto + óculos + pescoço + capa + bodysuit + braços + pernas + botas + cajado).
+Não omita partes. O personagem é desenhado virado para a ESQUERDA.
+O código deve começar com:
     img = Image.new("RGBA", (W, H), T)
 e terminar obrigatoriamente com:
-    return img"""
+    return img.transpose(Image.FLIP_LEFT_RIGHT)"""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -311,9 +315,9 @@ def iterate(engine: Engine, code: str, img: Image.Image, iteration: int) -> dict
     new_body = re.sub(r"^```(?:python)?\s*", "", new_body.strip())
     new_body = re.sub(r"\s*```\s*$", "", new_body)
     new_body = new_body.strip()
-    # Ensure the body always ends with return img
-    if not re.search(r"return\s+img\s*$", new_body):
-        new_body += "\nreturn img"
+    # Ensure the body always ends with a return
+    if not re.search(r"return\s+img", new_body):
+        new_body += "\nreturn img.transpose(Image.FLIP_LEFT_RIGHT)"
     # Splice the improved body back into the full file
     result["improved_code"] = _splice_body(code, new_body)
     return result
