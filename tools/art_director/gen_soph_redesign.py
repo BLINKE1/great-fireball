@@ -114,29 +114,28 @@ def generate() -> Image.Image:
     hline(img, 12, 14,  8, OUTLINE)
     hline(img, 17, 19,  8, OUTLINE)
 
-    # ── Óculos (dois quadradinhos com armação) ────────────────────────────────
-    # Vidro esquerdo (x=11-14, y=9-13)
-    hline(img, 11, 14,  9, GLASS)
-    hline(img, 11, 14, 13, GLASS)
-    vline(img, 11,  9, 13, GLASS)
-    vline(img, 14,  9, 13, GLASS)
-    # Vidro direito (x=16-19, y=9-13)
-    hline(img, 16, 19,  9, GLASS)
-    hline(img, 16, 19, 13, GLASS)
-    vline(img, 16,  9, 13, GLASS)
-    vline(img, 19,  9, 13, GLASS)
-    # Ponte entre os vidros
-    px(img, 15, 11, GLASS)
-    # Haste direita (vai até a orelha)
-    px(img, 20, 10, GLASS); px(img, 21, 10, GLASS)
-    # Olhos (atrás dos óculos)
-    rect(img, 12, 10, 13, 12, EYE)
-    rect(img, 17, 10, 18, 12, EYE)
-    px(img, 12, 10, HAIR_H)             # reflexo olho esq
-    px(img, 17, 10, HAIR_H)             # reflexo olho dir
+    # ── Óculos redondos (lente clara + aro fino, não um visor) ────────────────
+    LENS  = (205, 222, 240, 255)   # vidro claro levemente azulado
+    WHITE = (255, 255, 255, 255)
+    # Lente esquerda: aro GLASS em volta, interior de vidro claro (x=10-13, y=9-12)
+    rect(img, 10,  9, 13, 12, LENS)
+    hline(img, 10, 13,  9, GLASS); hline(img, 10, 13, 12, GLASS)
+    vline(img, 10,  9, 12, GLASS); vline(img, 13,  9, 12, GLASS)
+    # Lente direita (x=18-21, y=9-12)
+    rect(img, 18,  9, 21, 12, LENS)
+    hline(img, 18, 21,  9, GLASS); hline(img, 18, 21, 12, GLASS)
+    vline(img, 18,  9, 12, GLASS); vline(img, 21,  9, 12, GLASS)
+    # Ponte entre as lentes
+    hline(img, 14, 17, 10, GLASS)
+    # Haste esquerda até o cabelo
+    px(img,  9, 10, GLASS)
+    # Olhos atrás das lentes (pupila escura + brilho branco)
+    px(img, 11, 11, EYE); px(img, 12, 11, EYE)
+    px(img, 19, 11, EYE); px(img, 20, 11, EYE)
+    px(img, 11, 10, WHITE)              # glint lente esq
+    px(img, 19, 10, WHITE)              # glint lente dir
     # Sorriso leve (olhando levemente pra baixo como no rascunho)
-    px(img, 16, 14, SKIN_S)
-    px(img, 17, 14, SKIN_S)
+    px(img, 15, 14, SKIN_S); px(img, 16, 14, SKIN_S)
 
     # ── Pescoço ───────────────────────────────────────────────────────────────
     rect(img, 14, 17, 17, 19, SKIN)
