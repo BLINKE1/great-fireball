@@ -5,6 +5,14 @@ const SPEED = 200.0
 const JUMP_VELOCITY = -420.0
 const GRAVITY = 980.0
 
+# ── Arte HD da Soph (conjunto "dream": alta resolucao, suave) ──────────────
+# Experimental: destoa do pixel-art do resto do jogo. Desligue para voltar ao
+# pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
+# e sao gerados por tools/art_director/soph_dream.py --apply-game.
+const USE_HD_SOPH := true
+const HD_SCALE := 0.34            # frames de 192px de altura → ~65px na tela
+const HD_OFFSET := Vector2(0, 0)  # ajuste fino de alinhamento com o hitbox
+
 const MAGIC_MISSILE_COST  = 15.0
 const MAGIC_MISSILE_CD    = 0.18
 const TIME_STOP_COST      = 30.0
@@ -120,7 +128,13 @@ func _ready() -> void:
 
 	sprite.sprite_frames = _build_soph_frames()
 	sprite.play("idle_5")
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if USE_HD_SOPH:
+		# arte HD: amostragem linear (suave) + escala/offset p/ caber no hitbox
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		sprite.scale = Vector2(HD_SCALE, HD_SCALE)
+		sprite.position = HD_OFFSET
+	else:
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	hair.hide()  # full-body sprites include hair
 
@@ -669,6 +683,8 @@ func _update_anim() -> void:
 		sprite.play(anim)
 
 func _build_soph_frames() -> SpriteFrames:
+	if USE_HD_SOPH:
+		return _build_soph_frames_hd()
 	var sf := SpriteFrames.new()
 	# idle: 2 frames, 4 fps (slow breathe)
 	_add_anim(sf, "idle",  ["soph_idle_0", "soph_idle_1"], 4.0,  true)
@@ -684,6 +700,22 @@ func _build_soph_frames() -> SpriteFrames:
 	# mana-state idles (level 5 = full, level 1 = depleted)
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_mana_%d" % lvl], 4.0, true)
+	return sf
+
+func _build_soph_frames_hd() -> SpriteFrames:
+	# Conjunto HD (soph_hd_*): idle/walk/run + jump/fall/hurt.
+	var sf := SpriteFrames.new()
+	_add_anim(sf, "idle", ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
+	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1","soph_hd_walk_2",
+							 "soph_hd_walk_3","soph_hd_walk_4","soph_hd_walk_5"], 10.0, true)
+	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1",
+							 "soph_hd_run_2","soph_hd_run_3"], 14.0, true)
+	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
+	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
+	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
+	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
+	for lvl in range(1, 6):
+		_add_anim(sf, "idle_%d" % lvl, ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
 	return sf
 
 func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:
