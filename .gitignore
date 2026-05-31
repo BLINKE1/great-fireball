@@ -5,3 +5,6 @@ __pycache__/
 .env
 *.env
 assets/sprites/player/*_bak_*.png
+
+# Screenshots de teste gerados pelo harness do Godot (regeraveis)
+tools/art_director/iterations/godot_shots/
