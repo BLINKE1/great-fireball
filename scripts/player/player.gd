@@ -11,7 +11,7 @@ const GRAVITY = 980.0
 # e sao gerados por tools/art_director/soph_dream.py --apply-game.
 const USE_HD_SOPH := true
 const HD_SCALE := 0.34            # frames de 192px de altura → ~65px na tela
-const HD_OFFSET := Vector2(0, 0)  # ajuste fino de alinhamento com o hitbox
+const HD_OFFSET := Vector2(0, 1)  # +1px: encaixa os pes no chao (medido no test room)
 
 const MAGIC_MISSILE_COST  = 15.0
 const MAGIC_MISSILE_CD    = 0.18
