@@ -685,6 +685,9 @@ func _update_anim() -> void:
 func _build_soph_frames() -> SpriteFrames:
 	if USE_HD_SOPH:
 		return _build_soph_frames_hd()
+	return _build_soph_frames_pixel()
+
+func _build_soph_frames_pixel() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	# idle: 2 frames, 4 fps (slow breathe)
 	_add_anim(sf, "idle",  ["soph_idle_0", "soph_idle_1"], 4.0,  true)
