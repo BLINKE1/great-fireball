@@ -28,15 +28,18 @@ echo "[session-start] preparando ambiente de teste do jogo..."
 need_pkgs=()
 command -v xvfb-run >/dev/null 2>&1 || need_pkgs+=(xvfb)
 command -v unzip     >/dev/null 2>&1 || need_pkgs+=(unzip)
-# libs graficas que o Godot (GL compatibility) precisa mesmo headless
-ldconfig -p 2>/dev/null | grep -q "libGL.so.1"  || need_pkgs+=(libgl1)
-ldconfig -p 2>/dev/null | grep -q "libEGL.so.1" || need_pkgs+=(libegl1)
+# libGL basta p/ rodar headless com o driver opengl3 (GL compatibility).
+ldconfig -p 2>/dev/null | grep -q "libGL.so.1" || need_pkgs+=(libgl1)
 if [ "${#need_pkgs[@]}" -gt 0 ]; then
   echo "[session-start] instalando libs: ${need_pkgs[*]}"
   if command -v apt-get >/dev/null 2>&1; then
-    (apt-get update -qq && apt-get install -y -qq "${need_pkgs[@]}") \
+    # update tolerante: PPAs de terceiro quebrados nao devem abortar o setup
+    apt-get update -qq 2>/dev/null || echo "[session-start] aviso: apt-get update parcial (PPA de terceiro?)"
+    apt-get install -y -qq "${need_pkgs[@]}" \
       || echo "[session-start] aviso: apt falhou em ${need_pkgs[*]} (segue mesmo assim)"
   fi
+else
+  echo "[session-start] libs de sistema ja presentes (xvfb/unzip/libGL)."
 fi
 
 # ── 2) Godot 4.6.3 (baixa so se ainda nao existe) ───────────────────────────
