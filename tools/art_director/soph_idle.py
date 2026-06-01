@@ -70,9 +70,7 @@ def _draw_base_idle(im, br=0.0):
     d.polygon([(248,330+sx),(296,330+sx),(300,362),(244,362)], fill=CAPE)   # gola (deslocada p/ dir)
     d.line([(248,346+sx),(298,344+sx)], fill=CAPE_H, width=3)
 
-    # ───── BRAÇO PERTO (direito) trazendo a mão ao cajado ──────────────────────
-    d.polygon([(300,362+sx),(332,376),(358,462),(332,490),(300,424)], fill=CAPE)
-    d.line([(318,384),(348,470)], fill=CAPE_H, width=3)
+    # (cajado escondido na robe fechada — só aparece após movimento; sem braço à mostra)
 
     # ───── BROCHE dourado no colo ──────────────────────────────────────────────
     d.ellipse((252,396+sx,284,430+sx), fill=ORB, outline=GOLD, width=4)
@@ -82,19 +80,27 @@ def _draw_base_idle(im, br=0.0):
     d.polygon([(250,324+hy),(290,324+hy),(292,348+hy),(248,348+hy)], fill=SKIN)
     d.line([(250,342+hy),(292,342+hy)], fill=SKIN_S, width=3)
     d.ellipse((184,134+hy,348,334+hy), fill=SKIN)                 # cabeça (centro x266)
-    d.ellipse((334,230+hy,354,262+hy), fill=SKIN)                # orelha perto (direita)
-    d.ellipse((340,238+hy,350,254+hy), fill=SKIN_S)
+    d.polygon([(344,236+hy),(360,254+hy),(350,266+hy),(342,260+hy)], fill=SKIN)  # nariz (bump no perfil)
+    d.ellipse((216,232+hy,240,268+hy), fill=SKIN)                # orelha no lado de TRÁS (esquerda)
+    d.pieslice((220,240+hy,238,264+hy), 20, 300, fill=SKIN_S)
 
     # ───── SIDEBURNS (emolduram o rosto à ESQUERDA = lado de longe → firma o 3/4)
     d.polygon([(196,168+hy),(190,300+hy),(212,332+hy),(234,302+hy),(230,206+hy),(216,162+hy)], fill=HAIR)
     d.polygon([(200,200+hy),(198,294+hy),(214,316+hy),(226,296+hy),(222,222+hy)], fill=HAIR_D)
-    d.polygon([(340,184+hy),(346,278+hy),(332,300+hy),(326,212+hy)], fill=HAIR)   # costeleta perto (fina)
+    # (sem costeleta à direita — ali fica o nariz/perfil)
     # ───── FRANJA (curtain 3/4, partição deslocada p/ direita ~x292) ───────────
     d.polygon([(188,152+hy),(200,256+hy),(262,214+hy),(292,150+hy),(220,118+hy)], fill=HAIR)
     d.polygon([(350,176+hy),(342,260+hy),(312,216+hy),(300,150+hy),(338,122+hy)], fill=HAIR)
     d.polygon([(220,118+hy),(300,118+hy),(292,182+hy),(262,150+hy),(238,172+hy)], fill=HAIR)
     d.polygon([(196,150+hy),(292,156+hy),(290,180+hy),(266,206+hy),(224,206+hy),(198,188+hy)], fill=HAIR)
     d.polygon([(350,158+hy),(292,156+hy),(290,176+hy),(306,196+hy),(332,192+hy),(348,178+hy)], fill=HAIR)
+    # bangs caindo na testa (pontas até ~sobrancelhas) — tira o vão de pele
+    d.polygon([(230,150+hy),(244,204+hy),(260,152+hy)], fill=HAIR)
+    d.polygon([(258,152+hy),(272,208+hy),(288,150+hy)], fill=HAIR)
+    d.polygon([(288,150+hy),(300,204+hy),(316,152+hy)], fill=HAIR)
+    d.polygon([(314,154+hy),(326,196+hy),(340,158+hy)], fill=HAIR)
+    d.line([(252,158+hy),(258,200+hy)], fill=HAIR_D, width=2)
+    d.line([(294,158+hy),(298,200+hy)], fill=HAIR_D, width=2)
     # textura da franja
     d.line([(232,158+hy),(224,202+hy)], fill=HAIR_D, width=3)
     d.line([(289,162+hy),(285,200+hy)], fill=HAIR_D, width=3)
@@ -170,9 +176,8 @@ def _shaded_idle(br=0.0):
                            Image.new("RGBA", (WK, HK_), (0, 0, 0, 0)), edge)
     im = Image.alpha_composite(outl, im)
 
-    # rosto + cajado/orbe (nítidos por cima)
+    # rosto nítido por cima (cajado escondido na robe → ausente no idle)
     im = _draw_face_idle(im, br)
-    im = _draw_staff_idle(im, br)
     return im
 
 
@@ -182,42 +187,42 @@ def _shaded_idle(br=0.0):
 def _draw_face_idle(im, br=0.0):
     hy = -round(br)
     d = ImageDraw.Draw(im)
-    # olhos: perto (direito) maior; longe (esquerdo) menor/comprimido
+    # 3/4 à direita: olho PERTO (tela-esquerda) GRANDE; olho LONGE (tela-direita)
+    # PEQUENO e comprimido junto ao nariz — a fração do rosto sumindo no perfil.
     def eye(x0, x1, top, bot, near):
         cx = (x0 + x1) // 2
         d.ellipse((x0, top, x1, bot), fill=(255, 255, 255))
-        rr = (x1 - x0) // 2 - 2
-        d.ellipse((cx-rr, top+10, cx+rr, bot), fill=HAIR_D)
-        d.ellipse((cx-rr+2, top+16, cx+rr-2, bot), fill=HAIR)
-        d.ellipse((cx-rr+2, top+26, cx+rr-2, bot), fill=(120, 185, 255))
-        pr = max(4, rr-9)
-        d.ellipse((cx-pr, top+20, cx+pr, bot-8), fill=(20, 14, 40))            # pupila
-        d.ellipse((cx-rr+1, top+4, cx-rr+pr+2, top+20), fill=(255, 255, 255))  # brilho
-        d.arc((x0, top-6, x1, bot+8), 192, 348, fill=OUT, width=5 if near else 4)
-    eye(250, 284, 214+hy, 260+hy, near=False)    # longe (menor)
-    eye(300, 352, 208+hy, 268+hy, near=True)     # perto (maior)
-    # sobrancelhas
-    d.line([(252, 204+hy), (286, 200+hy)], fill=(46, 70, 150), width=4)
-    d.line([(302, 200+hy), (348, 204+hy)], fill=(46, 70, 150), width=5)
-    # blush (bochecha perto maior)
+        ir = (x1 - x0) // 2 - 5                  # íris menor → sobra branco
+        d.ellipse((cx-ir, top+11, cx+ir, bot-2), fill=HAIR_D)
+        d.ellipse((cx-ir+2, top+15, cx+ir-2, bot-2), fill=HAIR)
+        d.ellipse((cx-ir+2, top+22, cx+ir-2, bot-2), fill=(120, 185, 255))
+        pr = max(4, ir-7)
+        d.ellipse((cx-pr, top+18, cx+pr, bot-8), fill=(20, 14, 40))           # pupila
+        d.ellipse((cx-ir+1, top+6, cx-ir+pr, top+20), fill=(255, 255, 255))   # brilho
+        d.arc((x0, top-6, x1, bot+8), 192, 348, fill=OUT, width=5 if near else 3)
+    eye(238, 296, 206+hy, 272+hy, near=True)     # PERTO (esquerda) — grande
+    eye(312, 344, 218+hy, 256+hy, near=False)    # LONGE (direita) — pequeno
+    # sobrancelhas (perto: longa/curva; longe: curtinha)
+    d.line([(238, 200+hy), (292, 196+hy)], fill=(46, 70, 150), width=6)
+    d.line([(314, 200+hy), (344, 203+hy)], fill=(46, 70, 150), width=4)
+    # blush (bochecha perto maior; longe quase nada)
     im = _overlay(im, lambda o: (
-        o.ellipse((244, 250+hy, 280, 284+hy), fill=(242, 148, 150, 100)),
-        o.ellipse((312, 252+hy, 354, 288+hy), fill=(242, 148, 150, 120))))
+        o.ellipse((236, 252+hy, 284, 290+hy), fill=(242, 148, 150, 115)),
+        o.ellipse((314, 256+hy, 346, 286+hy), fill=(242, 148, 150, 80))))
     d = ImageDraw.Draw(im)
-    # nariz (no lado PERTO) + boca doce deslocada p/ direita
-    d.line([(342, 244+hy), (350, 262+hy), (338, 266+hy)], fill=SKIN_S, width=3)
-    d.arc((300, 280+hy, 348, 312+hy), 18, 150, fill=(176, 94, 94), width=5)
-    # ÓCULOS (lente perto maior; longe menor/angulada) — vidro bem transparente
+    # sombra sob o nariz (já há o bump de pele no perfil) + boca doce logo abaixo
+    d.line([(350, 252+hy), (358, 262+hy), (349, 266+hy)], fill=SKIN_S, width=3)
+    d.arc((300, 276+hy, 342, 306+hy), 20, 150, fill=(176, 94, 94), width=5)
+    # ÓCULOS: lente perto grande/redonda; longe pequena/angulada
     im = _overlay(im, lambda o: (
-        o.ellipse((246, 206+hy, 288, 274+hy), fill=(210, 235, 252, 30)),
-        o.ellipse((298, 202+hy, 356, 278+hy), fill=(210, 235, 252, 34)),
-        o.arc((250, 210+hy, 284, 270+hy), 205, 245, fill=(255, 255, 255, 110), width=4),
-        o.arc((302, 206+hy, 352, 274+hy), 205, 245, fill=(255, 255, 255, 120), width=4)))
+        o.ellipse((232, 204+hy, 300, 276+hy), fill=(210, 235, 252, 30)),
+        o.ellipse((308, 212+hy, 348, 268+hy), fill=(210, 235, 252, 34)),
+        o.arc((238, 210+hy, 294, 270+hy), 205, 245, fill=(255, 255, 255, 120), width=4)))
     d = ImageDraw.Draw(im)
-    d.ellipse((246, 206+hy, 288, 274+hy), outline=GLASS, width=4)
-    d.ellipse((298, 202+hy, 356, 278+hy), outline=GLASS, width=5)
-    d.line([(288, 234+hy), (298, 232+hy)], fill=GLASS, width=4)   # ponte
-    d.line([(356, 232+hy), (372, 224+hy)], fill=GLASS, width=4)   # haste (lado perto → cue 3/4)
+    d.ellipse((232, 204+hy, 300, 276+hy), outline=GLASS, width=5)   # lente perto (grande)
+    d.ellipse((308, 212+hy, 348, 268+hy), outline=GLASS, width=4)   # lente longe (pequena)
+    d.line([(300, 240+hy), (308, 240+hy)], fill=GLASS, width=4)     # ponte
+    d.line([(232, 232+hy), (214, 226+hy)], fill=GLASS, width=4)     # haste → orelha (esquerda)
     return im
 
 
@@ -291,9 +296,6 @@ def render_beauty():
     grad = grad.filter(ImageFilter.GaussianBlur(120))
     amb = Image.composite(Image.new("RGBA", (WK, HK_), (50, 70, 130, 255)), bg, grad)
     bg = Image.alpha_composite(bg, amb)
-    og = Image.new("RGBA", (WK, HK_), (0, 0, 0, 0))
-    ImageDraw.Draw(og).ellipse((300, 110, 470, 280), fill=(60, 130, 230, 255))
-    bg = ImageChops.add(bg, og.filter(ImageFilter.GaussianBlur(70)))
     vig = Image.new("L", (WK, HK_), 0)
     ImageDraw.Draw(vig).ellipse((-60, -60, WK+60, HK_+60), fill=255)
     vig = vig.filter(ImageFilter.GaussianBlur(90))
