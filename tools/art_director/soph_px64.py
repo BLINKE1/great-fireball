@@ -164,26 +164,29 @@ def draw_head(img, b=0):
     # Cabeça ARREDONDADA com 3/4 SUTIL (sem bicos). As pistas de profundidade são
     # suaves: narizinho de 1px no perfil direito, bochecha perto iluminada,
     # plano longe levemente sombreado, queixo macio levemente à direita.
+    # ASSIMÉTRICO de verdade: lado PERTO (esquerda) cheio até x21; lado LONGE
+    # (direita) RECUA logo após o olho longe + nariz (pouca bochecha além dele).
     spec = [
-        (38, 25, 44), (39, 23, 45), (40, 22, 46), (41, 22, 46), (42, 21, 47),
-        (43, 21, 47), (44, 21, 47), (45, 21, 47), (46, 21, 48), (47, 21, 47),
-        (48, 22, 47), (49, 22, 46), (50, 23, 46), (51, 24, 45), (52, 26, 45),
-        (53, 28, 44), (54, 30, 43), (55, 33, 42), (56, 35, 41), (57, 37, 40),
+        (38, 25, 43), (39, 23, 44), (40, 22, 44), (41, 21, 45), (42, 21, 45),
+        (43, 21, 45), (44, 21, 44), (45, 21, 44), (46, 21, 45), (47, 21, 45),
+        (48, 21, 43), (49, 22, 42), (50, 22, 41), (51, 23, 40), (52, 25, 40),
+        (53, 27, 39), (54, 29, 38), (55, 31, 38), (56, 33, 37), (57, 35, 37),
     ]
     for y, xl, xr in spec:
         hline(img, xl, xr, y + hy, SKIN)
-    # narizinho (1px) + sombra discreta da ponte/narina
-    px(img, 45, 47 + hy, SKIN_S); px(img, 44, 46 + hy, SKIN_S)      # ponte (sombra)
-    px(img, 45, 48 + hy, SKIN_S)                                    # narina
-    # plano LONGE (direita) levemente sombreado
-    for y in range(43, 51): px(img, 46, y + hy, SKIN_S)
-    # bochecha PERTO (esquerda) iluminada
+    # NARIZ (ponte+ponta) na borda do perfil direito (quebra o contorno)
+    px(img, 40, 45 + hy, SKIN_H); px(img, 41, 46 + hy, SKIN_H)      # luz na ponte (lado perto)
+    px(img, 43, 46 + hy, SKIN_S); px(img, 44, 47 + hy, SKIN_S)      # sombra da ponte (longe)
+    px(img, 43, 48 + hy, SKIN_S)                                    # narina
+    # plano LONGE (direita) sombreado na borda que recua
+    for y in range(44, 49): px(img, 43, y + hy, SKIN_S)
+    # bochecha PERTO (esquerda, cheia) iluminada
     for y in range(43, 50): px(img, 22, y + hy, SKIN_H)
-    hline(img, 31, 40, 56 + hy, SKIN_S)                             # sombra sob o queixo
+    # sombra SOB o queixo (separa do pescoço)
+    hline(img, 31, 38, 57 + hy, SKIN_S); hline(img, 33, 37, 58 + hy, SKIN_S)
     # ORELHA pequena e ARREDONDADA no lado de trás (esquerda) — sem bico
-    px(img, 20, 45 + hy, SKIN); px(img, 21, 45 + hy, SKIN)
-    px(img, 20, 46 + hy, SKIN_S); px(img, 21, 47 + hy, SKIN)
-    px(img, 19, 45 + hy, OUT); px(img, 19, 46 + hy, OUT); px(img, 20, 47 + hy, OUT)
+    px(img, 20, 46 + hy, SKIN); px(img, 21, 46 + hy, SKIN); px(img, 20, 47 + hy, SKIN_S)
+    px(img, 19, 46 + hy, OUT); px(img, 19, 47 + hy, OUT); px(img, 20, 48 + hy, OUT)
     # contorno do rosto
     for y, xl, xr in spec:
         px(img, xl - 1, y + hy, OUT); px(img, xr + 1, y + hy, OUT)
@@ -191,47 +194,50 @@ def draw_head(img, b=0):
 
 def draw_face(img, b=0):
     hy = -b
-    # OLHOS verdes — perto (esq) maior; longe (dir) levemente menor/recuado
-    rect(img, 27, 45, 32, 48, EYEW)
-    rect(img, 28, 46, 31, 48, IRIS_D)
-    hline(img, 28, 31, 47, IRIS); hline(img, 28, 31, 48, IRIS_L)
-    px(img, 29, 47, PUP); px(img, 30, 47, PUP); px(img, 29, 48, PUP); px(img, 30, 48, PUP)
-    px(img, 28, 46, EYEW)                                           # catchlight
-    rect(img, 37, 45, 41, 48, EYEW)
-    rect(img, 38, 46, 41, 48, IRIS_D)
-    hline(img, 38, 41, 47, IRIS); px(img, 41, 47, IRIS_L)
-    px(img, 39, 47, PUP); px(img, 40, 47, PUP); px(img, 39, 48, PUP)
-    px(img, 38, 46, EYEW)
-    # ÓCULOS aro fino dourado (perto maior, longe menor)
-    rows(img, [(44, 27, 32)], GLASS); rows(img, [(49, 27, 32)], GLASS)
-    vline(img, 26, 45, 48, GLASS); vline(img, 33, 45, 48, GLASS)
-    rows(img, [(44, 37, 41)], GLASS); rows(img, [(49, 37, 41)], GLASS)
-    vline(img, 36, 45, 48, GLASS); vline(img, 42, 45, 48, GLASS)
-    px(img, 34, 46, GLASS); px(img, 35, 46, GLASS)                  # ponte
-    px(img, 25, 46, GLASS); px(img, 24, 45, GLASS)                  # haste → orelha
-    # LÁBIOS berry (centro-frente, levemente à direita)
-    hline(img, 36, 42, 53, BERRY_D); hline(img, 37, 41, 54, BERRY)
-    px(img, 38, 54, BERRY_H); px(img, 39, 54, BERRY_H)
+    # OLHOS verdes — afastados (Gemini). Perto (esq) MAIOR; longe (dir) menor,
+    # colado na borda do perfil.
+    rect(img, 27, 46, 31, 48, EYEW)
+    hline(img, 27, 30, 47, IRIS); hline(img, 27, 30, 48, IRIS_L)
+    px(img, 28, 47, PUP); px(img, 29, 47, PUP)
+    px(img, 27, 46, EYEW)                                           # catchlight
+    rect(img, 37, 46, 40, 48, EYEW)
+    hline(img, 37, 39, 47, IRIS); px(img, 40, 47, IRIS_L)
+    px(img, 38, 47, PUP); px(img, 39, 47, PUP)
+    px(img, 37, 46, EYEW)
+    # ÓCULOS redondos de aro fino (cantos arredondados, não quadrados)
+    # lente perto (maior)
+    hline(img, 28, 30, 45, GLASS); hline(img, 28, 30, 49, GLASS)
+    px(img, 27, 46, GLASS); px(img, 26, 47, GLASS); px(img, 27, 48, GLASS)
+    px(img, 31, 46, GLASS); px(img, 32, 47, GLASS); px(img, 31, 48, GLASS)
+    # lente longe (menor)
+    hline(img, 37, 39, 45, GLASS); hline(img, 37, 39, 49, GLASS)
+    px(img, 36, 47, GLASS); px(img, 40, 46, GLASS); px(img, 41, 47, GLASS); px(img, 40, 48, GLASS)
+    px(img, 33, 46, GLASS); px(img, 34, 46, GLASS); px(img, 35, 46, GLASS)   # ponte
+    px(img, 25, 47, GLASS); px(img, 24, 47, GLASS)                  # haste → orelha
+    # LÁBIOS berry com CURVA p/ a direita (pista da virada)
+    px(img, 35, 53, BERRY_D); px(img, 36, 53, BERRY_D); px(img, 37, 53, BERRY_D)
+    px(img, 38, 54, BERRY_D)
+    px(img, 36, 54, BERRY); px(img, 37, 54, BERRY); px(img, 38, 55, BERRY_H)
     # blush (perto maior)
-    px(img, 28, 50, BLUSH); px(img, 29, 50, BLUSH); px(img, 40, 50, BLUSH)
+    px(img, 27, 51, BLUSH); px(img, 28, 51, BLUSH); px(img, 39, 50, BLUSH)
 
 
 # ── Franja reta (blunt bangs) — hugando o rosto, sem bicos ───────────────────
 def draw_bangs(img, b=0):
     hy = -b
-    # franja reta cobrindo a testa, base ~y43
+    # franja reta cobrindo a testa, base ~y42 (deixa 1px de TESTA antes dos óculos)
     rows(img, [
-        (38, 24, 45), (39, 23, 46), (40, 22, 46), (41, 22, 47), (42, 22, 47), (43, 23, 46),
+        (38, 24, 43), (39, 23, 44), (40, 22, 44), (41, 22, 44), (42, 23, 43),
     ], HAIR)
-    for a in (24, 30, 37, 43):                                      # base com leves pontas
-        px(img, a, 43 + hy, HAIR); px(img, a + 1, 43 + hy, HAIR)
-    vline(img, 33, 38, 42, HAIR_D); vline(img, 28, 39, 42, HAIR_D)  # mechas discretas
+    for a in (24, 30, 36, 42):                                      # base reta com leves pontas
+        px(img, a, 42 + hy, HAIR); px(img, a + 1, 42 + hy, HAIR)
+    vline(img, 33, 38, 41, HAIR_D); vline(img, 28, 39, 41, HAIR_D)  # mechas discretas
     rows(img, [(38, 26, 31), (39, 24, 28)], HAIR_H)                 # brilho topo
     # cabelo lateral curto hugando o lado PERTO (esquerda), ACIMA da orelha
     for y in range(40, 45):
         px(img, 21, y + hy, HAIR); px(img, 20, y + hy, HAIR_D); px(img, 19, y + hy, OUT)
-    # contorno superior da franja
-    rows(img, [(37, 24, 45)], OUT)
+    # contorno superior da franja (linha reta — blunt)
+    rows(img, [(37, 24, 43)], OUT)
 
 
 # ── Chapéu de mago navy ─────────────────────────────────────────────────────
