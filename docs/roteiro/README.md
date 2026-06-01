@@ -36,6 +36,12 @@ Assim as duas trilhas andam juntas e nunca se misturam no que vai pro GitHub.
 - `🌱 ESBOÇO` — ideia/batidas soltas, a desenvolver
 - `💭 SEMENTE` — só um conceito anotado pra não esquecer
 
+## Mundo & lore profunda
+
+- [`lore_profunda.md`](lore_profunda.md) — As Duas Coroas. A camada profunda
+  (Rei Lucius, o tirano de rosto bondoso; o Outro Rei; Gui Fenrir anti-herói;
+  o tema "homens bons a serviço do mal").
+
 ## Índice de capítulos
 
 | Cap. | Título | Arquivo | Estado |
