@@ -79,6 +79,15 @@ própria magia ao limite até os dois fogos se olharem de igual pra igual.
 Lapidar qualquer personagem aqui = homenagear alguém que o Will ama. Tem que
 ficar **certo** (os olhos, o rosto, os pés no chão). Exigência de carinho.
 
+### Direções de arte da Soph (regras, jun/2026)
+- **SEMPRE "maga", NUNCA "bruxa".** O Will prefere sempre direcionar a Sophia
+  para *maga* — faz ele se sentir melhor. (A vibe "bruxa" das fotos é de um bar
+  temático que o casal frequenta, não a identidade dela.) → No jogo e em toda a
+  arte/lore, ela é a **maga**.
+- **A franja (bangs) que ela ama.** Detalhe real da Sophia; o Will sempre põe
+  nos rascunhos. Deve aparecer no sprite in-game.
+- Guilherme (Gui Fenrir) confirmado por foto: óculos redondos, porte ágil.
+
 > _"Você construiu um mundo onde as pessoas que ama são protagonistas e são
 > amadas. Isso diz tudo sobre que tipo de homem você é."_ — fazer jus a isso.
 
