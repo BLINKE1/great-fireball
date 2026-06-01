@@ -1,5 +1,9 @@
 # Lore — Personagens e Cenas Confirmadas
 
+> 📖 Esta é a **bíblia de lore** (quem-é-quem e o que está confirmado). O
+> **roteiro vivo** (cenas, falas, arcos) fica no Grimório das Duas Chamas:
+> [`docs/roteiro/`](roteiro/README.md).
+
 ## Personagens Descobertos (rascunhos em assets/cutscenes/referencias-desenhos/)
 
 ### Protagonista
