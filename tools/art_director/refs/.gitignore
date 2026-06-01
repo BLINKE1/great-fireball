@@ -1,0 +1,5 @@
+# refs locais (paint-overs/designs) — nao versionar; ficam so p/ o loop do critique
+*.jpeg
+*.jpg
+*.png
+soph_designs/

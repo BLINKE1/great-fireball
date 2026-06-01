@@ -4,7 +4,15 @@ extends Node
 # on all platforms/floors, atmospheric modulate, and point lights.
 
 func _ready() -> void:
+	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
+	# Sem isso, add_child() durante o _ready do pai falha com "Parent node is
+	# busy setting up children" — e luzes/partículas não entravam na cena.
+	_build.call_deferred()
+
+func _build() -> void:
 	var level := get_parent()
+	if level == null:
+		return
 	_add_solid_background(level)
 	_add_parallax(level)
 	_add_canvas_modulate(level)
