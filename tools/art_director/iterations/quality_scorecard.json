@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "asset": "soph_hd_idle_0.png",
+      "ts": "2026-05-31T16:29:52",
+      "metrics": {
+        "size": "100x192",
+        "palette_colors": 63,
+        "silhouette_legibility": 1.0,
+        "edge_quality": 0.44,
+        "contrast": 0.486,
+        "objective_score": 6.6
+      },
+      "visual_score": null,
+      "notes": ""
+    },
+    {
+      "asset": "soph_hd_walk_2.png",
+      "ts": "2026-05-31T16:29:52",
+      "metrics": {
+        "size": "100x192",
+        "palette_colors": 62,
+        "silhouette_legibility": 1.0,
+        "edge_quality": 0.332,
+        "contrast": 0.497,
+        "objective_score": 6.3
+      },
+      "visual_score": null,
+      "notes": ""
+    }
+  ]
+}

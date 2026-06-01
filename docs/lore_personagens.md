@@ -1,5 +1,9 @@
 # Lore — Personagens e Cenas Confirmadas
 
+> 📖 Esta é a **bíblia de lore** (quem-é-quem e o que está confirmado). O
+> **roteiro vivo** (cenas, falas, arcos) fica no Grimório das Duas Chamas:
+> [`docs/roteiro/`](roteiro/README.md).
+
 ## Personagens Descobertos (rascunhos em assets/cutscenes/referencias-desenhos/)
 
 ### Protagonista
@@ -14,7 +18,7 @@
   Usa adagas. Apaixonado(?) por Di, a elfa.
 
 ### Aliados
-- **Gui Fenhyr, o cavaleiro-lobo** — cavaleiro que pode se transformar em lobo bípede.
+- **Gui Fenrir, o cavaleiro-lobo** — cavaleiro que pode se transformar em lobo bípede.
   "Forte e ágil, nutre sentimentos pela maga. Irá lutar por seu amor."
   Aparece nos esboços de spoiler como criatura lupina bípede.
 - **Juju, a fada** — "foi ativada pelo cavaleiro gigante [Will]."
@@ -79,7 +83,7 @@ Variante original descartada (meme do Twitter): "Não importa a pergunta, bola d
 Durante exploração dos assets em `assets/cutscenes/referencias-desenhos/`, foram encontrados:
 - Esboços de personagens com anotações manuscritas de lore
 - Pasta "Spoilers de cenas do jogo" com: Soph perto de criatura grande, Soph conjurando
-  feitiços em múltiplas direções, boss urso, criatura lupina bípede (provável Gui Fenhyr transformado)
+  feitiços em múltiplas direções, boss urso, criatura lupina bípede (provável Gui Fenrir transformado)
 
 O PRD completo do projeto NÃO foi localizado em arquivos de texto no repositório.
 Estas notas consolidam o que foi inferido/confirmado pelo usuário durante o desenvolvimento.
