@@ -150,6 +150,7 @@ def _shaded_idle(br=0.0):
     hl = Image.new("L", (WK, HK_), 0)
     hd = ImageDraw.Draw(hl)
     hd.ellipse((230, 110, 460, 520), fill=120)
+    hd.ellipse((252, 470, 430, 884), fill=72)        # brilho na frente da robe → volume cilíndrico
     hl = hl.filter(ImageFilter.GaussianBlur(46))
     light = Image.composite(Image.new("RGBA", (WK, HK_), (255, 250, 235, 90)),
                             Image.new("RGBA", (WK, HK_), (0, 0, 0, 0)), hl)
