@@ -56,8 +56,8 @@ FEATURE_CHECKS = [
     ("Squash & stretch",
      r"_squash|squash|stretch",
      "deformar no pulo/pouso dá vida e elasticidade ao corpo"),
-    ("Apex hang (flutuar levin no topo do pulo)",
-     r"apex_hang|hang_time|apex.*gravity|float.*apex",
+    ("Apex hang (flutuar leve no topo do pulo)",
+     r"apex_hang|hang_time|APEX_GRAVITY|APEX_THRESHOLD|apex.*gravity|float.*apex",
      "reduzir gravidade no topo do pulo dá controle aéreo — sensação premium"),
 ]
 

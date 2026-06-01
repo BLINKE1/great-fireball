@@ -5,6 +5,15 @@ const SPEED = 200.0
 const JUMP_VELOCITY = -420.0
 const GRAVITY = 980.0
 
+# ── Game feel do pulo (afináveis — medidos pelo tools/feel_bench.py) ────────
+# Pulo variável: soltar o botão cedo corta a subida → controle de altura.
+const JUMP_CUT_MULT      = 0.45   # ao soltar subindo, velocity.y *= isto
+# Gravidade de queda assimétrica: cai mais pesado que sobe → pulo "gostoso".
+const FALL_GRAVITY_MULT  = 1.45   # gravidade extra quando descendo
+# Apex hang: gravidade reduzida no topo do arco → sensação premium de controle.
+const APEX_THRESHOLD     = 55.0   # |velocity.y| abaixo disto = "no apex"
+const APEX_GRAVITY_MULT  = 0.55   # gravidade reduzida perto do topo
+
 # ── Arte HD da Soph (conjunto "dream": alta resolucao, suave) ──────────────
 # Experimental: destoa do pixel-art do resto do jogo. Desligue para voltar ao
 # pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
@@ -273,8 +282,16 @@ func _check_landing() -> void:
 	was_on_floor = is_on_floor()
 
 func _apply_gravity(delta: float) -> void:
-	if not is_on_floor():
-		velocity.y += GRAVITY * delta
+	if is_on_floor():
+		return
+	var g := GRAVITY
+	if velocity.y > 0.0:
+		# Descendo: queda mais pesada que a subida (pulo menos "flutuante").
+		g *= FALL_GRAVITY_MULT
+	if absf(velocity.y) < APEX_THRESHOLD:
+		# Perto do topo do arco: segura um instante → controle aéreo premium.
+		g *= APEX_GRAVITY_MULT
+	velocity.y += g * delta
 
 func _max_air_jumps() -> int:
 	return 1 if SkillManager.has("double_jump") else 0
@@ -385,6 +402,10 @@ func _handle_jump() -> void:
 		jumps_remaining = _max_air_jumps()
 		_squash = Vector2(0.78, 1.24)
 		AudioManager.play("jump")
+
+	# Pulo variável: soltou o botão ainda subindo → corta a subida (pulo baixo).
+	if Input.is_action_just_released("ui_accept") and velocity.y < 0.0:
+		velocity.y *= JUMP_CUT_MULT
 
 func _handle_movement() -> void:
 	var direction := Input.get_axis("ui_left", "ui_right")
