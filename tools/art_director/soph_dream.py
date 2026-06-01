@@ -92,6 +92,16 @@ def _draw_base(im, pose=None):
     d.polygon([(342,160),(330,270),(286,210),(268,120),(330,92)], fill=HAIR)
     d.polygon([(196,104),(286,104),(330,170),(252,132),(212,150)], fill=HAIR)
 
+    # ── Franja "curtain" (estilo real da Sophia): cai sobre a testa, parte ao
+    #    meio, para logo acima das sobrancelhas — emoldura o rosto ──────────────
+    d.polygon([(150,130),(240,138),(240,154),(228,180),(200,188),(172,184),(150,176)], fill=HAIR)
+    d.polygon([(330,132),(240,138),(240,154),(252,180),(280,188),(308,184),(330,174)], fill=HAIR)
+    # mechas/separação da franja (textura)
+    d.line([(192,138),(202,186)], fill=HAIR_D, width=4)            # fio esq
+    d.line([(237,152),(231,184)], fill=HAIR_D, width=3)            # junto à parte (esq)
+    d.line([(243,152),(249,184)], fill=HAIR_D, width=3)            # junto à parte (dir)
+    d.line([(288,140),(280,186)], fill=HAIR_D, width=4)            # fio dir
+
     # ════ BRILHO DO CABELO (shine de anime + mechas glossy) ══════════════════
     d.arc((176,112,300,184), 200, 340, fill=HAIR_H, width=7)        # shine no topo
     d.line([(150,168),(118,330),(126,520)], fill=HAIR_H, width=6)   # gloss cauda esq
