@@ -149,7 +149,7 @@ func _die() -> void:
 	GameState.enemy_died()
 	AudioManager.play("enemy_die")
 	VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(0.32, 0.72, 0.18), 12, 72.0, 40.0)
-	if randf() < 0.35:
+	if randf() < 0.20:
 		var orb = ManaOrb.instantiate()
 		orb.position = global_position + Vector2(randf_range(-14, 14), -8)
 		get_parent().add_child(orb)

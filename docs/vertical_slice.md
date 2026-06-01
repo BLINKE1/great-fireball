@@ -41,12 +41,16 @@ O game feel de *movimento* está 10/10; falta levar o mesmo nível ao *combate*.
 - **Dificuldade "deliciosa":** o *flow channel* — desafio que recompensa o
   aprendizado. Fácil demais = sem interesse; impossível = desistência.
 
-### C. Economia de mana  🔵 (pedido específico do Will)
-- **Problema atual:** orbe cai de *todo* goblin + auto-atração + regen passivo
-  → mana nunca acaba (sem tensão de recurso).
-- **Direção:** tornar a mana um **recurso com peso** e uma decisão. _(Modelo a
-  decidir junto — ver pergunta aberta.)_
-- Liga com a **arma secundária**: sem mana → parte pro cajado.
+### C. Economia de mana  🔵 ✅ IMPLEMENTADA (v1)
+- **Problema:** orbe caía de *todo* goblin + auto-atração + regen passivo → mana
+  nunca acabava.
+- **Modelo escolhido: HÍBRIDO** (decisão do Will), com a **agressão como fonte
+  principal** pra manter identidade:
+  - Golpe de cajado que acerta devolve **+12 de mana** (loop cajado↔magia).
+  - Regen passiva **só fora de combate** (`out_of_combat_delay = 2s`, gasto e
+    dano renovam a pausa; `regen_rate = 4/s`).
+  - Orbes mais raros e fracos (goblin 35%→20%; orbe 20→15).
+- Provado em `tools/mana_probe.gd` (coerente). Calibração fina no playtest.
 
 ### D. Kit inicial (habilidades emprestadas)  🧰
 Pro slice, a Soph começa "turbinada" (depois o jogo principal vai **tirar** e

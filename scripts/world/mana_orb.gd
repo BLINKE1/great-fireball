@@ -1,6 +1,6 @@
 extends Area2D
 
-const RESTORE_AMOUNT = 20.0
+const RESTORE_AMOUNT = 15.0
 const ATTRACT_RANGE  = 90.0
 const ATTRACT_SPEED  = 180.0
 
