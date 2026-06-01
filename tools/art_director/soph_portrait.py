@@ -72,14 +72,16 @@ def _draw_back(im):
 
 
 def _draw_body(d):
-    # pescoço + ombros (robe) + gola
-    _poly(d, [(158, 300), (192, 300), (198, 340), (152, 340)], SKIN)
-    d.rectangle((s(0), s(330), s(300), s(360)), fill=ROBE)
-    _poly(d, [(0, 360), (40, 332), (110, 322), (152, 332), (200, 326),
-              (270, 334), (300, 330), (300, 360)], ROBE)
-    _poly(d, [(150, 326), (176, 330), (188, 348), (150, 348)], LINING)   # forro
-    # gola alta
-    _poly(d, [(150, 314), (196, 314), (200, 332), (146, 332)], ROBE)
+    # pescoço (mais curto/largo) + sombra sob o queixo
+    _poly(d, [(160, 296), (192, 296), (196, 330), (156, 330)], SKIN)
+    _poly(d, [(160, 296), (192, 296), (190, 307), (162, 307)], SKIN_S)
+    # gola alta (turtleneck) limpa
+    _poly(d, [(150, 322), (202, 322), (206, 342), (146, 342)], ROBE)
+    _line(d, [(150, 330), (202, 332)], ROBE_H, 2)
+    # ombros (slope limpo) + base
+    _poly(d, [(0, 360), (28, 344), (96, 332), (150, 340), (206, 334),
+              (280, 344), (300, 348), (300, 360)], ROBE)
+    d.rectangle((s(0), s(348), s(300), s(360)), fill=ROBE)
 
 
 def _draw_face_base(d):
@@ -94,9 +96,22 @@ def _draw_hair_front(d):
     for x in (108, 126, 144, 162, 180, 196):
         _line(d, [(x, 112), (x - 3, 172)], HAIR_D, 2)
     d.arc((s(94), s(98), s(206), s(176)), 198, 326, fill=HAIR_H, width=s(4))
-    # mecha lateral curta no lado PERTO (esquerda), acima da orelha
-    _poly(d, [(90, 168), (86, 220), (100, 240), (108, 212), (104, 172)], HAIR)
-    _poly(d, [(90, 168), (86, 220), (94, 232), (98, 200)], HAIR_D)
+    # MECHA volumosa ondulada no lado PERTO (esquerda), descendo do chapéu até o
+    # queixo, emoldurando a bochecha (marcação do Will).
+    pts_l, pts_r = [], []
+    for i in range(22):
+        t = i / 21
+        y = 160 + t * 150
+        cx = 100 + 9 * math.sin(t * 3.4 + 0.2) - 5 * t
+        half = 13 * (1 - 0.22 * t)
+        pts_l.append((cx - half, y)); pts_r.append((cx + half, y))
+    _poly(d, pts_l + pts_r[::-1], HAIR)
+    for i in range(22):
+        t = i / 21; y = 160 + t * 150
+        cx = 100 + 9 * math.sin(t * 3.4 + 0.2) - 5 * t
+        half = 13 * (1 - 0.22 * t)
+        d.line([(s(cx - half + 3), s(y)), (s(cx - half + 3), s(y + 7))], fill=HAIR_H, width=s(2))
+        d.line([(s(cx + half - 1), s(y)), (s(cx + half - 1), s(y + 7))], fill=HAIR_D, width=s(2))
 
 
 def _eye(d, cx, cy, rw, rh, near):
@@ -117,7 +132,9 @@ def _draw_features(im):
     _eye(d, 198, 191, 12, 8, near=False)     # LONGE (direita) menor/recuado, junto ao nariz
     _line(d, [(116, 162), (156, 158)], HAIR_D, 4)     # sobrancelha perto
     _line(d, [(186, 167), (212, 171)], HAIR_D, 3)     # sobrancelha longe
-    _line(d, [(214, 214), (210, 232), (220, 236)], SKIN_S, 3)   # nariz (sombra/narina)
+    # NARIZ sutil (sem risco/scar): só a sombra do lado longe + narina discreta
+    _line(d, [(197, 212), (202, 228)], SKIN_S, 2)       # lado longe (sombra suave)
+    _poly(d, [(190, 229), (199, 230), (196, 236), (190, 235)], SKIN_S)  # base/narina
     # lábios berry (centro-frente; menos deslocado p/ direita; leve curva)
     d.line([(s(152), s(272)), (s(170), s(270)), (s(184), s(276))], fill=BERRY_D, width=s(3))
     _poly(d, [(156, 274), (182, 276), (174, 286), (160, 286)], BERRY)
