@@ -36,19 +36,31 @@ Responda em PORTUGUÊS, OBJETIVO e PRIORIZADO:
 Seja conciso. Sem rodeios."""
 
 
+def _from_sprite():
+    frame = S.compose(0)
+    head = frame.crop((8, 28, 56, 60))
+    head = head.resize((head.width * 12, head.height * 12), Image.NEAREST)
+    bg = Image.new("RGBA", head.size, (40, 38, 52, 255))
+    return Image.alpha_composite(bg, head)
+
+
 def main():
+    import sys
     key = load_env("gemini")
     if not key:
         raise SystemExit("Sem GEMINI_API_KEY no .env")
     eng = GeminiEngine(key)
-    frame = S.compose(0)
-    # recorta a cabeça e amplia bastante p/ o Gemini ver os pixels do rosto
-    head = frame.crop((8, 28, 56, 60))
-    head = head.resize((head.width * 12, head.height * 12), Image.NEAREST)
-    bg = Image.new("RGBA", head.size, (40, 38, 52, 255))
-    head = Image.alpha_composite(bg, head)
-    print("== enviando rosto ao Gemini (óculos de entrada) ==\n")
-    print(eng.call(PROMPT, head))
+    # critique.py <caminho-da-imagem>  → avalia QUALQUER imagem (ex.: paint-over
+    # do Will salvo em refs/). Sem argumento → avalia o rosto do sprite atual.
+    if len(sys.argv) > 1:
+        img = Image.open(sys.argv[1]).convert("RGBA")
+        bg = Image.new("RGBA", img.size, (40, 38, 52, 255))
+        img = Image.alpha_composite(bg, img)
+        print(f"== enviando '{sys.argv[1]}' ao Gemini ==\n")
+    else:
+        img = _from_sprite()
+        print("== enviando rosto do sprite ao Gemini (óculos de entrada) ==\n")
+    print(eng.call(PROMPT, img))
 
 
 if __name__ == "__main__":
