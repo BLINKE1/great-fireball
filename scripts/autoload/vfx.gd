@@ -37,7 +37,32 @@ func burst(
 	if is_instance_valid(p):
 		p.queue_free()
 
-# Expanding ring effect — great for impacts and unlocks.
+# Directional impact spark — punchy hit feedback for melee/projectile contact.
+func hit_spark(world_pos: Vector2, parent: Node, dir: float = 1.0,
+		color: Color = Color(1.0, 0.95, 0.62)) -> void:
+	if not is_instance_valid(parent): return
+	var p := CPUParticles2D.new()
+	parent.add_child(p)
+	p.global_position = world_pos
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = 9
+	p.lifetime = 0.26
+	p.local_coords = false
+	p.direction = Vector2(dir, -0.2)   # esguicha no sentido do golpe
+	p.spread = 42.0
+	p.gravity = Vector2(0, 140.0)
+	p.initial_velocity_min = 150.0
+	p.initial_velocity_max = 320.0
+	p.scale_amount_min = 2.5
+	p.scale_amount_max = 5.5
+	p.color = color
+	p.color_ramp = _fade_gradient(color)
+	ring(world_pos, parent, Color(1, 1, 1, 0.85), 20.0, 0.16)  # estalo branco
+	await get_tree().create_timer(0.6).timeout
+	if is_instance_valid(p):
+		p.queue_free()
 func ring(world_pos: Vector2, parent: Node, color: Color, radius: float = 40.0, duration: float = 0.35) -> void:
 	if not is_instance_valid(parent): return
 	var ring_node := _RingNode.new()

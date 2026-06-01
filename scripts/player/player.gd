@@ -34,6 +34,7 @@ const DASH_DURATION       = 0.18
 const DASH_COOLDOWN       = 0.5
 const SWORD_COOLDOWN      = 0.4
 const SWORD_FLASH         = 0.1
+const MELEE_MANA_GAIN     = 12.0   # mana recuperada por golpe de cajado que acerta
 
 # New missile variants
 const MISSILE_SPREAD_COST     = 22.0
@@ -150,7 +151,8 @@ func _ready() -> void:
 	base_modulate = sprite.modulate
 	mana.mana_changed.connect(_on_mana_changed)
 	hp.died.connect(_on_died)
-	mana.regen_rate = 1.5
+	mana.regen_rate = 4.0
+	mana.out_of_combat_delay = 2.0
 
 	var ShieldVisual = load("res://scripts/player/shield_visual.gd")
 	_shield_visual = ShieldVisual.new()
@@ -550,6 +552,11 @@ func _attack_sword() -> void:
 	slash.global_position = global_position + Vector2(facing * 36, -16)
 	get_parent().add_child(slash)
 
+func gain_mana_from_melee() -> void:
+	# Agressão recompensa: acertar com o cajado devolve mana (loop melee↔magia).
+	mana.restore(MELEE_MANA_GAIN)
+	AudioManager.play("orb_pickup", randf_range(1.15, 1.3))
+
 func apply_burn(dps: float, duration: float) -> void:
 	_burn_dps   = maxf(dps, _burn_dps)
 	_burn_timer = maxf(duration, _burn_timer)
@@ -568,6 +575,7 @@ func take_damage(amount: float, source_position: Vector2 = global_position) -> v
 		VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.30, 0.68, 1.0), 8, 55.0, 30.0)
 		return
 	hp.take_damage(amount)
+	mana.bump_combat()   # levar dano mantém a regen passiva pausada (em combate)
 	iframe_timer = IFRAME_DURATION
 	AudioManager.play("hit_player")
 	shake(7.0, 0.28)

@@ -130,26 +130,50 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	dmg.setup(amount)
 	var kdir = sign(global_position.x - from.x) if from != Vector2.ZERO else 1.0
 	if kdir == 0: kdir = 1.0
-	knockback = Vector2(kdir * 300.0, -100.0)
-	AudioManager.play("hit")
-	GameState.start_hitstop()
+	var killing := hp <= 0.0
+	knockback = Vector2(kdir * (340.0 if killing else 300.0), -100.0)
+	AudioManager.play("hit", randf_range(0.92, 1.12))
+
+	# ── Juice: freeze escalado ao golpe (morte congela mais), faísca, shake ──
+	var freeze := 0.11 if killing else clampf(0.045 + amount * 0.0022, 0.045, 0.10)
+	GameState.start_hitstop(freeze)
+	var spark_pos := global_position + Vector2(-kdir * 10.0, -16.0)
+	VFX.hit_spark(spark_pos, get_parent(), -kdir)
+	if player and is_instance_valid(player) and player.has_method("shake"):
+		player.shake(clampf(amount * 0.16, 2.5, 7.0), 0.13)
+
 	_flash()
-	if hp <= 0.0:
+	if killing:
 		_die()
+	else:
+		_hit_pop()
 
 func _flash() -> void:
-	$Sprite2D.modulate = Color(1.5, 0.3, 0.3)
-	await get_tree().create_timer(0.12).timeout
+	# Estala branco no impacto, depois assenta no vermelho de dano.
+	$Sprite2D.modulate = Color(3.0, 3.0, 3.0)
+	await get_tree().create_timer(0.05).timeout
+	if not is_instance_valid(self) or is_dead: return
+	$Sprite2D.modulate = Color(1.5, 0.35, 0.35)
+	await get_tree().create_timer(0.09).timeout
 	if is_instance_valid(self) and not is_dead:
 		$Sprite2D.modulate = Color.WHITE
+
+func _hit_pop() -> void:
+	# Squash elástico ao apanhar — dá borracha/peso ao corpo.
+	var s := $Sprite2D
+	var tw := s.create_tween()
+	tw.tween_property(s, "scale", Vector2(1.26, 0.76), 0.05)
+	tw.tween_property(s, "scale", Vector2(1.0, 1.0), 0.12)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
 	GameState.enemy_died()
 	AudioManager.play("enemy_die")
-	VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(0.32, 0.72, 0.18), 12, 72.0, 40.0)
-	if randf() < 0.35:
+	VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(0.32, 0.72, 0.18), 18, 92.0, 60.0)
+	VFX.ring(global_position + Vector2(0, -10), get_parent(), Color(0.62, 1.0, 0.42, 0.7), 30.0, 0.28)
+	if randf() < 0.20:
 		var orb = ManaOrb.instantiate()
 		orb.position = global_position + Vector2(randf_range(-14, 14), -8)
 		get_parent().add_child(orb)

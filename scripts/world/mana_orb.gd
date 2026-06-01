@@ -1,6 +1,6 @@
 extends Area2D
 
-const RESTORE_AMOUNT = 20.0
+const RESTORE_AMOUNT = 15.0
 const ATTRACT_RANGE  = 90.0
 const ATTRACT_SPEED  = 180.0
 
@@ -23,11 +23,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not _player or not is_instance_valid(_player): return
-	var dist := global_position.distance_to(_player.global_position)
+	var ppos: Vector2 = (_player as Node2D).global_position
+	var dist := global_position.distance_to(ppos)
 	if dist < ATTRACT_RANGE and dist > 1.0:
 		var pull := 1.0 - (dist / ATTRACT_RANGE)   # 0 at edge, 1 at center
 		var speed := ATTRACT_SPEED * (0.4 + pull * 1.6)
-		var dir := (_player.global_position - global_position).normalized()
+		var dir := (ppos - global_position).normalized()
 		global_position += dir * speed * delta
 
 func _on_body_entered(body: Node) -> void:

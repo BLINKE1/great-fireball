@@ -35,3 +35,5 @@ func _hit(body: Node) -> void:
 		var p := get_tree().get_first_node_in_group("player")
 		if p and p.has_method("shake"):
 			p.shake(3.5, 0.12)
+		if p and p.has_method("gain_mana_from_melee"):
+			p.gain_mana_from_melee()   # agressão recarrega mana (modelo híbrido)
