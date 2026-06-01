@@ -40,14 +40,18 @@ def _line(d, pts, fill, w=1): d.line([(s(x), s(y)) for x, y in pts], fill=fill, 
 def _ell(d, x0, y0, x1, y1, **k): d.ellipse((s(x0), s(y0), s(x1), s(y1)), **k)
 
 
-# Silhueta do rosto 3/4 à direita (cx≈148): nuca à esquerda, nariz à direita,
-# queixo à frente (direita do centro).
+# Silhueta do rosto 3/4 à direita (cx≈148). Checklist convergente aplicado:
+# queixo arredondado, mandíbula LONGE (direita) curvando p/ dentro (sem cunha),
+# nariz suave (sem bico), rosto menos alongado.
 FACE = [
-    (104, 128), (128, 100), (162, 92), (190, 104), (202, 134),
-    (206, 166), (210, 194), (218, 212), (226, 226),     # nariz (ponta, x226)
-    (216, 240), (208, 252), (204, 268), (198, 286),
-    (186, 300), (168, 308), (148, 305), (124, 292),
-    (104, 266), (92, 228), (88, 190), (92, 152),
+    (104, 130), (126, 104), (160, 96), (188, 108), (200, 134),
+    (205, 162), (208, 188),                              # têmpora/sobrancelha (direita)
+    (212, 206), (214, 220),                              # nariz: bump SUAVE (x214)
+    (210, 232), (204, 246),                              # sob o nariz / longe recuando
+    (196, 264), (184, 282),                              # mandíbula LONGE curvando p/ dentro
+    (164, 294), (144, 292),                              # queixo arredondado (dir. do centro)
+    (122, 280), (104, 258),                              # mandíbula PERTO (esquerda)
+    (92, 222), (88, 186), (92, 152),                     # bochecha perto / nuca
 ]
 
 
@@ -128,45 +132,46 @@ def _eye(d, cx, cy, rw, rh, near):
 
 def _draw_features(im):
     d = ImageDraw.Draw(im)
-    _eye(d, 134, 182, 21, 12, near=True)     # PERTO (esquerda) grande
-    _eye(d, 198, 191, 12, 8, near=False)     # LONGE (direita) menor/recuado, junto ao nariz
-    _line(d, [(116, 162), (156, 158)], HAIR_D, 4)     # sobrancelha perto
-    _line(d, [(186, 167), (212, 171)], HAIR_D, 3)     # sobrancelha longe
-    # NARIZ sutil (sem risco/scar): só a sombra do lado longe + narina discreta
-    _line(d, [(197, 212), (202, 228)], SKIN_S, 2)       # lado longe (sombra suave)
-    _poly(d, [(190, 229), (199, 230), (196, 236), (190, 235)], SKIN_S)  # base/narina
-    # lábios berry (centro-frente; menos deslocado p/ direita; leve curva)
-    d.line([(s(152), s(272)), (s(170), s(270)), (s(184), s(276))], fill=BERRY_D, width=s(3))
-    _poly(d, [(156, 274), (182, 276), (174, 286), (160, 286)], BERRY)
-    _line(d, [(162, 281), (178, 281)], BERRY_H, 2)
-    # óculos redondos aro fino — lente LONGE mais estreita (perspectiva 3/4)
-    _ell(d, 110, 160, 160, 206, outline=GLASS, width=s(2))
-    _ell(d, 182, 172, 212, 210, outline=GLASS, width=s(2))
-    _line(d, [(160, 182), (182, 186)], GLASS, 2)       # ponte
-    _line(d, [(110, 180), (86, 174)], GLASS, 2)        # haste → orelha esquerda
+    # OLHOS ALINHADOS na mesma linha (cy=182); LONGE claramente menor (perspectiva)
+    _eye(d, 134, 182, 20, 12, near=True)     # PERTO (esquerda) grande
+    _eye(d, 194, 182, 11, 7, near=False)     # LONGE (direita) menor, mesma altura
+    _line(d, [(116, 160), (154, 158)], HAIR_D, 4)     # sobrancelha perto
+    _line(d, [(184, 164), (206, 166)], HAIR_D, 3)     # sobrancelha longe
+    # NARIZ suave (sem bico/scar): sombra leve do lado longe + narina pequena
+    _line(d, [(206, 212), (210, 226)], SKIN_S, 2)
+    _poly(d, [(200, 226), (208, 228), (205, 233), (199, 232)], SKIN_S)
+    # LÁBIOS berry (um pouco mais p/ cima; centro-frente; leve curva)
+    d.line([(s(150), s(260)), (s(168), s(258)), (s(182), s(264))], fill=BERRY_D, width=s(3))
+    _poly(d, [(154, 262), (180, 264), (172, 273), (158, 273)], BERRY)
+    _line(d, [(160, 268), (176, 268)], BERRY_H, 2)
+    # ÓCULOS redondos aro fino — lente LONGE mais estreita (perspectiva 3/4)
+    _ell(d, 110, 160, 158, 204, outline=GLASS, width=s(2))
+    _ell(d, 178, 166, 206, 200, outline=GLASS, width=s(2))
+    _line(d, [(158, 180), (178, 182)], GLASS, 2)       # ponte
+    _line(d, [(110, 178), (86, 172)], GLASS, 2)        # haste → orelha esquerda
 
 
 def _shade(im):
     alpha = im.split()[3]
     mask = alpha.point(lambda a: 255 if a > 60 else 0)
     sh = Image.new("L", im.size, 0); sd = ImageDraw.Draw(sh)
-    sd.ellipse((s(196), s(150), s(280), s(320)), fill=120)      # lado longe (direita)
-    sd.ellipse((s(120), s(286), s(220), s(340)), fill=90)       # sob o queixo
+    sd.ellipse((s(188), s(150), s(250), s(300)), fill=120)      # lado longe (direita)
+    sd.ellipse((s(118), s(270), s(206), s(320)), fill=88)       # sob o queixo
     sh = sh.filter(ImageFilter.GaussianBlur(s(9)))
     shadow = Image.composite(Image.new("RGBA", im.size, (30, 18, 50, 105)),
                              Image.new("RGBA", im.size, (0, 0, 0, 0)), sh)
     shadow.putalpha(ImageChops.multiply(shadow.split()[3], mask))
     im = Image.alpha_composite(im, shadow)
     hl = Image.new("L", im.size, 0); hd = ImageDraw.Draw(hl)
-    hd.ellipse((s(96), s(150), s(190), s(300)), fill=105)       # bochecha perto (esquerda)
+    hd.ellipse((s(92), s(150), s(180), s(286)), fill=105)       # bochecha perto (esquerda)
     hl = hl.filter(ImageFilter.GaussianBlur(s(12)))
     light = Image.composite(Image.new("RGBA", im.size, (255, 250, 235, 66)),
                             Image.new("RGBA", im.size, (0, 0, 0, 0)), hl)
     light.putalpha(ImageChops.multiply(light.split()[3], mask))
     im = Image.alpha_composite(im, light)
     bl = Image.new("RGBA", im.size, (0, 0, 0, 0)); bd = ImageDraw.Draw(bl)
-    bd.ellipse((s(112), s(232), s(146), s(256)), fill=(*BLUSH, 62))
-    bd.ellipse((s(188), s(236), s(210), s(256)), fill=(*BLUSH, 42))
+    bd.ellipse((s(110), s(224), s(144), s(248)), fill=(*BLUSH, 60))
+    bd.ellipse((s(184), s(226), s(204), s(244)), fill=(*BLUSH, 40))
     im = Image.alpha_composite(im, bl.filter(ImageFilter.GaussianBlur(s(4))))
     k = s(3) | 1
     edge = ImageChops.subtract(mask.filter(ImageFilter.MaxFilter(k)), mask)
