@@ -179,8 +179,15 @@ def draw_head(img, b=0):
     # sombra de forma (lado direito/afastado) + sob o queixo
     vline(img, 45, 40 + hy, 52 + hy, SKIN_S)
     hline(img, 30, 40, 56 + hy, SKIN_S)
-    # orelha (lado de trás = esquerda), parcialmente sob a franja
-    px(img, 23, 45 + hy, SKIN); px(img, 23, 46 + hy, SKIN_S)
+    # ORELHA no lado de TRÁS (esquerda) — pista clara do 3/4 virado à direita.
+    # Protrai no contorno esquerdo, abaixo da franja. (NUNCA na direita: lá é o
+    # perfil/frente do rosto — testa→nariz→queixo.)
+    rect(img, 18, 43 + hy, 22, 48 + hy, SKIN)
+    px(img, 20, 45 + hy, SKIN_S); px(img, 20, 46 + hy, SKIN_S); px(img, 21, 47 + hy, SKIN_S)
+    px(img, 19, 45 + hy, SKIN_H)                                   # brilho na hélice
+    px(img, 17, 43 + hy, OUT); px(img, 17, 44 + hy, OUT); px(img, 17, 45 + hy, OUT)
+    px(img, 17, 46 + hy, OUT); px(img, 18, 47 + hy, OUT)
+    px(img, 18, 49 + hy, OUT); px(img, 20, 49 + hy, OUT); px(img, 22, 49 + hy, OUT)
     # contorno do rosto
     for i in range(len(anchors) - 1):
         y0, l0, r0 = anchors[i]; y1, l1, r1 = anchors[i + 1]
@@ -242,14 +249,12 @@ def draw_bangs(img, b=0):
     # brilho no topo (acompanha a curva do crânio)
     rows(img, [(33, 28, 33), (34, 26, 30)], HAIR_H)
     rows(img, [(33, 37, 43), (34, 40, 45)], HAIR_H)
-    # mechas laterais ONDULADAS emoldurando o rosto (perto/esquerda desce mais)
-    for y in range(36, 55):
-        t = (y - 36) / 18
-        xx = 22 + int(round(1.5 * __import__("math").sin(y * 0.6)))
+    # mecha lateral curta no têmpora (para ACIMA da orelha, não a cobre)
+    for y in range(35, 43):
+        xx = 23 + int(round(1.2 * __import__("math").sin(y * 0.6)))
         px(img, xx, y + hy, HAIR); px(img, xx + 1, y + hy, HAIR_D)
         px(img, xx - 1, y + hy, OUT)
-    vline(img, 47, 36, 47, HAIR); vline(img, 46, 38, 45, HAIR_D)   # lado longe (curto)
-    px(img, 48, 38 + hy, OUT)
+    # (SEM mecha à direita — ali é a frente/perfil: testa→nariz→queixo, sem orelha)
     # contorno superior da franja
     rows(img, [(32, 26, 44), (33, 24, 25), (33, 45, 46)], OUT)
 
