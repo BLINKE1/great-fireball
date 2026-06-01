@@ -43,6 +43,9 @@ def _draw_base_idle(im, br=0.0):
                (222,640),(210,470),(238,360)], fill=HAIR)
     d.polygon([(206,344),(168,504),(172,706),(204,790),(222,690),(214,504)], fill=HAIR_D)
     d.polygon([(190,430),(164,566),(180,712),(198,650),(192,524)], fill=HAIR_DD)
+    # pontas levemente roxas (nod à Soph real — cabelo com baixo-luz roxo/azul)
+    d.polygon([(150,724),(132,760),(176,816),(220,802),(220,742),(184,758)], fill=(96,72,150))
+    d.polygon([(176,768),(182,808),(210,800),(208,762)], fill=(70,52,118))
 
     # ───── ROBE FECHADA (coluna A-line, leve sweep p/ direita) ─────────────────
     robe = [(218,356+sx),(192,478),(168,656),(150,832),(168,902),
@@ -88,25 +91,22 @@ def _draw_base_idle(im, br=0.0):
     d.polygon([(196,168+hy),(190,300+hy),(212,332+hy),(234,302+hy),(230,206+hy),(216,162+hy)], fill=HAIR)
     d.polygon([(200,200+hy),(198,294+hy),(214,316+hy),(226,296+hy),(222,222+hy)], fill=HAIR_D)
     # (sem costeleta à direita — ali fica o nariz/perfil)
-    # ───── FRANJA (curtain 3/4, partição deslocada p/ direita ~x292) ───────────
-    d.polygon([(188,152+hy),(200,256+hy),(262,214+hy),(292,150+hy),(220,118+hy)], fill=HAIR)
-    d.polygon([(350,176+hy),(342,260+hy),(312,216+hy),(300,150+hy),(338,122+hy)], fill=HAIR)
-    d.polygon([(220,118+hy),(300,118+hy),(292,182+hy),(262,150+hy),(238,172+hy)], fill=HAIR)
-    d.polygon([(196,150+hy),(292,156+hy),(290,180+hy),(266,206+hy),(224,206+hy),(198,188+hy)], fill=HAIR)
-    d.polygon([(350,158+hy),(292,156+hy),(290,176+hy),(306,196+hy),(332,192+hy),(348,178+hy)], fill=HAIR)
-    # bangs caindo na testa (pontas até ~sobrancelhas) — tira o vão de pele
-    d.polygon([(230,150+hy),(244,204+hy),(260,152+hy)], fill=HAIR)
-    d.polygon([(258,152+hy),(272,208+hy),(288,150+hy)], fill=HAIR)
-    d.polygon([(288,150+hy),(300,204+hy),(316,152+hy)], fill=HAIR)
-    d.polygon([(314,154+hy),(326,196+hy),(340,158+hy)], fill=HAIR)
-    d.line([(252,158+hy),(258,200+hy)], fill=HAIR_D, width=2)
-    d.line([(294,158+hy),(298,200+hy)], fill=HAIR_D, width=2)
-    # textura da franja
-    d.line([(232,158+hy),(224,202+hy)], fill=HAIR_D, width=3)
-    d.line([(289,162+hy),(285,200+hy)], fill=HAIR_D, width=3)
-    d.line([(295,162+hy),(301,196+hy)], fill=HAIR_D, width=3)
-    d.line([(326,162+hy),(318,196+hy)], fill=HAIR_D, width=3)
-    d.arc((218,118+hy,326,196+hy), 205, 335, fill=HAIR_H, width=6)   # shine
+    # ───── FRANJA RETA / BLUNT BANGS (assinatura da Soph real) ─────────────────
+    # massa cheia cobrindo a testa; base reta logo acima das sobrancelhas, com
+    # leves pontas/wisps. Sem partição central (≠ franja anime repartida).
+    d.polygon([
+        (188,176+hy),(192,150+hy),(214,128+hy),(248,118+hy),(288,118+hy),
+        (324,128+hy),(348,152+hy),(352,180+hy),
+        (344,210+hy),(332,200+hy),(320,212+hy),(308,200+hy),(296,214+hy),
+        (284,200+hy),(272,213+hy),(258,200+hy),(246,212+hy),(232,200+hy),
+        (218,210+hy),(204,198+hy),(192,202+hy)
+    ], fill=HAIR)
+    # textura de mechas (verticais, leve leque)
+    for bx, tilt in ((210,-5),(236,-3),(262,-1),(288,1),(314,3),(332,5)):
+        d.line([(bx,150+hy),(bx+tilt,204+hy)], fill=HAIR_D, width=3)
+    d.line([(248,150+hy),(246,206+hy)], fill=HAIR_DD, width=2)
+    d.line([(300,150+hy),(302,204+hy)], fill=HAIR_DD, width=2)
+    d.arc((196,118+hy,346,198+hy), 200, 340, fill=HAIR_H, width=6)   # shine no topo
 
     # ───── CHAPÉU DE MAGO (cone pendendo p/ trás-esquerda) ─────────────────────
     # aba (elipse achatada, perspectiva 3/4 — frente um tico mais baixa)
@@ -193,36 +193,38 @@ def _draw_face_idle(im, br=0.0):
         cx = (x0 + x1) // 2
         d.ellipse((x0, top, x1, bot), fill=(255, 255, 255))
         ir = (x1 - x0) // 2 - 5                  # íris menor → sobra branco
-        d.ellipse((cx-ir, top+11, cx+ir, bot-2), fill=HAIR_D)
-        d.ellipse((cx-ir+2, top+15, cx+ir-2, bot-2), fill=HAIR)
-        d.ellipse((cx-ir+2, top+22, cx+ir-2, bot-2), fill=(120, 185, 255))
+        d.ellipse((cx-ir, top+11, cx+ir, bot-2), fill=(34, 72, 48))        # íris verde (Soph real)
+        d.ellipse((cx-ir+2, top+15, cx+ir-2, bot-2), fill=(70, 124, 74))   # verde médio
+        d.ellipse((cx-ir+2, top+22, cx+ir-2, bot-2), fill=(140, 196, 116)) # verde claro embaixo
         pr = max(4, ir-7)
         d.ellipse((cx-pr, top+18, cx+pr, bot-8), fill=(20, 14, 40))           # pupila
         d.ellipse((cx-ir+1, top+6, cx-ir+pr, top+20), fill=(255, 255, 255))   # brilho
         d.arc((x0, top-6, x1, bot+8), 192, 348, fill=OUT, width=5 if near else 3)
     eye(238, 296, 206+hy, 272+hy, near=True)     # PERTO (esquerda) — grande
     eye(312, 344, 218+hy, 256+hy, near=False)    # LONGE (direita) — pequeno
-    # sobrancelhas (perto: longa/curva; longe: curtinha)
-    d.line([(238, 200+hy), (292, 196+hy)], fill=(46, 70, 150), width=6)
-    d.line([(314, 200+hy), (344, 203+hy)], fill=(46, 70, 150), width=4)
-    # blush (bochecha perto maior; longe quase nada)
+    # (sobrancelhas ficam sob a franja reta — não desenhadas)
+    # blush suave (bochecha perto maior; longe quase nada)
     im = _overlay(im, lambda o: (
-        o.ellipse((236, 252+hy, 284, 290+hy), fill=(242, 148, 150, 115)),
-        o.ellipse((314, 256+hy, 346, 286+hy), fill=(242, 148, 150, 80))))
+        o.ellipse((236, 252+hy, 284, 290+hy), fill=(232, 138, 140, 90)),
+        o.ellipse((314, 256+hy, 346, 286+hy), fill=(232, 138, 140, 64))))
     d = ImageDraw.Draw(im)
-    # sombra sob o nariz (já há o bump de pele no perfil) + boca doce logo abaixo
+    # sombra sob o nariz (há bump de pele no perfil)
     d.line([(350, 252+hy), (358, 262+hy), (349, 266+hy)], fill=SKIN_S, width=3)
-    d.arc((300, 276+hy, 342, 306+hy), 20, 150, fill=(176, 94, 94), width=5)
+    # LÁBIOS berry (assinatura) — sorriso suave, deslocado p/ o lado perto
+    d.line([(298, 285+hy), (312, 283+hy), (328, 287+hy)], fill=(120, 32, 50), width=3)
+    d.polygon([(300, 287+hy), (326, 288+hy), (318, 298+hy), (308, 298+hy)], fill=(170, 54, 76))
+    d.line([(305, 293+hy), (321, 293+hy)], fill=(208, 100, 120), width=2)
     # ÓCULOS: lente perto grande/redonda; longe pequena/angulada
     im = _overlay(im, lambda o: (
         o.ellipse((232, 204+hy, 300, 276+hy), fill=(210, 235, 252, 30)),
         o.ellipse((308, 212+hy, 348, 268+hy), fill=(210, 235, 252, 34)),
         o.arc((238, 210+hy, 294, 270+hy), 205, 245, fill=(255, 255, 255, 120), width=4)))
     d = ImageDraw.Draw(im)
-    d.ellipse((232, 204+hy, 300, 276+hy), outline=GLASS, width=5)   # lente perto (grande)
-    d.ellipse((308, 212+hy, 348, 268+hy), outline=GLASS, width=4)   # lente longe (pequena)
-    d.line([(300, 240+hy), (308, 240+hy)], fill=GLASS, width=4)     # ponte
-    d.line([(232, 232+hy), (214, 226+hy)], fill=GLASS, width=4)     # haste → orelha (esquerda)
+    GW = (150, 132, 100)                                           # aro fino dourado/wire
+    d.ellipse((232, 204+hy, 300, 276+hy), outline=GW, width=3)     # lente perto (grande, redonda)
+    d.ellipse((308, 212+hy, 348, 268+hy), outline=GW, width=3)     # lente longe (pequena)
+    d.line([(300, 240+hy), (308, 240+hy)], fill=GW, width=3)       # ponte
+    d.line([(232, 232+hy), (214, 226+hy)], fill=GW, width=3)       # haste → orelha (esquerda)
     return im
 
 
