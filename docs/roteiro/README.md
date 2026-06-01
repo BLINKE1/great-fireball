@@ -10,7 +10,7 @@
 | | 🔥 **Chama Visível** | 🕯️ **Chama Oculta** |
 |---|---|---|
 | **O que é** | O roteiro público do jogo | O paralelo com a vida real |
-| **Onde mora** | `docs/roteiro/` (este diretório) | `soph_lore.env` (fora do git) |
+| **Onde mora** | `docs/roteiro/` (este diretório) | [`docs/chama_oculta.md`](../chama_oculta.md) (repo privado) |
 | **Quem lê** | Todo mundo | Só o Will e o Claude |
 | **Função** | A história que se sustenta sozinha | A alma que dá calor a cada batida |
 
@@ -24,10 +24,10 @@ Cada cena tem um **ID** no formato `C<capítulo>·S<cena>` (ex.: `C1·S05`), e
 cada batida dentro dela é numerada (`C1·S05 ▸ b2`).
 
 - O roteiro público usa esses IDs normalmente — eles não revelam nada.
-- A Chama Oculta, no `.env`, referencia os **mesmos IDs** para dizer "esta
-  batida espelha tal coisa real".
+- A Chama Oculta (`chama_oculta.md`) referencia os **mesmos IDs** para dizer
+  "esta batida espelha tal coisa real".
 
-Assim as duas trilhas andam juntas e nunca se misturam no que vai pro GitHub.
+Assim as duas trilhas andam juntas e nunca se misturam no roteiro público.
 
 ## Legenda de status (por cena)
 
@@ -54,7 +54,7 @@ Assim as duas trilhas andam juntas e nunca se misturam no que vai pro GitHub.
 1. Copie o bloco-modelo de [`MODELO_cena.md`](MODELO_cena.md).
 2. Dê um ID (`C<cap>·S<n>`) e preencha cabeçalho, ação, falas, nota de gameplay.
 3. Se houver paralelo real, **não escreva aqui** — registre na Chama Oculta
-   (`soph_lore.env`) referenciando o ID.
+   (`docs/chama_oculta.md`) referenciando o ID.
 4. Atualize o estado no índice.
 
 ---
