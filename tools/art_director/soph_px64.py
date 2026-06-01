@@ -92,31 +92,33 @@ def rows(img, spec, c):
 
 # ── Cabelo de trás (cascata pela esquerda) ──────────────────────────────────
 def draw_back_hair(img, b=0):
-    # massa longa fluindo pelas costas (lado esquerdo), ondulada
-    spec = [
-        (60, 16, 30), (64, 13, 30), (70, 11, 29), (78, 10, 28),
-        (88, 10, 27), (98, 11, 26), (108, 13, 26), (116, 16, 27),
-        (122, 19, 28),
-    ]
-    # preenche o corpo da cascata por interpolação simples entre âncoras
-    anchors = [(54, 18, 31), (60, 15, 31), (70, 11, 30), (82, 9, 28),
-               (94, 10, 27), (106, 12, 26), (116, 16, 27), (124, 20, 28)]
-    for i in range(len(anchors) - 1):
-        y0, l0, r0 = anchors[i]; y1, l1, r1 = anchors[i + 1]
-        for y in range(y0, y1):
-            t = (y - y0) / (y1 - y0)
-            xl = round(l0 + (l1 - l0) * t); xr = round(r0 + (r1 - r0) * t)
-            hline(img, xl, xr, y, HAIR)
-            vline(img, xl, y, y, HAIR_D)            # borda interna sombreada
-            px(img, xl + 1, y, HAIR_H if y < 92 else HAIR)   # mecha de brilho
-    # pontas roxas (baixo da cascata)
-    for y in range(104, 125):
-        t = (y - 104) / 20
-        xl = round(12 + 8 * t); xr = round(26 + 2 * t)
-        hline(img, xl, xr, y, HAIR_PU if (y + xl) % 3 else HAIR_PUD)
-    # contorno externo
-    for y, xl, xr in anchors:
-        px(img, xl - 1, y, OUT)
+    import math
+    # Cascata ONDULADA pelas costas (lado esquerdo). Duas mechas que serpenteiam
+    # (cabelo ondulado da Soph real), afunilando até as pontas roxas.
+    top_y, bot_y = 50, 124
+    for y in range(top_y, bot_y + 1):
+        t = (y - top_y) / (bot_y - top_y)
+        # eixo da cascata oscila (ondas longas) e infla na barriga
+        cx = 19 + 3.6 * math.sin(t * 3.2 + 0.3) - 2 * t
+        half = 9.5 * (1 - 0.42 * t) + 0.7 * math.sin(y * 0.42)
+        xl = int(round(cx - half)); xr = int(round(cx + half))
+        purple = t > 0.72
+        base = HAIR_PU if purple else HAIR
+        dk   = HAIR_PUD if purple else HAIR_D
+        hi   = HAIR_PU if purple else HAIR_H
+        hline(img, xl, xr, y, base)
+        # ondulação interna: linhas de mecha clara/escura que serpenteiam
+        s1 = xl + 2 + int(round(2 * math.sin(y * 0.55)))
+        s2 = xl + int(round(half)) + int(round(2 * math.sin(y * 0.55 + 2)))
+        px(img, s1, y, hi)
+        px(img, s2, y, dk)
+        px(img, xr, y, dk)                         # borda interna (sombra do corpo)
+        px(img, xl, y, hi if y % 4 else base)      # leve luz na borda externa
+        px(img, xl - 1, y, OUT)                    # contorno
+        px(img, xr + 1, y, OUT) if xr + 1 < 22 else None
+    # ponta afilada solta
+    px(img, 18, bot_y + 1, HAIR_PUD); px(img, 19, bot_y + 1, HAIR_PU)
+    px(img, 18, bot_y + 2, OUT)
 
 
 # ── Robe / corpo (coluna esguia com cintura) ────────────────────────────────
@@ -230,20 +232,24 @@ def draw_bangs(img, b=0):
     rows(img, [
         (33, 26, 44), (34, 24, 46), (35, 23, 47), (36, 22, 47),
         (37, 22, 47), (38, 22, 47), (39, 22, 47), (40, 22, 47), (41, 22, 47),
-    ], [(y, a, c) for (y, a, c) in []] and HAIR or HAIR)
-    # base com leves pontas (wisps)
-    wisp = [(42, 23, 24), (42, 28, 29), (42, 33, 34), (42, 38, 39), (42, 44, 45)]
-    for y, a, c in wisp: hline(img, a, c, y + hy, HAIR)
-    # mechas (textura vertical) + sombra
-    for x in (25, 29, 33, 37, 41, 45):
-        vline(img, x, 33, 41, HAIR_D)
-    vline(img, 31, 33, 41, HAIR_DD); vline(img, 39, 34, 41, HAIR_DD)
-    # brilho no topo
-    hline(img, 28, 42, 34, HAIR_H)
-    # mechas laterais emoldurando o rosto (perto: esquerda desce mais)
-    vline(img, 22, 36, 52, HAIR); vline(img, 23, 38, 50, HAIR_D)
-    px(img, 22, 53, HAIR); px(img, 23, 52, HAIR)
-    vline(img, 47, 36, 48, HAIR); vline(img, 46, 38, 46, HAIR_D)   # lado longe (curto)
+    ], HAIR)
+    # base reta com leves pontas (wisps) caindo entre as sobrancelhas
+    for a in (24, 29, 36, 41, 46):
+        px(img, a, 42 + hy, HAIR); px(img, a + 1, 42 + hy, HAIR)
+    # leve repartição suave (como a franja real dela) + 2 mechas discretas
+    vline(img, 34, 33, 40, HAIR_D)               # quebra central suave
+    vline(img, 28, 34, 41, HAIR_D); vline(img, 41, 34, 41, HAIR_D)
+    # brilho no topo (acompanha a curva do crânio)
+    rows(img, [(33, 28, 33), (34, 26, 30)], HAIR_H)
+    rows(img, [(33, 37, 43), (34, 40, 45)], HAIR_H)
+    # mechas laterais ONDULADAS emoldurando o rosto (perto/esquerda desce mais)
+    for y in range(36, 55):
+        t = (y - 36) / 18
+        xx = 22 + int(round(1.5 * __import__("math").sin(y * 0.6)))
+        px(img, xx, y + hy, HAIR); px(img, xx + 1, y + hy, HAIR_D)
+        px(img, xx - 1, y + hy, OUT)
+    vline(img, 47, 36, 47, HAIR); vline(img, 46, 38, 45, HAIR_D)   # lado longe (curto)
+    px(img, 48, 38 + hy, OUT)
     # contorno superior da franja
     rows(img, [(32, 26, 44), (33, 24, 25), (33, 45, 46)], OUT)
 
