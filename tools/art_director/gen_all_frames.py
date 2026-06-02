@@ -86,6 +86,12 @@ def build():
         boots={"back": (9, 14), "front": (17, 22)},
     )
 
+    # ── poses de ataque (arma exposta na altura do spawn) ───────────────────────
+    # cast: cajado exposto (magic missile nasce do orbe, ~y16)
+    frames["soph_cast"] = S.compose(mana=5, arms="cast")
+    # slash: lâmina exposta (sword_slash nasce da lâmina, ~y16)
+    frames["soph_slash"] = S.compose(mana=5, arms="slash")
+
     # ── mana states (idle por nível) ────────────────────────────────────────────
     for m in range(1, 6):
         frames[f"soph_mana_{m}"] = S.compose(mana=m)

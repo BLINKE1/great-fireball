@@ -18,7 +18,7 @@ const APEX_GRAVITY_MULT  = 0.55   # gravidade reduzida perto do topo
 # Experimental: destoa do pixel-art do resto do jogo. Desligue para voltar ao
 # pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
 # e sao gerados por tools/art_director/soph_dream.py --apply-game.
-const USE_HD_SOPH := true
+const USE_HD_SOPH := false  # pixel-art como padrão (a HD virou arte conceitual)
 const HD_SCALE := 0.34            # frames de 192px de altura → ~65px na tela
 const HD_OFFSET := Vector2(0, 1)  # +1px: encaixa os pes no chao (medido no test room)
 
@@ -83,6 +83,8 @@ var jump_buffer_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cooldown_timer: float = 0.0
 var sword_timer: float = 0.0
+var _attack_pose: String = ""        # "cast" (cajado) / "slash" (lâmina) durante o ataque
+var _attack_pose_timer: float = 0.0
 var attack_flash_timer: float = 0.0
 var is_dashing: bool = false
 var is_dead: bool = false
@@ -205,6 +207,7 @@ func _tick_timers(delta: float) -> void:
 	jump_buffer_timer   = max(jump_buffer_timer   - delta, 0.0)
 	dash_cooldown_timer = max(dash_cooldown_timer - delta, 0.0)
 	sword_timer         = max(sword_timer         - delta, 0.0)
+	_attack_pose_timer  = max(_attack_pose_timer  - delta, 0.0)
 	attack_flash_timer  = max(attack_flash_timer  - delta, 0.0)
 	_ghost_timer        = max(_ghost_timer        - delta, 0.0)
 	_step_timer         = max(_step_timer         - delta, 0.0)
@@ -455,6 +458,7 @@ func _cast_magic_missile() -> void:
 	if magic_missile_cd > 0.0: return
 	if not mana.spend(MAGIC_MISSILE_COST): return
 	magic_missile_cd = MAGIC_MISSILE_CD
+	_set_attack_pose("cast")
 	AudioManager.play("missile")
 	var missile = MagicMissile.instantiate()
 	missile.direction = facing
@@ -466,6 +470,7 @@ func _cast_missile_spread() -> void:
 	if missile_spread_cd > 0.0: return
 	if not mana.spend(MISSILE_SPREAD_COST): return
 	missile_spread_cd = MISSILE_SPREAD_CD
+	_set_attack_pose("cast")
 	AudioManager.play("missile_spread")
 	VFX.sparkle(global_position + Vector2(facing * 20, -16), get_parent(), Color(0.80, 0.35, 1.0), 8)
 	var angles := [-0.18, 0.18]
@@ -481,6 +486,7 @@ func _cast_missile_piercing() -> void:
 	if missile_piercing_cd > 0.0: return
 	if not mana.spend(MISSILE_PIERCING_COST): return
 	missile_piercing_cd = MISSILE_PIERCING_CD
+	_set_attack_pose("cast")
 	AudioManager.play("missile_piercing")
 	var m = MissilePiercing.instantiate()
 	m.direction = facing
@@ -492,6 +498,7 @@ func _cast_missile_giant() -> void:
 	if missile_giant_cd > 0.0: return
 	if not mana.spend(MISSILE_GIANT_COST): return
 	missile_giant_cd = MISSILE_GIANT_CD
+	_set_attack_pose("cast", 0.28)
 	AudioManager.play("missile_giant")
 	shake(3.5, 0.22)
 	var m = MissileGiant.instantiate()
@@ -504,6 +511,7 @@ func _cast_missile_curved() -> void:
 	if missile_curved_cd > 0.0: return
 	if not mana.spend(MISSILE_CURVED_COST): return
 	missile_curved_cd = MISSILE_CURVED_CD
+	_set_attack_pose("cast")
 	AudioManager.play("missile_curved")
 	VFX.sparkle(global_position + Vector2(facing * 18, -20), get_parent(), Color(0.60, 0.15, 1.0), 6)
 	var m = MissileCurved.instantiate()
@@ -553,10 +561,15 @@ func _cast_magic_dash() -> void:
 	dash_cooldown_timer = DASH_COOLDOWN
 	iframe_timer = max(iframe_timer, DASH_DURATION)
 
+func _set_attack_pose(p: String, dur: float = 0.22) -> void:
+	_attack_pose = p
+	_attack_pose_timer = dur
+
 func _attack_sword() -> void:
 	if sword_timer > 0.0 or is_dashing: return
 	sword_timer = SWORD_COOLDOWN
 	attack_flash_timer = SWORD_FLASH
+	_set_attack_pose("slash", 0.20)
 	AudioManager.play("sword")
 	var slash = SwordSlash.instantiate()
 	slash.facing = facing
@@ -713,7 +726,9 @@ func _update_visuals() -> void:
 func _update_anim() -> void:
 	var spd := absf(velocity.x)
 	var anim: String
-	if not is_on_floor():
+	if _attack_pose_timer > 0.0:
+		anim = _attack_pose                     # cajado/lâmina exposto durante o ataque
+	elif not is_on_floor():
 		anim = "fall" if velocity.y > 80.0 else "jump"
 	elif iframe_timer > 0.7:
 		anim = "hurt"
@@ -744,6 +759,9 @@ func _build_soph_frames_pixel() -> SpriteFrames:
 	_add_anim(sf, "jump",  ["soph_jump"],  8.0, false)
 	_add_anim(sf, "fall",  ["soph_fall"],  8.0, false)
 	_add_anim(sf, "hurt",  ["soph_hurt"],  8.0, false)
+	# Poses de ataque: arma exposta na altura do spawn.
+	_add_anim(sf, "cast",  ["soph_cast"],  8.0, false)   # cajado no magic missile
+	_add_anim(sf, "slash", ["soph_slash"], 8.0, false)   # lâmina no golpe físico
 	# mana-state idles (level 5 = full, level 1 = depleted)
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_mana_%d" % lvl], 4.0, true)
@@ -760,6 +778,8 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
 	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
 	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
+	_add_anim(sf, "cast", ["soph_hd_idle_0"], 8.0, false)   # HD = arte conceitual (fallback)
+	_add_anim(sf, "slash", ["soph_hd_idle_0"], 8.0, false)
 	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
