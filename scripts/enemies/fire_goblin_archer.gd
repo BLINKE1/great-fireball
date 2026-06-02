@@ -9,6 +9,7 @@ const ATTACK_RANGE   = 340.0
 const ATTACK_COOLDOWN = 2.8
 const MAX_HP         = 35.0
 const KNOCKBACK_DECAY = 1100.0
+const DRAW_WINDUP    = 0.48   # mira flamejante antes de soltar (dá pra esquivar)
 
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
 const FireGoblinArrow = preload("res://scenes/enemies/fire_goblin_arrow.tscn")
@@ -24,6 +25,8 @@ var is_dead: bool = false
 var knockback: Vector2 = Vector2.ZERO
 var player: Node = null
 var _alerted: bool = false
+var _drawing: bool = false
+var _draw_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -56,7 +59,12 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if player and is_instance_valid(player):
+	if _drawing:
+		velocity.x = move_toward(velocity.x, 0.0, SPEED * 8.0)
+		_draw_timer -= delta
+		if _draw_timer <= 0.0:
+			_release()
+	elif player and is_instance_valid(player):
 		var dist = global_position.distance_to(player.global_position)
 		if dist < DETECT_RANGE:
 			if not _alerted:
@@ -83,7 +91,26 @@ func _handle_ai(dist: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, SPEED * 3.0)
 
 	if dist < ATTACK_RANGE and attack_timer <= 0.0:
-		_shoot()
+		_start_draw()
+
+func _start_draw() -> void:
+	_drawing = true
+	_draw_timer = DRAW_WINDUP
+	var dir = sign(player.global_position.x - global_position.x)
+	facing = dir if dir != 0 else facing
+	$Sprite2D.flip_h = facing < 0
+	$Sprite2D.modulate = Color(2.0, 1.0, 0.35)   # mira flamejante (laranja quente)
+
+func _release() -> void:
+	_drawing = false
+	$Sprite2D.modulate = Color.WHITE
+	_shoot()
+
+func _cancel_draw() -> void:
+	if not _drawing:
+		return
+	_drawing = false
+	$Sprite2D.modulate = Color.WHITE
 
 func _on_time_stop() -> void:
 	if is_dead: return
@@ -120,6 +147,7 @@ func _shoot() -> void:
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead: return
+	_cancel_draw()
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	var dmg = DamageNumber.instantiate()
