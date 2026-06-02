@@ -92,13 +92,55 @@ topo de `player.gd`.
   (nó faltando, path errado, null). **18/18 OK.**
 - Use esses + `combat_probe`/`mana_probe` como regressão antes de mexer no combate.
 
-## Como testar de manhã
-1. `git pull` no master.
-2. Test room (`soph_test_room.tscn`, F6): bate nos goblins (Q cajado / Z míssil),
-   spawna mais com **G**. Sente o juice + o windup deles (brilho antes de bater —
-   dá pra esquivar/interromper batendo).
-3. Se algum "tato" estiver off, os números estão em constantes no topo dos
-   arquivos (`goblin.gd`: ATTACK_WINDUP/LUNGE/STRIKE_RANGE; `player.gd`:
-   SWORD_LUNGE). Fácil de afinar.
+### 10. Telegrafia visual no boss (forest_ogre)
+O ogre (clímax do slice) já tinha windup, mas o aviso era só um squash de escala
+sutil. Agora o **charge brilha vermelho** ("vai investir!") e o **stomp dá um
+flash quente** no impacto. _(visual apenas — não mexi em dano/timing/dificuldade
+do boss; isso é teu pra afinar.)_ Fix: `enemy_impact` ganhou flag `squash` (o
+ogre passa `false` pra o squash genérico não brigar com as animações de escala
+do charge/stomp dele).
 
-_(continua…)_
+### 11. Golem telegrafado + poeira ao correr
+- **golem** (melee pesado): mesmo telegraph (windup 0.42s). Fecha a cobertura.
+- **player**: pufezinho de poeira atrás do pé ao correr (game feel).
+
+### 12. Test room virou DOJO de combate
+Agora dá pra spawnar qualquer inimigo e sentir todos os telegraphs:
+`1` goblin · `2` archer · `3` leader · `4` golem · `5` fire archer · `6` OGRE ·
+`G` goblin rápido · `K` limpa todos. (Só mexi no `.gd` — tuas plataformas no
+`.tscn` intactas.)
+
+---
+
+## ✅ Resumo da noite (tudo no master, validado headless)
+**Tema central: combate "delicioso" e justo — a maior alavanca do slice.**
+
+1. Juice de impacto **unificado** em todos os inimigos (era só o goblin).
+2. Fim do feedback **dobrado** ao acertar (som/hitstop/shake).
+3. **Jitter de pitch** automático nos SFX repetitivos (some a monotonia).
+4. **Ataques telegrafados** em TODOS os inimigos — melee (windup + lunge,
+   cancelável) e ranged (puxar o arco). Combate legível: tudo avisa, dá pra
+   esquivar/interromper. Boss com telegrafia visual.
+5. **Golpe de cajado com peso** (passo + squash).
+6. **Números de dano** com cor por magnitude + deriva.
+7. **Poeira ao correr**; test room virou **dojo** (spawna todos os inimigos).
+8. Rede de segurança: probes (`goblin_attack_probe`, `archer_attack_probe`,
+   `scene_smoke`) — use antes de mexer no combate.
+
+Saúde: projeto importa limpo, **boot do jogo sem erro**, scene_smoke 18/18,
+níveis (test/tutorial/dungeon) carregam ok, combat/mana probes passam.
+
+## 🎚️ Pro teu playtest (tato — os números estão em consts no topo dos arquivos)
+- **Windups dos inimigos**: `ATTACK_WINDUP`/`ATTACK_LUNGE`/`STRIKE_RANGE` em
+  cada `*.gd` de inimigo; archers: `DRAW_WINDUP`. Curto = agressivo; longo =
+  mais fácil de ler. Comecei conservador.
+- **Cajado**: `SWORD_LUNGE` em `player.gd`.
+- **Boss**: deixei a **dificuldade/timing intactos** de propósito (é teu calibre).
+  O stomp ainda acerta no mesmo instante — se quiser que seja esquivável, dá pra
+  adicionar uma janela de windup nele (me avisa que faço).
+
+## 💡 Sugestões que NÃO fiz (esperando tua direção)
+- **Parry** (kit item D): casaria lindo com os telegraphs novos, mas é mecânica
+  nova de player + bind de input + feel — decisão tua. Proposta pronta se quiser.
+- **Stomp do boss esquivável** (janela de windup antes do AoE) — muda balanço.
+- **Arte/música**: dependem de ti / APIs.
