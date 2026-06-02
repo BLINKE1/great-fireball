@@ -410,7 +410,7 @@ func _handle_jump() -> void:
 		jump_buffer_timer = 0.0
 		jumps_remaining = _max_air_jumps()
 		_squash = Vector2(0.78, 1.24)
-		AudioManager.play("jump")
+		# (sem som de pulo: a repetição a cada pulo ficava cansativa)
 
 	# Pulo variável: soltou o botão ainda subindo → corta a subida (pulo baixo).
 	if Input.is_action_just_released("ui_accept") and velocity.y < 0.0:

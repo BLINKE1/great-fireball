@@ -23,6 +23,12 @@ var _offset_y: float = 0.0
 const SCALE_STEP := 0.01
 const OFFSET_STEP := 1.0
 
+# Goblins de treino — pra sentir o JUICE de combate aqui mesmo no test room.
+# (adicionados por script: não tocam no .tscn, então não conflitam com as
+#  plataformas que você edita na cena.)
+const GoblinScene := preload("res://scenes/enemies/goblin.tscn")
+const TRAINING_X := [480, 680, 880]
+
 func _ready() -> void:
 	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
 	SkillManager.unlock("double_jump")
@@ -39,6 +45,19 @@ func _ready() -> void:
 	_offset_y = player.HD_OFFSET.y
 	_build_overlay()
 	_apply()
+	_spawn_training_goblins.call_deferred()
+
+# ── Goblins de treino ────────────────────────────────────────────────────────
+func _spawn_training_goblins() -> void:
+	for x in TRAINING_X:
+		_spawn_goblin(Vector2(x, 430))
+
+func _spawn_goblin(pos: Vector2) -> void:
+	if GoblinScene == null:
+		return
+	var g := GoblinScene.instantiate()
+	add_child(g)
+	g.global_position = pos   # após add_child p/ valer global_position
 
 func _build_overlay() -> void:
 	var cl := CanvasLayer.new()
@@ -79,6 +98,14 @@ func _handle_keys() -> void:
 		player.global_position = Vector2(200, 300)
 		player.velocity = Vector2.ZERO
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_G:                       # spawna mais um goblin
+			_spawn_goblin(Vector2(randf_range(440, 920), 410))
+		elif event.keycode == KEY_K:                     # limpa todos os goblins
+			for e in get_tree().get_nodes_in_group("enemy"):
+				e.queue_free()
+
 func _apply() -> void:
 	if not _sprite:
 		return
@@ -113,4 +140,5 @@ func _update_label() -> void:
 	var spd := absf(player.velocity.x)
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
-		+ "H mode  [ ] scale  ; ' off  R reset  Z miss  Shift dash"
+		+ "H mode  [ ] scale  ; ' off  R reset  Z miss  Shift dash\n" \
+		+ "G goblin  K clear"
