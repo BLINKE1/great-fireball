@@ -53,12 +53,19 @@ const TOWER_GAP    := 88.0     # vão vertical entre andares (tato: maior = + di
 const TOWER_COUNT  := 10
 const TOWER_PLAT_W := 54.0
 const TOWER_PLAT_H := 12.0
-const ARENA_W      := 340.0
-const ARENA_H      := 20.0
+const ARENA_W       := 680.0     # DOBRADO (por precaução)
+const ARENA_H       := 40.0
+# Desloca a arena pra DIREITA: a borda esquerda dela fica ao lado da coluna,
+# deixando CÉU ABERTO acima do topo da coluna. Assim você pula pra cima+direita e
+# pousa na borda da arena — sem bater a cabeça no "T". (0 = em cima da coluna.)
+const ARENA_OFFSET_X := 380.0
 var _arena_boss_spawned := false
 
 func _arena_center_y() -> float:
 	return TOWER_BASE_Y - (TOWER_COUNT + 1) * TOWER_GAP
+
+func _arena_center_x() -> float:
+	return TOWER_X + ARENA_OFFSET_X
 
 func _ready() -> void:
 	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
@@ -101,12 +108,13 @@ func _build_bhop_tower() -> void:
 		var y := TOWER_BASE_Y - i * TOWER_GAP
 		_make_platform(Vector2(TOWER_X, y), TOWER_PLAT_W, TOWER_PLAT_H,
 				Color(0.32, 0.42, 0.58))
-	# Plataforma GRANDE da arena no topo.
+	# Plataforma GRANDE da arena no topo — deslocada pra direita (sai do "T").
 	var ay := _arena_center_y()
-	_make_platform(Vector2(TOWER_X, ay), ARENA_W, ARENA_H, Color(0.48, 0.20, 0.20))
+	var ax := _arena_center_x()
+	_make_platform(Vector2(ax, ay), ARENA_W, ARENA_H, Color(0.48, 0.20, 0.20))
 	# Gatilho: pisar na arena spawna o Boss (uma vez).
 	var trig := Area2D.new()
-	trig.position = Vector2(TOWER_X, ay - 30.0)
+	trig.position = Vector2(ax, ay - 30.0)
 	var cs := CollisionShape2D.new()
 	var rs := RectangleShape2D.new()
 	rs.size = Vector2(ARENA_W - 20.0, 44.0)
@@ -140,7 +148,7 @@ func _on_arena_entered(b: Node) -> void:
 	var ay := _arena_center_y()
 	var boss := MutantScene.instantiate()
 	add_child(boss)
-	boss.global_position = Vector2(TOWER_X, ay - 60.0)   # cai na plataforma
+	boss.global_position = Vector2(_arena_center_x(), ay - 75.0)   # cai na arena
 
 func _build_overlay() -> void:
 	var cl := CanvasLayer.new()

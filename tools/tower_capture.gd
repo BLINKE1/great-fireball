@@ -7,12 +7,12 @@ func _initialize():
 func _process(_d):
 	_f += 1
 	if _f < 20:
-		_cam.global_position = Vector2(580, -430)
-		_cam.zoom = Vector2(0.34, 0.34)
+		_cam.global_position = Vector2(820, -870)
+		_cam.zoom = Vector2(0.62, 0.62)
 		_cam.make_current()
 		return false
 	var img := get_root().get_texture().get_image()
 	if img:
-		var p := ProjectSettings.globalize_path("res://tools/art_director/iterations/godot_shots/bhop_tower.png")
-		img.save_png(p); print("saved tower")
+		img.save_png(ProjectSettings.globalize_path("res://tools/art_director/iterations/godot_shots/bhop_tower.png"))
+		print("saved")
 	quit(0); return true

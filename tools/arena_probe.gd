@@ -17,14 +17,14 @@ func _process(_d) -> bool:
 		print("StaticBody2D na sala: ", statics)
 		# teleporta pra arena do topo
 		var ay: float = _room._arena_center_y()
-		_player.global_position = Vector2(580, ay - 70.0)
+		_player.global_position = Vector2(_room._arena_center_x(), ay - 70.0)
 		_player.velocity = Vector2.ZERO
 		_tp = true
 	if _tp and _f > 14 and _f < 60:
 		# segura o player na arena pra garantir o overlap do gatilho
 		var ay: float = _room._arena_center_y()
 		if _player.global_position.y < ay - 40.0:
-			_player.global_position.y = ay - 20.0
+			_player.global_position = Vector2(_room._arena_center_x(), ay - 20.0)
 	if _f == 70:
 		var spawned = _room._arena_boss_spawned
 		var has_mut := false
