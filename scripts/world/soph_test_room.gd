@@ -24,6 +24,13 @@ const SCALE_STEP := 0.01
 const OFFSET_STEP := 1.0
 
 func _ready() -> void:
+	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
+	SkillManager.unlock("double_jump")
+	SkillManager.unlock("magic_dash")
+	SkillManager.unlock("magic_missile")
+	# player._ready ja rodou ANTES desse _ready (filho roda antes do pai), entao
+	# jumps_remaining ja foi calculado com double_jump bloqueado. Recarrega.
+	player.jumps_remaining = player._max_air_jumps()
 	# Pega o sprite do player e o estado HD atual como ponto de partida.
 	# (player.gd expoe USE_HD_SOPH/HD_SCALE/HD_OFFSET como consts.)
 	_sprite = player.get_node("Sprite2D") as AnimatedSprite2D
@@ -39,16 +46,17 @@ func _build_overlay() -> void:
 	add_child(cl)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(8, 8)
-	panel.modulate = Color(1, 1, 1, 0.92)
+	# Quase invisivel: nao polui a tela mas continua legivel se voce procurar.
+	panel.modulate = Color(1, 1, 1, 0.22)
 	cl.add_child(panel)
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	panel.add_child(margin)
 	_label = Label.new()
-	_label.add_theme_font_size_override("font_size", 11)
+	_label.add_theme_font_size_override("font_size", 10)
 	margin.add_child(_label)
 
 func _process(_delta: float) -> void:
@@ -74,13 +82,16 @@ func _handle_keys() -> void:
 func _apply() -> void:
 	if not _sprite:
 		return
+	# player._update_visuals reescreve sprite.scale todo frame como
+	# _base_scale * squash. Pra que o ajuste persista, mudamos a _base_scale
+	# do player (e não sprite.scale direto).
 	if _hd:
 		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		_sprite.scale = Vector2(_scale, _scale)
+		player._base_scale = Vector2(_scale, _scale)
 		_sprite.position = Vector2(0, _offset_y)
 	else:
 		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_sprite.scale = Vector2.ONE
+		player._base_scale = Vector2.ONE
 		_sprite.position = Vector2.ZERO
 
 func _rebuild_frames() -> void:
@@ -100,10 +111,6 @@ func _update_label() -> void:
 	if not _label or not _sprite:
 		return
 	var spd := absf(player.velocity.x)
-	_label.text = "SOPH TEST ROOM\n" \
-		+ "modo: %s   anim: %s\n" % ["HD" if _hd else "PIXEL", _sprite.animation] \
-		+ "vel.x: %4.0f   no_chao: %s\n" % [spd, str(player.is_on_floor())] \
-		+ "HD_SCALE: %.2f   HD_OFFSET.y: %.0f\n" % [_scale, _offset_y] \
-		+ "─────────────\n" \
-		+ "[H] HD/pixel  [ ] escala  ; ' offset\n" \
-		+ "[R] reset  ←→ andar  Shift correr  Z missil"
+	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
+			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
+		+ "H mode  [ ] scale  ; ' off  R reset  Z miss  Shift dash"

@@ -129,6 +129,11 @@ var _look_ahead: float      = 0.0
 # Squash & stretch
 var _squash: Vector2 = Vector2.ONE
 
+# Escala base do sprite (1.0 no pixel-art, HD_SCALE no HD). _update_visuals
+# multiplica isso pela squash todo frame; sem essa base, a squash zerava
+# o HD_SCALE e a Soph HD aparecia em tamanho nativo (gigante).
+var _base_scale: Vector2 = Vector2.ONE
+
 var _mana_level: int = 5
 var _mana_ratio: float = 1.0
 
@@ -141,10 +146,12 @@ func _ready() -> void:
 	if USE_HD_SOPH:
 		# arte HD: amostragem linear (suave) + escala/offset p/ caber no hitbox
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		sprite.scale = Vector2(HD_SCALE, HD_SCALE)
+		_base_scale = Vector2(HD_SCALE, HD_SCALE)
+		sprite.scale = _base_scale
 		sprite.position = HD_OFFSET
 	else:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_base_scale = Vector2.ONE
 
 	hair.hide()  # full-body sprites include hair
 
@@ -666,7 +673,7 @@ func _update_visuals() -> void:
 			and sq.distance_squared_to(Vector2.ONE) < 0.0004:
 		var breathe := 1.0 + 0.018 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.40)
 		sq = Vector2(breathe, breathe)
-	sprite.scale = sq
+	sprite.scale = _base_scale * sq
 	hair.scale   = sq
 
 	# Flip to face direction

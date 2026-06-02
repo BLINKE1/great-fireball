@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn" id="4"]
@@ -26,6 +26,18 @@ size = Vector2(180, 16)
 
 [sub_resource type="PlaceholderTexture2D" id="7"]
 size = Vector2(180, 16)
+
+[sub_resource type="RectangleShape2D" id="8"]
+size = Vector2(80, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="9"]
+size = Vector2(80, 16)
+
+[sub_resource type="RectangleShape2D" id="10"]
+size = Vector2(90, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="11"]
+size = Vector2(90, 16)
 
 [node name="SophTestRoom" type="Node2D"]
 script = ExtResource("7")
@@ -87,6 +99,56 @@ modulate = Color(0.35, 0.28, 0.22, 1.0)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HighPlatform"]
 shape = SubResource("4")
+
+[node name="NwPillar" type="StaticBody2D" parent="."]
+position = Vector2(80, 170)
+
+[node name="Sprite2D" type="Sprite2D" parent="NwPillar"]
+texture = SubResource("9")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="NwPillar"]
+shape = SubResource("8")
+
+[node name="TopLeft" type="StaticBody2D" parent="."]
+position = Vector2(320, 110)
+
+[node name="Sprite2D" type="Sprite2D" parent="TopLeft"]
+texture = SubResource("9")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopLeft"]
+shape = SubResource("8")
+
+[node name="TopMid" type="StaticBody2D" parent="."]
+position = Vector2(580, 30)
+
+[node name="Sprite2D" type="Sprite2D" parent="TopMid"]
+texture = SubResource("11")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopMid"]
+shape = SubResource("10")
+
+[node name="TopRight" type="StaticBody2D" parent="."]
+position = Vector2(860, 110)
+
+[node name="Sprite2D" type="Sprite2D" parent="TopRight"]
+texture = SubResource("9")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopRight"]
+shape = SubResource("8")
+
+[node name="NePillar" type="StaticBody2D" parent="."]
+position = Vector2(1130, 170)
+
+[node name="Sprite2D" type="Sprite2D" parent="NePillar"]
+texture = SubResource("9")
+modulate = Color(0.35, 0.28, 0.22, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="NePillar"]
+shape = SubResource("8")
 
 [node name="KillZone" type="Area2D" parent="."]
 script = ExtResource("5")
