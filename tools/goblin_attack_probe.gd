@@ -23,8 +23,11 @@ func _initialize() -> void:
 	_player = StubPlayer.new()
 	_player.add_to_group("player")
 	get_root().add_child.call_deferred(_player)
-	var packed := load("res://scenes/enemies/goblin.tscn")
-	_goblin = packed.instantiate()
+	# Cena do inimigo via arg (depois de --), default goblin.
+	var args := OS.get_cmdline_user_args()
+	var path := args[0] if args.size() > 0 else "res://scenes/enemies/goblin.tscn"
+	print("ALVO: ", path)
+	_goblin = load(path).instantiate()
 	get_root().add_child.call_deferred(_goblin)
 
 func _process(_d: float) -> bool:
