@@ -9,6 +9,11 @@ const ATTACK_COOLDOWN = 1.8
 const MAX_HP = 100.0
 const KNOCKBACK_DECAY = 800.0
 
+# Ataque telegrafado (pesado: janela maior, lunge curto).
+const ATTACK_WINDUP = 0.42
+const ATTACK_LUNGE  = 120.0
+const STRIKE_RANGE  = 50.0
+
 const DamageNumber = preload("res://scenes/effects/damage_number.tscn")
 const ManaOrb      = preload("res://scenes/world/mana_orb.tscn")
 
@@ -22,6 +27,8 @@ var is_dead: bool = false
 var knockback: Vector2 = Vector2.ZERO
 var player: Node = null
 var _alerted: bool = false
+var _winding: bool = false
+var _windup_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -54,7 +61,12 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if player and is_instance_valid(player):
+	if _winding:
+		velocity.x = move_toward(velocity.x, 0.0, SPEED * 10.0 * delta)
+		_windup_timer -= delta
+		if _windup_timer <= 0.0:
+			_strike()
+	elif player and is_instance_valid(player):
 		var dist = global_position.distance_to(player.global_position)
 		if dist < DETECT_RANGE:
 			if not _alerted:
@@ -62,7 +74,7 @@ func _physics_process(delta: float) -> void:
 				_show_alert()
 			_chase(delta)
 			if dist < ATTACK_RANGE and attack_timer <= 0.0:
-				_attack()
+				_start_windup()
 		else:
 			_patrol(delta)
 	else:
@@ -113,15 +125,38 @@ func _show_alert() -> void:
 	tw.tween_property(lbl, "modulate:a", 0.0, 0.24)
 	tw.tween_callback(lbl.queue_free)
 
-func _attack() -> void:
+func _start_windup() -> void:
+	_winding = true
+	_windup_timer = ATTACK_WINDUP
+	facing = sign(player.global_position.x - global_position.x)
+	if facing == 0: facing = 1.0
+	var s := $Sprite2D
+	s.flip_h = facing < 0
+	s.modulate = Color(1.8, 1.3, 0.5)   # telegrafia: brilho quente
+	s.create_tween().tween_property(s, "position", Vector2(-facing * 5.0, 0.0), ATTACK_WINDUP * 0.8)
+
+func _strike() -> void:
+	_winding = false
 	attack_timer = ATTACK_COOLDOWN
+	var s := $Sprite2D
+	s.modulate = Color.WHITE
+	s.create_tween().tween_property(s, "position", Vector2.ZERO, 0.08)
 	AudioManager.play("enemy_attack", randf_range(0.65, 0.85))
-	if player.has_method("take_damage"):
-		player.take_damage(ATTACK_DAMAGE, global_position)
+	velocity.x = facing * ATTACK_LUNGE
+	if player and is_instance_valid(player) and player.has_method("take_damage"):
+		if global_position.distance_to(player.global_position) <= STRIKE_RANGE:
+			player.take_damage(ATTACK_DAMAGE, global_position)
+
+func _cancel_windup() -> void:
+	if not _winding:
+		return
+	_winding = false
+	$Sprite2D.position = Vector2.ZERO
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
 		return
+	_cancel_windup()
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	var dmg = DamageNumber.instantiate()

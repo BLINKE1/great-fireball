@@ -254,6 +254,9 @@ func _tick_timers(delta: float) -> void:
 	if is_on_floor() and abs(velocity.x) > 20.0 and not is_dashing and _step_timer <= 0.0:
 		_step_timer = 0.27
 		AudioManager.play("step", randf_range(0.82, 1.18))
+		# Pufezinho de poeira atrás do pé (toque de game feel ao correr).
+		VFX.burst(global_position + Vector2(-facing * 6.0, 16.0), get_parent(),
+				Color(0.70, 0.58, 0.42, 0.55), 3, 24.0, -8.0)
 	if is_dashing:
 		dash_timer -= delta
 		if dash_timer <= 0.0:
