@@ -30,4 +30,29 @@ do goblin. Cada inimigo mantém sua identidade (knockback, flash, morte, HP).
 - Som de hit com pitch aleatório (some a repetição monótona).
 - Goblin refatorado pra usar o mesmo helper (uma fonte de verdade, feel idêntico).
 
+### 2. Fim do feedback dobrado ao acertar inimigo
+Armas (cajado + mísseis) tocavam `hit` + hitstop/shake por conta própria, e como
+o `enemy.take_damage` agora também faz tudo isso, cada acerto disparava **som de
+hit dobrado, hitstop dobrado e shake dobrado**. Limpei a divisão: a **arma** fica
+só com sua explosão visual (burst/ring na cor da magia); o **inimigo** é dono da
+reação de impacto. (`missile_giant` mantido — explosão AoE deliberada.)
+
+### 3. Jitter automático de pitch nos SFX repetitivos
+A maioria das chamadas tocava em pitch fixo → repetição monótona ao bater/andar/
+atirar em sequência. O `AudioManager.play()` agora aplica jitter sutil de pitch
+(curado por som) quando o chamador usou pitch padrão; sons musicais/dramáticos
+ficam de fora. Quebra a monotonia sem tocar em dezenas de call sites.
+
+### 4. Goblin com ataque TELEGRAFADO (combate legível e justo)
+Antes o goblin dava dano por toque instantâneo, sem aviso — "barato" e
+inesquivável. Agora ele **arma o golpe**: brilho quente + recua o "braço"
+(anticipation) por ~0,3s, então desfere um **lunge** pra frente. O dano **só
+acontece se o player ainda estiver perto** (dá pra esquivar no windup), e
+**levar dano cancela o golpe** (recompensa trocar na hora certa).
+- Validado em `tools/goblin_attack_probe.gd`: entra em windup, golpe acerta,
+  e hit cancela — tudo sem crash.
+- 🎚️ **Pro teu playtest:** `ATTACK_WINDUP` (0.30), `ATTACK_LUNGE` (160),
+  `STRIKE_RANGE` (46) no topo de `goblin.gd`. Windup curto = agressivo; longo =
+  mais fácil de ler. Só apliquei no goblin básico (inimigo central do slice).
+
 _(continua…)_
