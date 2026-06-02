@@ -157,7 +157,7 @@ def draw_hair(img, mana=5, bob=0, sway=0):
 
 
 def draw_face(img, mana=5):
-    full = mana >= 3                                     # mana cheia → olhos vivos
+    full = True                                          # olhos SEMPRE vivos (sem olho-vazio)
     # ── Pele + formato (cantos arredondados, luz de cima-esquerda) ────────────
     rect(img, 10,  4, 22, 16, SKIN)
     hline(img, 11, 21,  4, OUTLINE); hline(img, 11, 21, 16, OUTLINE)
@@ -201,45 +201,69 @@ def draw_neck(img):
     vline(img, 13, 17, 19, OUTLINE); vline(img, 18, 17, 19, OUTLINE)
 
 
-def draw_cape(img, lower_y=56, hem_sway=0):
-    # ── Gola/ombros inclinados (trapézio: estreito no pescoço → largo nos ombros)
-    rect(img, 10, 19, 21, 19, CAPE)
-    rect(img,  8, 20, 23, 20, CAPE)
-    rect(img,  7, 21, 24, 23, CAPE)
-    hline(img, 11, 20, 18, OUTLINE)                      # linha da gola
+def draw_bangs(img, mana=5, bob=0):
+    """Franja sobre a testa (pontas irregulares) emoldurando o rosto. Desenhada
+    DEPOIS do rosto p/ cair sobre a testa. Usa a cor de cabelo dependente de mana."""
+    b = bob
+    _mhline(img, 10, 21, 4 + b, HAIR, mana)              # base da franja
+    _mhline(img, 10, 21, 5 + b, HAIR, mana)
+    _mhline(img, 12, 16, 4 + b, HAIR_H, mana)            # brilho no topo da franja
+    # pontas descendo sobre a testa (deixa os olhos livres em y9+)
+    for x in (10, 13, 16, 19, 21):
+        px(img, x, 6 + b, hair_c(6 + b, HAIR, mana))
+    px(img, 11, 7 + b, hair_c(7 + b, HAIR_D, mana))      # mechas mais longas
+    px(img, 20, 7 + b, hair_c(7 + b, HAIR_D, mana))
+    px(img, 15, 6 + b, SKIN); px(img, 16, 6 + b, SKIN)   # repartido leve no meio
 
-    # ── Asa esquerda (costas) — leve billow + hem afunilado/pontudo ───────────
-    hs = hem_sway                                        # balanço da barra (animação)
-    rect(img,  4, 22, 13, lower_y - 4, CAPE)
-    rect(img,  4 + hs // 2 if hs else 4, lower_y - 3, 13, lower_y, CAPE)
-    rect(img,  5 + hs, lower_y + 1, 12 + hs, lower_y + 2, CAPE)
-    rect(img,  7 + hs, lower_y + 3, 10 + hs, lower_y + 3, CAPE)
-    # dobra interna escura (separa a asa do corpo)
-    vline(img, 11, 24, lower_y, CAPE_D); vline(img, 12, 24, lower_y, CAPE_D)
-    rect(img,  4, 42,  6, lower_y, CAPE_D)               # sombra externa baixa
-    # rim-light frio na borda externa (luz de cima-esquerda)
-    vline(img,  4, 24, 31, CAPE_L); px(img, 5, 22, CAPE_L); px(img, 5, 23, CAPE_L)
 
-    # ── Painel frontal (direita) — forro ROXO aparecendo na abertura ──────────
-    rect(img, 18, 22, 24, 37, CAPE)
-    vline(img, 18, 24, 35, LINING)                       # forro (acento de cor)
-    vline(img, 19, 25, 34, LINING_D)
-    rect(img, 19, 38, 23, 38, CAPE)                      # leve hem
-    px(img, 24, 30, CAPE_D)                              # dobra na frente
-    # glow azul do orbe lambendo a capa (luz motivada pela magia)
-    px(img, 23, 23, CAPE_GLOW); px(img, 24, 23, CAPE_GLOW)
-    px(img, 23, 24, CAPE_GLOW); px(img, 24, 25, CAPE_GLOW)
-    px(img, 22, 22, CAPE_GLOW)
+def _bell_edges(y, lower_y):
+    """Bordas (x0,x1) do sino fechado na altura y. Estreito nos ombros → largo na barra."""
+    t = (y - 23) / max(1, (lower_y - 23))
+    x0 = int(round(7.0 - t * 2.0))      # alarga p/ a esquerda
+    x1 = int(round(24.0 + t * 2.0))     # alarga p/ a direita
+    return x0, x1
 
-    # ── Outlines externos ─────────────────────────────────────────────────────
-    vline(img,  3, 22, lower_y + 1, OUTLINE)
-    vline(img, 25, 21, 38, OUTLINE)
-    hline(img, 18, 25, 38, OUTLINE)
-    # contorno do hem afunilado (esquerda, segue o balanço)
-    px(img,  4 + hs, lower_y + 1, OUTLINE); px(img,  5 + hs, lower_y + 3, OUTLINE)
-    hline(img, 6 + hs, 10 + hs, lower_y + 4, OUTLINE)
-    px(img, 11 + hs, lower_y + 3, OUTLINE); px(img, 12 + hs, lower_y + 3, OUTLINE)
-    px(img, 13, lower_y + 1, OUTLINE)
+def draw_cape(img, lower_y=52, hem_sway=0):
+    """Manto FECHADO estilo Hollow Knight: sino sólido cobrindo o corpo todo,
+    sem abertura frontal, braços/bodysuit escondidos por baixo."""
+    hs = hem_sway
+    # ── Gola/ombros (trapézio do pescoço aos ombros) ──
+    rect(img, 11, 19, 20, 19, CAPE)
+    rect(img,  9, 20, 22, 20, CAPE)
+    rect(img,  8, 21, 23, 22, CAPE)
+
+    # ── Corpo do manto: sino fechado e sólido ──
+    for y in range(23, lower_y + 1):
+        x0, x1 = _bell_edges(y, lower_y)
+        rect(img, x0, y, x1, y, CAPE)
+    # Barra (hem) flarada com leve balanço
+    x0b, x1b = _bell_edges(lower_y, lower_y)
+    rect(img, x0b + hs, lower_y + 1, x1b + hs, lower_y + 2, CAPE)
+    rect(img, x0b + 2 + hs, lower_y + 3, x1b - 2 + hs, lower_y + 3, CAPE_D)
+
+    # ── Costura/forro central (acento roxo, sugere o fecho do manto) ──
+    vline(img, 15, 25, lower_y - 3, LINING_D)
+    vline(img, 16, 25, lower_y - 3, LINING)
+    # ── Rim-light frio na borda esquerda (luz da lua) + sombra de forma à direita ─
+    for y in range(23, lower_y + 1):
+        x0, x1 = _bell_edges(y, lower_y)
+        px(img, x0, y, CAPE_L)
+        if y >= 27: px(img, x1, y, CAPE_D)
+        if y >= 30: px(img, x1 - 1, y, CAPE_D)
+
+    # ── Broche-gema mágico no peito (acento focal azul + engaste dourado) ──
+    px(img, 15, 22, GOLD); px(img, 16, 22, GOLD_D)
+    px(img, 15, 23, ORB_D); px(img, 16, 23, ORB)
+    px(img, 15, 24, ORB);   px(img, 16, 24, ORB_H)
+    px(img, 14, 23, CAPE_GLOW); px(img, 17, 23, CAPE_GLOW)   # glow da gema na capa
+
+    # ── Outline do sino ──
+    for y in range(22, lower_y + 1):
+        x0, x1 = _bell_edges(y, lower_y)
+        px(img, x0 - 1, y, OUTLINE); px(img, x1 + 1, y, OUTLINE)
+    hline(img, x0b - 1 + hs, x1b + 1 + hs, lower_y + 3, OUTLINE)
+    px(img, x0b - 1 + hs, lower_y + 1, OUTLINE); px(img, x1b + 1 + hs, lower_y + 1, OUTLINE)
+    px(img, x0b + hs, lower_y + 3, OUTLINE); px(img, x1b + hs, lower_y + 3, OUTLINE)
 
 
 def draw_bodysuit(img):
@@ -338,18 +362,19 @@ def mirror_face(img):
 
 # ── Montagem de um frame ────────────────────────────────────────────────────--
 def compose(mana=5, hair_bob=0, arms="down", l_dy=0, r_dy=0,
-            legs=None, boots=None, knee_dy=0, cape_lower=56,
-            staff=True, sway=0, hem_sway=0) -> Image.Image:
+            legs=None, boots=None, knee_dy=0, cape_lower=52,
+            staff=False, sway=0, hem_sway=0) -> Image.Image:
     img = Image.new("RGBA", (W, H), T)
     draw_hair(img, mana=mana, bob=hair_bob, sway=sway)
     draw_face(img, mana=mana)
+    draw_bangs(img, mana=mana, bob=hair_bob)
     draw_neck(img)
-    draw_cape(img, lower_y=cape_lower, hem_sway=hem_sway)
-    draw_bodysuit(img)
-    draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy)
-    draw_belt(img)
-    draw_legs(img, **(legs or {}), knee_dy=knee_dy)
-    draw_boots(img, **(boots or {}))
+    draw_legs(img, **(legs or {}), knee_dy=knee_dy)      # pernas por baixo do manto
+    draw_cape(img, lower_y=cape_lower, hem_sway=hem_sway) # manto FECHADO cobre o corpo
+    # Braços só nas poses de ação (saem POR CIMA do manto); na idle ficam cobertos.
+    if arms != "down":
+        draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy)
+    draw_boots(img, **(boots or {}))                     # botas espiam sob a barra
     if staff:
         draw_staff(img, mana=mana)
     mirror_face(img)
