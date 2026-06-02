@@ -34,6 +34,7 @@ const DASH_DURATION       = 0.18
 const DASH_COOLDOWN       = 0.5
 const SWORD_COOLDOWN      = 0.4
 const SWORD_FLASH         = 0.1
+const SWORD_LUNGE         = 190.0  # passo pra frente no golpe (peso/compromisso)
 const MELEE_MANA_GAIN     = 12.0   # mana recuperada por golpe de cajado que acerta
 
 # New missile variants
@@ -558,6 +559,10 @@ func _attack_sword() -> void:
 	slash.facing = facing
 	slash.global_position = global_position + Vector2(facing * 36, -16)
 	get_parent().add_child(slash)
+	# Peso do golpe: passo pra frente no chão + squash horizontal (compromisso).
+	if is_on_floor():
+		velocity.x = facing * SWORD_LUNGE
+	_squash = Vector2(1.18, 0.86)
 
 func gain_mana_from_melee() -> void:
 	# Agressão recompensa: acertar com o cajado devolve mana (loop melee↔magia).
