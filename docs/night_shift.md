@@ -55,4 +55,33 @@ acontece se o player ainda estiver perto** (dá pra esquivar no windup), e
   `STRIKE_RANGE` (46) no topo de `goblin.gd`. Windup curto = agressivo; longo =
   mais fácil de ler. Só apliquei no goblin básico (inimigo central do slice).
 
+### 5. Golpe de cajado com peso (Q)
+O ataque de cajado era "chapado" (só spawnava o slash). Agora tem compromisso
+físico: **passo/lunge pra frente** no chão (`SWORD_LUNGE`) + **squash horizontal**
+no corpo. A Soph avança no golpe — bater fica mais gostoso. Constante de tato no
+topo de `player.gd`.
+
+### 6. Números de dano com cor por magnitude + deriva
+- Cor escala com o dano: branco-azulado (leve) → amarelo (padrão) → laranja
+  (crit ≥45) → vermelho-laranja (pesado ≥70); fonte maior por tier.
+- Deriva horizontal aleatória: números empilhados se espalham (legibilidade ao
+  acertar rápido).
+- Pop maior pros crits.
+
+### 📸 Prova visual
+`tools/combat_capture.gd` (determinístico) gera dois closes em
+`tools/art_director/iterations/godot_shots/`:
+- `juice_windup.png` — goblin telegrafando (brilho quente + "!").
+- `juice_impact.png` — faísca direcional + anel branco + número "20" + flash
+  vermelho + barra de HP danificada. Tudo num quadro.
+
+## Como testar de manhã
+1. `git pull` no master.
+2. Test room (`soph_test_room.tscn`, F6): bate nos goblins (Q cajado / Z míssil),
+   spawna mais com **G**. Sente o juice + o windup deles (brilho antes de bater —
+   dá pra esquivar/interromper batendo).
+3. Se algum "tato" estiver off, os números estão em constantes no topo dos
+   arquivos (`goblin.gd`: ATTACK_WINDUP/LUNGE/STRIKE_RANGE; `player.gd`:
+   SWORD_LUNGE). Fácil de afinar.
+
 _(continua…)_
