@@ -210,11 +210,12 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if kdir == 0: kdir = 1.0
 	knockback = Vector2(kdir * 120.0, -50.0)  # Ogre is very hard to knock back
 
-	AudioManager.play("hit")
-	GameState.start_hitstop(0.09)
+	AudioManager.play("hit", randf_range(0.84, 1.0))
+	var killing := hp <= 0.0
+	VFX.enemy_impact(sprite, global_position, get_parent(), kdir, amount, killing, -36.0)
 	_flash()
 	_check_phase()
-	if hp <= 0.0:
+	if killing:
 		_die()
 
 func _check_phase() -> void:

@@ -129,10 +129,11 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var kdir = sign(global_position.x - from.x) if from != Vector2.ZERO else 1.0
 	if kdir == 0: kdir = 1.0
 	knockback = Vector2(kdir * 280.0, -90.0)
-	AudioManager.play("hit")
-	GameState.start_hitstop()
+	AudioManager.play("hit", randf_range(0.92, 1.12))
+	var killing := hp <= 0.0
+	VFX.enemy_impact($Sprite2D, global_position, get_parent(), kdir, amount, killing)
 	_flash()
-	if hp <= 0.0:
+	if killing:
 		_die()
 
 func _flash() -> void:
