@@ -205,14 +205,20 @@ def draw_bangs(img, mana=5, bob=0):
     """Franja sobre a testa (pontas irregulares) emoldurando o rosto. Desenhada
     DEPOIS do rosto p/ cair sobre a testa. Usa a cor de cabelo dependente de mana."""
     b = bob
-    _mhline(img, 10, 21, 4 + b, HAIR, mana)              # base da franja
+    # Franja cheia/pesada: três linhas sólidas cobrindo a testa.
+    _mhline(img, 10, 21, 4 + b, HAIR, mana)
     _mhline(img, 10, 21, 5 + b, HAIR, mana)
-    _mhline(img, 12, 16, 4 + b, HAIR_H, mana)            # brilho no topo da franja
+    _mhline(img, 10, 21, 6 + b, HAIR, mana)
+    _mhline(img, 11, 16, 4 + b, HAIR_H, mana)            # brilho no topo
     # pontas descendo sobre a testa (deixa os olhos livres em y9+)
-    for x in (10, 13, 16, 19, 21):
-        px(img, x, 6 + b, hair_c(6 + b, HAIR, mana))
-    px(img, 11, 7 + b, hair_c(7 + b, HAIR_D, mana))      # mechas mais longas
-    px(img, 20, 7 + b, hair_c(7 + b, HAIR_D, mana))
+    for x in (10, 12, 14, 17, 19, 21):
+        px(img, x, 7 + b, hair_c(7 + b, HAIR, mana))
+    # mechas mais longas nas laterais (emolduram), centro mais curto
+    px(img, 10, 8 + b, hair_c(8 + b, HAIR_D, mana))
+    px(img, 11, 8 + b, hair_c(8 + b, HAIR_D, mana))
+    px(img, 20, 8 + b, hair_c(8 + b, HAIR_D, mana))
+    px(img, 21, 8 + b, hair_c(8 + b, HAIR_D, mana))
+    px(img, 13, 7 + b, HAIR_H if mana >= 4 else hair_c(7 + b, HAIR, mana))
     px(img, 15, 6 + b, SKIN); px(img, 16, 6 + b, SKIN)   # repartido leve no meio
 
 
