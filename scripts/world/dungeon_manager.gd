@@ -4,6 +4,7 @@ const GoblinScene          = preload("res://scenes/enemies/goblin.tscn")
 const GoblinArcherScene    = preload("res://scenes/enemies/goblin_archer.tscn")
 const GolemScene           = preload("res://scenes/enemies/golem.tscn")
 const ForestOgreScene      = preload("res://scenes/enemies/forest_ogre.tscn")
+const GoblinMutantScene    = preload("res://scenes/enemies/goblin_mutant.tscn")
 const FireGoblinArcherScene = preload("res://scenes/enemies/fire_goblin_archer.tscn")
 
 @onready var player       = get_tree().get_first_node_in_group("player")
@@ -126,16 +127,17 @@ func _on_boss_room(body: Node) -> void:
 	boss_trigger.monitoring = false
 	await _say([
 		"O que é isso?!",
-		"Um Ogro enorme... Ele guarda alguma coisa importante.",
+		"Um goblin... mas GIGANTE. Deformado, coberto de bombas...",
+		"O líder mutante. Ele guarda alguma coisa importante.",
 		"Não há como evitar. Vou ter que lutar!",
-	], ["Soph", "Soph", "Soph"])
+	], ["Soph", "Soph", "Soph", "Soph"])
 	if is_instance_valid(player) and player.has_node("Camera2D"):
 		var cam: Camera2D = player.get_node("Camera2D")
 		cam.create_tween().tween_property(cam, "zoom", Vector2(1.18, 1.18), 1.4).set_ease(Tween.EASE_IN_OUT)
 	MusicManager.play("boss")
-	var ogre = _spawn(ForestOgreScene, Vector2(4350, 455))
-	boss_hp_bar.show_boss("Ogro da Floresta", ogre)
-	ogre.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
+	var boss = _spawn(GoblinMutantScene, Vector2(4350, 432))
+	boss_hp_bar.show_boss("Goblin Mutante", boss)
+	boss.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
 
 func _on_ogre_died() -> void:
 	for e in get_tree().get_nodes_in_group("enemy"):

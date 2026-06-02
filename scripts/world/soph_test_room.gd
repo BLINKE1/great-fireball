@@ -38,7 +38,34 @@ const ENEMY_SCENES := {
 	KEY_4: "res://scenes/enemies/golem.tscn",
 	KEY_5: "res://scenes/enemies/fire_goblin_archer.tscn",
 	KEY_6: "res://scenes/enemies/forest_ogre.tscn",
+	KEY_7: "res://scenes/enemies/goblin_mutant.tscn",
 }
+
+# ── Torre de bhop/kreedz até a ARENA DO BOSS ──────────────────────────────────
+# Coluna de plataformas alinhadas a partir do ponto mais alto atual (TopMid,
+# ~580,30). Cada andar de cima funciona como "teto": pra subir você pula pra
+# FORA da coluna e volta (double jump) — vai e volta ganhando um andar por pulo.
+# No topo, uma plataforma GRANDE: ao pisar nela, o Goblin Mutante spawna.
+const MutantScene  := preload("res://scenes/enemies/goblin_mutant.tscn")
+const TOWER_X      := 580.0
+const TOWER_BASE_Y := 30.0     # referência: TopMid (plataforma mais alta atual)
+const TOWER_GAP    := 88.0     # vão vertical entre andares (tato: maior = + difícil)
+const TOWER_COUNT  := 10
+const TOWER_PLAT_W := 54.0
+const TOWER_PLAT_H := 12.0
+const ARENA_W       := 680.0     # DOBRADO (por precaução)
+const ARENA_H       := 40.0
+# Desloca a arena pra DIREITA: a borda esquerda dela fica ao lado da coluna,
+# deixando CÉU ABERTO acima do topo da coluna. Assim você pula pra cima+direita e
+# pousa na borda da arena — sem bater a cabeça no "T". (0 = em cima da coluna.)
+const ARENA_OFFSET_X := 380.0
+var _arena_boss_spawned := false
+
+func _arena_center_y() -> float:
+	return TOWER_BASE_Y - (TOWER_COUNT + 1) * TOWER_GAP
+
+func _arena_center_x() -> float:
+	return TOWER_X + ARENA_OFFSET_X
 
 func _ready() -> void:
 	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
@@ -57,6 +84,7 @@ func _ready() -> void:
 	_build_overlay()
 	_apply()
 	_spawn_training_goblins.call_deferred()
+	_build_bhop_tower()
 
 # ── Goblins de treino ────────────────────────────────────────────────────────
 func _spawn_training_goblins() -> void:
@@ -72,6 +100,55 @@ func _spawn_enemy(scene: PackedScene, pos: Vector2) -> void:
 	var e := scene.instantiate()
 	add_child(e)
 	e.global_position = pos   # após add_child p/ valer global_position
+
+# ── Torre de bhop + arena do Boss ─────────────────────────────────────────────
+func _build_bhop_tower() -> void:
+	# 10 andares alinhados (coluna), cada um "teto" do de baixo → out-and-back.
+	for i in range(1, TOWER_COUNT + 1):
+		var y := TOWER_BASE_Y - i * TOWER_GAP
+		_make_platform(Vector2(TOWER_X, y), TOWER_PLAT_W, TOWER_PLAT_H,
+				Color(0.32, 0.42, 0.58))
+	# Plataforma GRANDE da arena no topo — deslocada pra direita (sai do "T").
+	var ay := _arena_center_y()
+	var ax := _arena_center_x()
+	_make_platform(Vector2(ax, ay), ARENA_W, ARENA_H, Color(0.48, 0.20, 0.20))
+	# Gatilho: pisar na arena spawna o Boss (uma vez).
+	var trig := Area2D.new()
+	trig.position = Vector2(ax, ay - 30.0)
+	var cs := CollisionShape2D.new()
+	var rs := RectangleShape2D.new()
+	rs.size = Vector2(ARENA_W - 20.0, 44.0)
+	cs.shape = rs
+	trig.add_child(cs)
+	add_child(trig)
+	trig.body_entered.connect(_on_arena_entered)
+
+func _make_platform(pos: Vector2, w: float, h: float, col: Color) -> void:
+	var body := StaticBody2D.new()
+	body.position = pos
+	var cs := CollisionShape2D.new()
+	var rs := RectangleShape2D.new()
+	rs.size = Vector2(w, h)
+	cs.shape = rs
+	body.add_child(cs)
+	var spr := Sprite2D.new()
+	var ph := PlaceholderTexture2D.new()
+	ph.size = Vector2(w, h)
+	spr.texture = ph
+	spr.modulate = col
+	body.add_child(spr)
+	add_child(body)
+
+func _on_arena_entered(b: Node) -> void:
+	if _arena_boss_spawned:
+		return
+	if not (b is Node and b.is_in_group("player")):
+		return
+	_arena_boss_spawned = true
+	var ay := _arena_center_y()
+	var boss := MutantScene.instantiate()
+	add_child(boss)
+	boss.global_position = Vector2(_arena_center_x(), ay - 75.0)   # cai na arena
 
 func _build_overlay() -> void:
 	var cl := CanvasLayer.new()
@@ -157,4 +234,4 @@ func _update_label() -> void:
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
 		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
-		+ "G goblin  K clear   1goblin 2archer 3leader 4golem 5fire 6OGRE"
+		+ "G goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"
