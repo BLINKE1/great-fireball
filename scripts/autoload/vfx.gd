@@ -132,6 +132,34 @@ func ground_burst(world_pos: Vector2, parent: Node, color: Color, count: int = 2
 	if is_instance_valid(p):  p.queue_free()
 	if is_instance_valid(p2): p2.queue_free()
 
+# ── Juice de impacto reutilizável (todo inimigo bate igual de gostoso) ────────
+# Chame de take_damage DEPOIS de calcular kdir/killing. Centraliza o "tato":
+# hitstop escalado, faísca direcional, screenshake proporcional e squash ao
+# apanhar. Cada inimigo segue dono do seu flash/knockback/morte/HP.
+func enemy_impact(sprite: Node2D, world_pos: Vector2, parent: Node, kdir: float,
+		amount: float, killing: bool, top_offset: float = -16.0,
+		squash: bool = true) -> void:
+	# Hitstop escalado: o golpe letal congela mais (o "crunch").
+	var freeze := 0.11 if killing else clampf(0.045 + amount * 0.0022, 0.045, 0.10)
+	GameState.start_hitstop(freeze)
+	# Faísca direcional + estalo branco, esguichando no sentido do golpe.
+	hit_spark(world_pos + Vector2(-kdir * 10.0, top_offset), parent, -kdir)
+	# Screenshake proporcional ao dano (via câmera do player).
+	var pl := get_tree().get_first_node_in_group("player")
+	if pl and pl.has_method("shake"):
+		pl.shake(clampf(amount * 0.16, 2.5, 7.0), 0.13)
+	# Squash elástico ao apanhar (só em hit não-letal; a morte tem sua animação).
+	# rest_scale em meta → robusto a hits repetidos e a sprites com escala != 1.
+	# squash=false p/ inimigos que animam a própria escala (ex.: boss em charge).
+	if squash and not killing and is_instance_valid(sprite):
+		if not sprite.has_meta("rest_scale"):
+			sprite.set_meta("rest_scale", sprite.scale)
+		var base: Vector2 = sprite.get_meta("rest_scale")
+		var tw := sprite.create_tween()
+		tw.tween_property(sprite, "scale", base * Vector2(1.26, 0.76), 0.05)
+		tw.tween_property(sprite, "scale", base, 0.12)\
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
 func _fade_gradient(base: Color) -> Gradient:
 	var g := Gradient.new()
 	g.set_color(0, base)

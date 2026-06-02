@@ -35,5 +35,7 @@ func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	body.mana.restore(RESTORE_AMOUNT)
 	AudioManager.play("orb_pickup")
-	VFX.burst(global_position, get_parent(), Color(0.22, 0.56, 1.0), 10, 58.0, 45.0)
+	# Coletar gostoso: estalo de partículas + anel de "absorção".
+	VFX.burst(global_position, get_parent(), Color(0.30, 0.66, 1.0), 12, 70.0, 30.0)
+	VFX.ring(global_position, get_parent(), Color(0.45, 0.78, 1.0, 0.8), 22.0, 0.26)
 	queue_free()

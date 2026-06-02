@@ -145,6 +145,7 @@ func _start_charge() -> void:
 	is_winding_up = true
 	velocity.x = 0.0
 	AudioManager.play("stomp")
+	sprite.modulate = Color(2.0, 0.65, 0.45)   # telegrafia: brilho vermelho = vai investir!
 	# Scale up briefly as windup visual
 	var tw := create_tween()
 	tw.tween_property(sprite, "scale", Vector2(1.15, 0.88), CHARGE_WINDUP * 0.5)
@@ -153,6 +154,7 @@ func _start_charge() -> void:
 	if is_dead or not is_instance_valid(self): return
 	is_winding_up = false
 	is_charging = true
+	sprite.modulate = Color.WHITE
 	await get_tree().create_timer(0.55).timeout
 	if is_instance_valid(self) and not is_dead:
 		is_charging = false
@@ -170,10 +172,12 @@ func _do_stomp() -> void:
 	if player and is_instance_valid(player):
 		player.shake(12.0, 0.5)
 
-	# Scale squash on stomp
+	# Scale squash + flash quente no impacto do pisão (telegrafia/peso).
+	sprite.modulate = Color(2.0, 0.8, 0.5)
 	var tw := create_tween()
 	tw.tween_property(sprite, "scale", Vector2(1.2, 0.75), 0.10)
 	tw.tween_property(sprite, "scale", Vector2(1.0, 1.0),  0.20)
+	tw.parallel().tween_property(sprite, "modulate", Color.WHITE, 0.22)
 
 	# AoE damage
 	if player and is_instance_valid(player):
@@ -210,11 +214,13 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if kdir == 0: kdir = 1.0
 	knockback = Vector2(kdir * 120.0, -50.0)  # Ogre is very hard to knock back
 
-	AudioManager.play("hit")
-	GameState.start_hitstop(0.09)
+	AudioManager.play("hit", randf_range(0.84, 1.0))
+	var killing := hp <= 0.0
+	# squash=false: o ogre anima a própria escala (charge/stomp) — não conflitar.
+	VFX.enemy_impact(sprite, global_position, get_parent(), kdir, amount, killing, -36.0, false)
 	_flash()
 	_check_phase()
-	if hp <= 0.0:
+	if killing:
 		_die()
 
 func _check_phase() -> void:

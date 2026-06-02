@@ -9,6 +9,14 @@ const ATTACK_COOLDOWN = 1.0
 const MAX_HP = 40.0
 const KNOCKBACK_DECAY = 1100.0
 
+# ── Ataque telegrafado (combate legível e justo) ──────────────────────────────
+# O goblin "arma" o golpe (brilho quente + recua o braço) antes de bater, dando
+# uma janela pra esquivar/interromper. Levar dano cancela o windup. Tunar no
+# playtest: windup curto = agressivo; longo = mais fácil de ler/esquivar.
+const ATTACK_WINDUP = 0.30      # tempo de telegrafia antes do golpe
+const ATTACK_LUNGE  = 160.0     # impulso pra frente no golpe (compromisso visual)
+const STRIKE_RANGE  = 46.0      # alcance no instante do golpe (dá pra sair fora)
+
 const DamageNumber = preload("res://scenes/effects/damage_number.tscn")
 const ManaOrb      = preload("res://scenes/world/mana_orb.tscn")
 
@@ -22,6 +30,8 @@ var is_dead: bool = false
 var knockback: Vector2 = Vector2.ZERO
 var player: Node = null
 var _alerted: bool = false
+var _winding: bool = false
+var _windup_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -54,7 +64,13 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if player and is_instance_valid(player):
+	if _winding:
+		# Armando o golpe: planta os pés e descarrega o windup; ao zerar, ataca.
+		velocity.x = move_toward(velocity.x, 0.0, SPEED * 10.0 * delta)
+		_windup_timer -= delta
+		if _windup_timer <= 0.0:
+			_strike()
+	elif player and is_instance_valid(player):
 		var dist = global_position.distance_to(player.global_position)
 		if dist < DETECT_RANGE:
 			if not _alerted:
@@ -62,7 +78,7 @@ func _physics_process(delta: float) -> void:
 				_show_alert()
 			_chase(delta)
 			if dist < ATTACK_RANGE and attack_timer <= 0.0:
-				_attack()
+				_start_windup()
 		else:
 			_patrol(delta)
 	else:
@@ -113,15 +129,42 @@ func _show_alert() -> void:
 	tw.tween_property(lbl, "modulate:a", 0.0, 0.24)
 	tw.tween_callback(lbl.queue_free)
 
-func _attack() -> void:
+func _start_windup() -> void:
+	# Trava o alvo e telegrafa: brilho quente + recua o "braço" (anticipation).
+	_winding = true
+	_windup_timer = ATTACK_WINDUP
+	facing = sign(player.global_position.x - global_position.x)
+	if facing == 0: facing = 1.0
+	var s := $Sprite2D
+	s.flip_h = facing < 0
+	s.modulate = Color(1.7, 1.35, 0.55)
+	s.create_tween().tween_property(s, "position", Vector2(-facing * 4.0, 0.0), ATTACK_WINDUP * 0.8)
+
+func _strike() -> void:
+	# Descarrega o golpe: lunge pra frente + dano SÓ se o player ainda está perto.
+	_winding = false
 	attack_timer = ATTACK_COOLDOWN
+	var s := $Sprite2D
+	s.modulate = Color.WHITE
+	s.create_tween().tween_property(s, "position", Vector2.ZERO, 0.08)
 	AudioManager.play("enemy_attack", randf_range(0.90, 1.15))
-	if player.has_method("take_damage"):
-		player.take_damage(ATTACK_DAMAGE, global_position)
+	velocity.x = facing * ATTACK_LUNGE   # compromisso visual com o avanço
+	if player and is_instance_valid(player) and player.has_method("take_damage"):
+		if global_position.distance_to(player.global_position) <= STRIKE_RANGE:
+			player.take_damage(ATTACK_DAMAGE, global_position)
+
+func _cancel_windup() -> void:
+	# Levar dano interrompe o golpe (recompensa trocar na hora certa).
+	if not _winding:
+		return
+	_winding = false
+	var s := $Sprite2D
+	s.position = Vector2.ZERO
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
 		return
+	_cancel_windup()
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	var dmg = DamageNumber.instantiate()
@@ -133,20 +176,11 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var killing := hp <= 0.0
 	knockback = Vector2(kdir * (340.0 if killing else 300.0), -100.0)
 	AudioManager.play("hit", randf_range(0.92, 1.12))
-
-	# ── Juice: freeze escalado ao golpe (morte congela mais), faísca, shake ──
-	var freeze := 0.11 if killing else clampf(0.045 + amount * 0.0022, 0.045, 0.10)
-	GameState.start_hitstop(freeze)
-	var spark_pos := global_position + Vector2(-kdir * 10.0, -16.0)
-	VFX.hit_spark(spark_pos, get_parent(), -kdir)
-	if player and is_instance_valid(player) and player.has_method("shake"):
-		player.shake(clampf(amount * 0.16, 2.5, 7.0), 0.13)
-
+	# Juice de impacto (faísca/shake/hitstop/squash) — compartilhado em VFX.
+	VFX.enemy_impact($Sprite2D, global_position, get_parent(), kdir, amount, killing)
 	_flash()
 	if killing:
 		_die()
-	else:
-		_hit_pop()
 
 func _flash() -> void:
 	# Estala branco no impacto, depois assenta no vermelho de dano.
@@ -157,14 +191,6 @@ func _flash() -> void:
 	await get_tree().create_timer(0.09).timeout
 	if is_instance_valid(self) and not is_dead:
 		$Sprite2D.modulate = Color.WHITE
-
-func _hit_pop() -> void:
-	# Squash elástico ao apanhar — dá borracha/peso ao corpo.
-	var s := $Sprite2D
-	var tw := s.create_tween()
-	tw.tween_property(s, "scale", Vector2(1.26, 0.76), 0.05)
-	tw.tween_property(s, "scale", Vector2(1.0, 1.0), 0.12)\
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _die() -> void:
 	is_dead = true

@@ -33,9 +33,7 @@ func _physics_process(delta: float) -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("enemy"):
-		body.take_damage(DAMAGE, global_position)
-		AudioManager.play("hit")
-		GameState.start_hitstop(0.04)
+		body.take_damage(DAMAGE, global_position)  # impacto (som/shake/hitstop) via enemy_impact
 		VFX.burst(global_position, get_parent(), Color(0.85, 0.45, 1.0), 10, 70.0, 18.0)
 		VFX.ring(global_position, get_parent(), Color(0.80, 0.35, 1.0, 0.80), 22.0, 0.28)
 		queue_free()

@@ -29,6 +29,17 @@ const OFFSET_STEP := 1.0
 const GoblinScene := preload("res://scenes/enemies/goblin.tscn")
 const TRAINING_X := [480, 680, 880]
 
+# Dojo de combate: spawna qualquer inimigo pra sentir o juice + os ataques
+# telegrafados (todos avisam antes de bater). Teclas 1-6.
+const ENEMY_SCENES := {
+	KEY_1: "res://scenes/enemies/goblin.tscn",
+	KEY_2: "res://scenes/enemies/goblin_archer.tscn",
+	KEY_3: "res://scenes/enemies/goblin_leader.tscn",
+	KEY_4: "res://scenes/enemies/golem.tscn",
+	KEY_5: "res://scenes/enemies/fire_goblin_archer.tscn",
+	KEY_6: "res://scenes/enemies/forest_ogre.tscn",
+}
+
 func _ready() -> void:
 	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
 	SkillManager.unlock("double_jump")
@@ -53,11 +64,14 @@ func _spawn_training_goblins() -> void:
 		_spawn_goblin(Vector2(x, 430))
 
 func _spawn_goblin(pos: Vector2) -> void:
-	if GoblinScene == null:
+	_spawn_enemy(GoblinScene, pos)
+
+func _spawn_enemy(scene: PackedScene, pos: Vector2) -> void:
+	if scene == null:
 		return
-	var g := GoblinScene.instantiate()
-	add_child(g)
-	g.global_position = pos   # após add_child p/ valer global_position
+	var e := scene.instantiate()
+	add_child(e)
+	e.global_position = pos   # após add_child p/ valer global_position
 
 func _build_overlay() -> void:
 	var cl := CanvasLayer.new()
@@ -102,9 +116,11 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_G:                       # spawna mais um goblin
 			_spawn_goblin(Vector2(randf_range(440, 920), 410))
-		elif event.keycode == KEY_K:                     # limpa todos os goblins
+		elif event.keycode == KEY_K:                     # limpa todos os inimigos
 			for e in get_tree().get_nodes_in_group("enemy"):
 				e.queue_free()
+		elif ENEMY_SCENES.has(event.keycode):            # 1-6: spawna por tipo
+			_spawn_enemy(load(ENEMY_SCENES[event.keycode]), Vector2(randf_range(460, 900), 400))
 
 func _apply() -> void:
 	if not _sprite:
@@ -140,5 +156,5 @@ func _update_label() -> void:
 	var spd := absf(player.velocity.x)
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
-		+ "H mode  [ ] scale  ; ' off  R reset  Z miss  Shift dash\n" \
-		+ "G goblin  K clear"
+		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
+		+ "G goblin  K clear   1goblin 2archer 3leader 4golem 5fire 6OGRE"

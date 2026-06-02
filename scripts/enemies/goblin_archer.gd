@@ -9,6 +9,7 @@ const ATTACK_RANGE   = 350.0
 const ATTACK_COOLDOWN = 2.2
 const MAX_HP         = 30.0
 const KNOCKBACK_DECAY = 1100.0
+const DRAW_WINDUP    = 0.45   # "puxa o arco" antes de soltar (dá pra esquivar)
 
 const DamageNumber = preload("res://scenes/effects/damage_number.tscn")
 const GoblinArrow  = preload("res://scenes/enemies/goblin_arrow.tscn")
@@ -24,6 +25,8 @@ var is_dead: bool = false
 var knockback: Vector2 = Vector2.ZERO
 var player: Node = null
 var _alerted: bool = false
+var _drawing: bool = false
+var _draw_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -56,7 +59,13 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if player and is_instance_valid(player):
+	if _drawing:
+		# Mirando: segura a posição e descarrega o windup; ao zerar, solta a flecha.
+		velocity.x = move_toward(velocity.x, 0.0, SPEED * 8.0)
+		_draw_timer -= delta
+		if _draw_timer <= 0.0:
+			_release()
+	elif player and is_instance_valid(player):
 		var dist = global_position.distance_to(player.global_position)
 		if dist < DETECT_RANGE:
 			if not _alerted:
@@ -85,7 +94,28 @@ func _handle_ai(dist: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, SPEED * 3.0)
 
 	if dist < ATTACK_RANGE and attack_timer <= 0.0:
-		_shoot()
+		_start_draw()
+
+func _start_draw() -> void:
+	# Telegrafa o tiro: trava a mira e acende um brilho quente (aviso ao player).
+	_drawing = true
+	_draw_timer = DRAW_WINDUP
+	var dir = sign(player.global_position.x - global_position.x)
+	facing = dir if dir != 0 else facing
+	$Sprite2D.flip_h = facing < 0
+	$Sprite2D.modulate = Color(1.7, 1.4, 0.6)
+
+func _release() -> void:
+	_drawing = false
+	$Sprite2D.modulate = Color.WHITE
+	_shoot()
+
+func _cancel_draw() -> void:
+	# Levar dano cancela a mira (interrompe o tiro).
+	if not _drawing:
+		return
+	_drawing = false
+	$Sprite2D.modulate = Color.WHITE
 
 func _on_time_stop() -> void:
 	if is_dead: return
@@ -120,6 +150,7 @@ func _shoot() -> void:
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead: return
+	_cancel_draw()
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	var dmg = DamageNumber.instantiate()
@@ -129,10 +160,11 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var kdir = sign(global_position.x - from.x) if from != Vector2.ZERO else 1.0
 	if kdir == 0: kdir = 1.0
 	knockback = Vector2(kdir * 280.0, -90.0)
-	AudioManager.play("hit")
-	GameState.start_hitstop()
+	AudioManager.play("hit", randf_range(0.92, 1.12))
+	var killing := hp <= 0.0
+	VFX.enemy_impact($Sprite2D, global_position, get_parent(), kdir, amount, killing)
 	_flash()
-	if hp <= 0.0:
+	if killing:
 		_die()
 
 func _flash() -> void:

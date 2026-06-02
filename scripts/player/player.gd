@@ -34,6 +34,7 @@ const DASH_DURATION       = 0.18
 const DASH_COOLDOWN       = 0.5
 const SWORD_COOLDOWN      = 0.4
 const SWORD_FLASH         = 0.1
+const SWORD_LUNGE         = 190.0  # passo pra frente no golpe (peso/compromisso)
 const MELEE_MANA_GAIN     = 12.0   # mana recuperada por golpe de cajado que acerta
 
 # New missile variants
@@ -253,6 +254,9 @@ func _tick_timers(delta: float) -> void:
 	if is_on_floor() and abs(velocity.x) > 20.0 and not is_dashing and _step_timer <= 0.0:
 		_step_timer = 0.27
 		AudioManager.play("step", randf_range(0.82, 1.18))
+		# Pufezinho de poeira atrás do pé (toque de game feel ao correr).
+		VFX.burst(global_position + Vector2(-facing * 6.0, 16.0), get_parent(),
+				Color(0.70, 0.58, 0.42, 0.55), 3, 24.0, -8.0)
 	if is_dashing:
 		dash_timer -= delta
 		if dash_timer <= 0.0:
@@ -558,6 +562,10 @@ func _attack_sword() -> void:
 	slash.facing = facing
 	slash.global_position = global_position + Vector2(facing * 36, -16)
 	get_parent().add_child(slash)
+	# Peso do golpe: passo pra frente no chão + squash horizontal (compromisso).
+	if is_on_floor():
+		velocity.x = facing * SWORD_LUNGE
+	_squash = Vector2(1.18, 0.86)
 
 func gain_mana_from_melee() -> void:
 	# Agressão recompensa: acertar com o cajado devolve mana (loop melee↔magia).

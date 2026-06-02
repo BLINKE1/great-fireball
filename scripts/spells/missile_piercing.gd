@@ -29,9 +29,7 @@ func _on_body_entered(body: Node) -> void:
 		if body in _hit_bodies:
 			return
 		_hit_bodies.append(body)
-		body.take_damage(DAMAGE, global_position)
-		AudioManager.play("hit")
-		GameState.start_hitstop(0.045)
+		body.take_damage(DAMAGE, global_position)  # impacto (som/shake/hitstop) via enemy_impact
 		VFX.burst(global_position, get_parent(), Color(0.12, 1.00, 0.65), 12, 80.0, 22.0)
 		VFX.ring(global_position, get_parent(), Color(0.10, 0.95, 0.60, 0.85), 20.0, 0.25)
 		# Piercing — does NOT queue_free on enemy hit
