@@ -48,6 +48,7 @@ func _ready() -> void:
 	_gen_forest_ogre()
 	_gen_ogre_shockwave()
 	_gen_goblin_mutant()
+	_gen_staff()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -503,6 +504,41 @@ func _gen_goblin_mutant() -> void:
 	_glow_soft(img, 70, 94, 6, MVN, 0.35)  # brilho mutante no punho
 
 	_store("goblin_mutant", img)
+
+# ── Cajado da Soph (16x64) — avulso, p/ a cena do pickup/flourish ─────────────
+func _gen_staff() -> void:
+	const WD  := Color(0.45, 0.30, 0.16)   # madeira
+	const WDD := Color(0.30, 0.19, 0.09)   # madeira sombra
+	const WDL := Color(0.60, 0.42, 0.22)   # madeira luz
+	const GLD := Color(0.85, 0.70, 0.18)   # enrolado dourado
+	const MET := Color(0.62, 0.64, 0.70)   # metal (garras/cap)
+	const ORC := Color(0.92, 0.97, 1.00)   # núcleo do orbe
+	const ORG := Color(0.30, 0.70, 1.00)   # orbe (azul mágico)
+	const ORP := Color(0.55, 0.35, 0.95)   # tinta roxa do glow
+
+	var img := Image.create(16, 64, false, Image.FORMAT_RGBA8)
+
+	# Haste
+	_fr(img, 7, 16, 4, 42, WD)
+	_fr(img, 7, 16, 1, 42, WDD)
+	_fr(img, 10, 16, 1, 42, WDL)
+	# Enrolados dourados
+	for wy in [24, 34, 44]:
+		_fr(img, 6, wy, 6, 2, GLD)
+	# Cap de metal embaixo
+	_fr(img, 6, 58, 6, 5, MET)
+	img.set_pixel(8, 63, MET); img.set_pixel(9, 63, MET)
+	# Garras de metal segurando o orbe
+	_fr(img, 5, 12, 2, 6, MET)
+	_fr(img, 11, 12, 2, 6, MET)
+	img.set_pixel(6, 11, MET); img.set_pixel(11, 11, MET)
+	# Orbe brilhando
+	_glow_soft(img, 8, 8, 8, ORP, 0.55)
+	_fc(img, 8, 8, 6, ORG)
+	_fc(img, 8, 8, 3, ORC)
+	img.set_pixel(7, 6, Color(1, 1, 1, 1))   # brilho especular
+
+	_store("staff", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 
