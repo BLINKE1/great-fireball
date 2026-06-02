@@ -30,10 +30,7 @@ func _hit(body: Node) -> void:
 		return
 	hit_bodies.append(body)
 	if body.is_in_group("enemy"):
-		body.take_damage(DAMAGE, global_position)
-		AudioManager.play("hit")
+		body.take_damage(DAMAGE, global_position)  # impacto (som/shake/hitstop) via enemy_impact
 		var p := get_tree().get_first_node_in_group("player")
-		if p and p.has_method("shake"):
-			p.shake(3.5, 0.12)
 		if p and p.has_method("gain_mana_from_melee"):
 			p.gain_mana_from_melee()   # agressão recarrega mana (modelo híbrido)
