@@ -47,6 +47,7 @@ func _ready() -> void:
 	_gen_mana_orb()
 	_gen_forest_ogre()
 	_gen_ogre_shockwave()
+	_gen_goblin_mutant()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -398,6 +399,110 @@ func _gen_goblin_leader() -> void:
 	_fr(img, 20, 51, 3, 1, GR)
 
 	_store("goblin_leader", img)
+
+# ── Goblin Mutante — BOSS (80x112, ~2x a Soph) ────────────────────────────────
+# Brutamonte mutante: um braço gigante deformado, espinhos ósseos, arreio de
+# couro vermelho + bandoleira de bombas (vibe Siege-Gang Commander), olhos que
+# brilham. Trocável por um PNG "goblin_mutant.png" se o Will quiser arte autoral.
+func _gen_goblin_mutant() -> void:
+	const GB  := Color(0.28, 0.40, 0.15)   # verde base
+	const GL  := Color(0.46, 0.60, 0.24)   # verde claro (luz/barriga)
+	const GD  := Color(0.18, 0.26, 0.09)   # verde sombra
+	const MUT := Color(0.44, 0.16, 0.46)   # mutação roxa
+	const MVN := Color(0.68, 0.30, 0.64)   # veia mutante
+	const HAR := Color(0.56, 0.10, 0.08)   # couro vermelho
+	const HRD := Color(0.36, 0.05, 0.04)   # tira escura
+	const MET := Color(0.60, 0.62, 0.68)   # metal
+	const MTD := Color(0.30, 0.32, 0.37)   # metal escuro
+	const BON := Color(0.90, 0.86, 0.70)   # osso/presa
+	const BND := Color(0.68, 0.64, 0.48)   # osso sombra
+	const EYE := Color(1.00, 0.88, 0.18)   # olho brilhando
+	const EYR := Color(0.95, 0.22, 0.05)   # borda do olho (vermelho)
+	const BK  := Color(0.06, 0.06, 0.07)
+	const BMB := Color(0.10, 0.10, 0.13)   # bomba
+	const FUS := Color(0.95, 0.60, 0.10)   # pavio
+
+	var img := Image.create(80, 112, false, Image.FORMAT_RGBA8)
+
+	# ── Pernas + pés garrudos ──
+	_fr(img, 24, 86, 14, 26, GB); _fr(img, 24, 86, 4, 26, GD)
+	_fr(img, 44, 86, 14, 26, GB); _fr(img, 54, 86, 4, 26, GD)
+	_fr(img, 20, 106, 20, 6, GB); _fr(img, 42, 106, 20, 6, GB)   # pés
+	for fx in [20, 26, 32, 44, 50, 56]:
+		img.set_pixel(fx, 111, BON); img.set_pixel(fx, 110, BON)   # garras
+	# Tanga de couro
+	_fr(img, 30, 80, 22, 14, HRD); _fr(img, 38, 80, 4, 14, HAR)
+
+	# ── Tronco hercúleo (curvado/largo) ──
+	_fr(img, 16, 50, 48, 38, GB)
+	_fr(img, 22, 56, 34, 28, GL)            # barriga clara
+	_fr(img, 16, 50, 6, 38, GD)             # sombra lateral
+	_fr(img, 18, 82, 44, 6, GD)             # sombra inferior
+
+	# ── Ombros enormes com espinhos ósseos ──
+	_fr(img, 8, 42, 64, 12, GB)
+	_fr(img, 8, 42, 64, 3, GL)
+	for sx in [12, 22, 33, 46, 58, 67]:
+		_fr(img, sx, 36, 4, 8, BON); img.set_pixel(sx + 1, 34, BON)
+
+	# ── Arreio vermelho cruzado (X) + estudos de metal ──
+	for yy in range(50, 86):
+		var xa := 20 + (yy - 50) * 32 / 36
+		var xb := 60 - (yy - 50) * 32 / 36
+		_fr(img, xa, yy, 4, 1, HAR); _fr(img, xb, yy, 4, 1, HAR)
+	for my in [54, 62, 70, 78]:
+		_fc(img, 40, my, 2, MET)
+	# Bandoleira de bombas (cintura)
+	_fr(img, 18, 84, 44, 4, HRD)
+	for bx in [24, 34, 44, 54]:
+		_fc(img, bx, 90, 3, BMB); img.set_pixel(bx, 86, FUS); img.set_pixel(bx, 85, FUS)
+
+	# ── Cabeça baixa entre os ombros ──
+	_fc(img, 40, 24, 16, GB)
+	_fc(img, 34, 28, 11, GL)                # bochecha clara
+	_fr(img, 26, 12, 28, 5, GD)             # testa franzida (sombra)
+	# Orelhas pontudas (conectadas à cabeça)
+	_fr(img, 12, 18, 16, 5, GB); img.set_pixel(10, 19, GB); img.set_pixel(8, 20, BON)
+	_fr(img, 52, 18, 16, 5, GB); img.set_pixel(69, 19, GB); img.set_pixel(71, 20, BON)
+	# Chifres no topo
+	for hx in [30, 40, 50]:
+		_fr(img, hx, 6, 3, 7, BON); img.set_pixel(hx + 1, 4, BON)
+	# Olhos brilhando (raivosos)
+	_fc(img, 33, 24, 4, EYR); _fc(img, 47, 24, 4, EYR)
+	_fc(img, 33, 24, 2, EYE); _fc(img, 47, 24, 2, EYE)
+	img.set_pixel(33, 24, BK); img.set_pixel(47, 24, BK)
+	_glow_soft(img, 33, 24, 6, EYE, 0.5); _glow_soft(img, 47, 24, 6, EYE, 0.5)
+	# Mandíbula com presas (subordida)
+	_fr(img, 28, 32, 24, 8, BK)
+	for tx in [30, 36, 43, 49]:
+		_fr(img, tx, 30, 3, 5, BON)         # presas pra cima
+	_fr(img, 31, 38, 3, 3, BON); _fr(img, 46, 38, 3, 3, BON)
+
+	# ── Braço NORMAL (esquerda da tela) ──
+	_fr(img, 2, 48, 14, 30, GB); _fr(img, 2, 48, 4, 30, GD)
+	_fc(img, 8, 80, 7, GB)                  # mão
+	for cx in [3, 8, 13]:
+		img.set_pixel(cx, 86, BON)          # garras
+
+	# ── Braço GIGANTE MUTANTE (direita da tela) ──
+	_fr(img, 58, 44, 20, 18, GB)            # ombro/úmero massivo
+	_fr(img, 60, 60, 20, 26, GB)            # antebraço
+	_fr(img, 58, 44, 20, 4, GL)
+	# Veias da mutação
+	for vy in range(48, 84, 4):
+		img.set_pixel(66, vy, MVN); img.set_pixel(72, vy + 2, MUT)
+	_fc(img, 70, 56, 4, MUT)               # protuberância
+	# PUNHO descomunal
+	_fc(img, 68, 94, 13, GB)
+	_fc(img, 64, 92, 8, GL)
+	_fc(img, 68, 94, 13, GB)               # contorno
+	for ky in [86, 92, 98]:                # espinhos ósseos nos nós
+		_fr(img, 78, ky, 2, 4, BON)
+	for ky2 in [88, 96]:
+		img.set_pixel(56, ky2, BON)
+	_glow_soft(img, 70, 94, 6, MVN, 0.35)  # brilho mutante no punho
+
+	_store("goblin_mutant", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 

@@ -38,6 +38,7 @@ const ENEMY_SCENES := {
 	KEY_4: "res://scenes/enemies/golem.tscn",
 	KEY_5: "res://scenes/enemies/fire_goblin_archer.tscn",
 	KEY_6: "res://scenes/enemies/forest_ogre.tscn",
+	KEY_7: "res://scenes/enemies/goblin_mutant.tscn",
 }
 
 func _ready() -> void:
@@ -157,4 +158,4 @@ func _update_label() -> void:
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
 		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
-		+ "G goblin  K clear   1goblin 2archer 3leader 4golem 5fire 6OGRE"
+		+ "G goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"

@@ -13,6 +13,7 @@ var _scenes := [
 	"res://scenes/enemies/goblin_archer.tscn",
 	"res://scenes/enemies/goblin_arrow.tscn",
 	"res://scenes/enemies/goblin_leader.tscn",
+	"res://scenes/enemies/goblin_mutant.tscn",
 	"res://scenes/enemies/golem.tscn",
 	"res://scenes/enemies/ogre_shockwave.tscn",
 	"res://scenes/player/sword_slash.tscn",
