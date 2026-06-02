@@ -312,6 +312,16 @@ def draw_arms(img, mode="down", l_dy=0, r_dy=0):
         rect(img, 19, 14, 22, 22, SUIT)                  # antebraço da frente subindo
         vline(img, 18, 14, 22, OUTLINE); vline(img, 23, 14, 22, OUTLINE)
         rect(img, 19, 12, 22, 13, SKIN); hline(img, 19, 22, 12, OUTLINE)
+    elif mode == "cast":      # magic missile: braço da frente estende com o cajado
+        rect(img, 20, 19, 24, 25, SUIT)                  # braço estendido p/ frente
+        vline(img, 19, 19, 25, OUTLINE); vline(img, 25, 19, 25, OUTLINE)
+        rect(img, 23, 17, 26, 19, SKIN)                  # mão erguida segurando
+        hline(img, 23, 26, 17, OUTLINE)
+    elif mode == "slash":     # golpe físico: braço da frente ergue a lâmina
+        rect(img, 20, 15, 23, 23, SUIT)                  # braço erguido
+        vline(img, 19, 15, 23, OUTLINE); vline(img, 24, 15, 23, OUTLINE)
+        rect(img, 22, 13, 25, 15, SKIN)                  # punho
+        hline(img, 22, 25, 13, OUTLINE)
     else:                     # down: braços ao lado (idle/walk/run)
         _arm(img,  8, 11, 22 + l_dy, 36 + l_dy)
         _arm(img, 20, 23, 22 + r_dy, 36 + r_dy)
@@ -360,6 +370,38 @@ def draw_staff(img, mana=5):
         px(img, 22, 20, orb_h); px(img, 32, 21, orb_c)
 
 
+def draw_staff_cast(img, mana=5):
+    """Cajado EXPOSTO no cast: erguido na mão, orbe forte na ALTURA do cast (~y16,
+    onde o magic missile nasce). Conecta a magia ao cajado."""
+    line(img, 24, 26, 28, 16, STAFF_C, hi=STAFF_H)       # haste subindo p/ frente
+    line(img, 25, 27, 29, 17, STAFF_C)
+    # Orbe (centro ~ y14, na altura do spawn do míssil)
+    rect(img, 26, 12, 30, 16, ORB)
+    hline(img, 26, 30, 12, OUTLINE); hline(img, 26, 30, 16, OUTLINE)
+    vline(img, 25, 12, 16, OUTLINE); vline(img, 31, 12, 16, OUTLINE)
+    px(img, 27, 13, ORB_H); px(img, 28, 13, ORB_H); px(img, 28, 14, WHITE)
+    # Raios de energia (carregando)
+    px(img, 31, 11, ORB_H); px(img, 25, 11, ORB_H)
+    px(img, 31, 17, ORB_H); px(img, 24, 16, ORB_H); px(img, 24, 12, ORB_H)
+
+
+def draw_blade(img):
+    """Lâmina EXPOSTA no golpe físico: apontada p/ frente na ALTURA do slash
+    (~y16, onde o sword_slash nasce). Conecta o corte à lâmina."""
+    BLADE   = (215, 225, 240, 255)
+    BLADE_H = (255, 255, 255, 255)
+    BLADE_D = (150, 160, 180, 255)
+    # Cabo na mão (~x23,y14) + guarda dourada
+    rect(img, 23, 14, 24, 16, BOOT_D)
+    hline(img, 22, 26, 13, GOLD)
+    px(img, 22, 13, GOLD_D); px(img, 26, 13, GOLD_D)
+    # Lâmina p/ frente-cima (ponta ~x31,y8) com fio brilhante
+    line(img, 25, 12, 31, 8, BLADE, hi=BLADE_H)
+    line(img, 26, 13, 31, 9, BLADE_D)
+    px(img, 31, 8, BLADE_H); px(img, 30, 9, BLADE_H)
+    px(img, 27, 10, BLADE_H)                             # reflexo no fio
+
+
 def mirror_face(img):
     """Espelha a região do rosto para a personagem olhar para a DIREITA."""
     face = img.crop((10, 4, 23, 17))
@@ -380,6 +422,10 @@ def compose(mana=5, hair_bob=0, arms="down", l_dy=0, r_dy=0,
     # Braços só nas poses de ação (saem POR CIMA do manto); na idle ficam cobertos.
     if arms != "down":
         draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy)
+    if arms == "cast":                                   # cajado exposto no cast
+        draw_staff_cast(img, mana=mana)
+    elif arms == "slash":                                # lâmina exposta no golpe
+        draw_blade(img)
     draw_boots(img, **(boots or {}))                     # botas espiam sob a barra
     if staff:
         draw_staff(img, mana=mana)
