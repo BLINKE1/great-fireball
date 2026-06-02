@@ -75,6 +75,23 @@ topo de `player.gd`.
 - `juice_impact.png` — faísca direcional + anel branco + número "20" + flash
   vermelho + barra de HP danificada. Tudo num quadro.
 
+### 7. Telegraph estendido a TODOS os inimigos
+- **goblin_leader** (durão, melee): mesmo windup/lunge do goblin, janela 0.36s.
+- **goblin_archer** e **fire_goblin_archer** (ranged): "puxam o arco" (~0.45s)
+  com brilho quente (laranja flamejante no de fogo) antes de soltar a flecha;
+  levar dano cancela a mira.
+- Resultado: **combate inteiro legível e justo** — todo ataque tem aviso e dá
+  pra esquivar/interromper. Constantes de tato no topo de cada inimigo.
+
+### 9. Ferramentas de validação (rede de segurança)
+- `tools/goblin_attack_probe.gd` (parametrizável por cena `-- <path>`):
+  windup/strike/cancel — valida goblin e leader.
+- `tools/archer_attack_probe.gd` (parametrizável): draw/release/cancel — valida
+  os dois archers.
+- `tools/scene_smoke.gd`: instancia 18 cenas de gameplay e pega erros de `_ready`
+  (nó faltando, path errado, null). **18/18 OK.**
+- Use esses + `combat_probe`/`mana_probe` como regressão antes de mexer no combate.
+
 ## Como testar de manhã
 1. `git pull` no master.
 2. Test room (`soph_test_room.tscn`, F6): bate nos goblins (Q cajado / Z míssil),
