@@ -41,6 +41,25 @@ const ENEMY_SCENES := {
 	KEY_7: "res://scenes/enemies/goblin_mutant.tscn",
 }
 
+# ── Torre de bhop/kreedz até a ARENA DO BOSS ──────────────────────────────────
+# Coluna de plataformas alinhadas a partir do ponto mais alto atual (TopMid,
+# ~580,30). Cada andar de cima funciona como "teto": pra subir você pula pra
+# FORA da coluna e volta (double jump) — vai e volta ganhando um andar por pulo.
+# No topo, uma plataforma GRANDE: ao pisar nela, o Goblin Mutante spawna.
+const MutantScene  := preload("res://scenes/enemies/goblin_mutant.tscn")
+const TOWER_X      := 580.0
+const TOWER_BASE_Y := 30.0     # referência: TopMid (plataforma mais alta atual)
+const TOWER_GAP    := 88.0     # vão vertical entre andares (tato: maior = + difícil)
+const TOWER_COUNT  := 10
+const TOWER_PLAT_W := 54.0
+const TOWER_PLAT_H := 12.0
+const ARENA_W      := 340.0
+const ARENA_H      := 20.0
+var _arena_boss_spawned := false
+
+func _arena_center_y() -> float:
+	return TOWER_BASE_Y - (TOWER_COUNT + 1) * TOWER_GAP
+
 func _ready() -> void:
 	# Endgame loadout: a sala existe pra sentir o movimento completo da Soph.
 	SkillManager.unlock("double_jump")
@@ -58,6 +77,7 @@ func _ready() -> void:
 	_build_overlay()
 	_apply()
 	_spawn_training_goblins.call_deferred()
+	_build_bhop_tower()
 
 # ── Goblins de treino ────────────────────────────────────────────────────────
 func _spawn_training_goblins() -> void:
@@ -73,6 +93,54 @@ func _spawn_enemy(scene: PackedScene, pos: Vector2) -> void:
 	var e := scene.instantiate()
 	add_child(e)
 	e.global_position = pos   # após add_child p/ valer global_position
+
+# ── Torre de bhop + arena do Boss ─────────────────────────────────────────────
+func _build_bhop_tower() -> void:
+	# 10 andares alinhados (coluna), cada um "teto" do de baixo → out-and-back.
+	for i in range(1, TOWER_COUNT + 1):
+		var y := TOWER_BASE_Y - i * TOWER_GAP
+		_make_platform(Vector2(TOWER_X, y), TOWER_PLAT_W, TOWER_PLAT_H,
+				Color(0.32, 0.42, 0.58))
+	# Plataforma GRANDE da arena no topo.
+	var ay := _arena_center_y()
+	_make_platform(Vector2(TOWER_X, ay), ARENA_W, ARENA_H, Color(0.48, 0.20, 0.20))
+	# Gatilho: pisar na arena spawna o Boss (uma vez).
+	var trig := Area2D.new()
+	trig.position = Vector2(TOWER_X, ay - 30.0)
+	var cs := CollisionShape2D.new()
+	var rs := RectangleShape2D.new()
+	rs.size = Vector2(ARENA_W - 20.0, 44.0)
+	cs.shape = rs
+	trig.add_child(cs)
+	add_child(trig)
+	trig.body_entered.connect(_on_arena_entered)
+
+func _make_platform(pos: Vector2, w: float, h: float, col: Color) -> void:
+	var body := StaticBody2D.new()
+	body.position = pos
+	var cs := CollisionShape2D.new()
+	var rs := RectangleShape2D.new()
+	rs.size = Vector2(w, h)
+	cs.shape = rs
+	body.add_child(cs)
+	var spr := Sprite2D.new()
+	var ph := PlaceholderTexture2D.new()
+	ph.size = Vector2(w, h)
+	spr.texture = ph
+	spr.modulate = col
+	body.add_child(spr)
+	add_child(body)
+
+func _on_arena_entered(b: Node) -> void:
+	if _arena_boss_spawned:
+		return
+	if not (b is Node and b.is_in_group("player")):
+		return
+	_arena_boss_spawned = true
+	var ay := _arena_center_y()
+	var boss := MutantScene.instantiate()
+	add_child(boss)
+	boss.global_position = Vector2(TOWER_X, ay - 60.0)   # cai na plataforma
 
 func _build_overlay() -> void:
 	var cl := CanvasLayer.new()
