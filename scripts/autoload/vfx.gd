@@ -137,7 +137,8 @@ func ground_burst(world_pos: Vector2, parent: Node, color: Color, count: int = 2
 # hitstop escalado, faísca direcional, screenshake proporcional e squash ao
 # apanhar. Cada inimigo segue dono do seu flash/knockback/morte/HP.
 func enemy_impact(sprite: Node2D, world_pos: Vector2, parent: Node, kdir: float,
-		amount: float, killing: bool, top_offset: float = -16.0) -> void:
+		amount: float, killing: bool, top_offset: float = -16.0,
+		squash: bool = true) -> void:
 	# Hitstop escalado: o golpe letal congela mais (o "crunch").
 	var freeze := 0.11 if killing else clampf(0.045 + amount * 0.0022, 0.045, 0.10)
 	GameState.start_hitstop(freeze)
@@ -149,7 +150,8 @@ func enemy_impact(sprite: Node2D, world_pos: Vector2, parent: Node, kdir: float,
 		pl.shake(clampf(amount * 0.16, 2.5, 7.0), 0.13)
 	# Squash elástico ao apanhar (só em hit não-letal; a morte tem sua animação).
 	# rest_scale em meta → robusto a hits repetidos e a sprites com escala != 1.
-	if not killing and is_instance_valid(sprite):
+	# squash=false p/ inimigos que animam a própria escala (ex.: boss em charge).
+	if squash and not killing and is_instance_valid(sprite):
 		if not sprite.has_meta("rest_scale"):
 			sprite.set_meta("rest_scale", sprite.scale)
 		var base: Vector2 = sprite.get_meta("rest_scale")
