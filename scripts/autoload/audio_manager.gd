@@ -11,6 +11,17 @@ const _AUDIO_EXTS := ["ogg", "wav"]
 var _pool: Array[AudioStreamPlayer] = []
 var _cache: Dictionary = {}  # key -> AudioStream (authored) or null (use procedural)
 
+# Jitter automático de pitch p/ SFX que tocam em sequência — quebra a repetição
+# monótona sem precisar tocar em cada call site. Só vale quando o chamador NÃO
+# passou pitch próprio (pitch == 1.0); sons musicais/dramáticos ficam de fora.
+const _PITCH_JITTER := {
+	"hit": 0.10, "enemy_die": 0.09, "enemy_attack": 0.10, "sword": 0.11,
+	"step": 0.12, "land": 0.08, "stomp": 0.07,
+	"missile": 0.09, "missile_spread": 0.07, "missile_piercing": 0.08,
+	"missile_curved": 0.08, "cast": 0.07, "dash": 0.08,
+	"arrow": 0.11, "fire_arrow": 0.11, "orb_pickup": 0.06, "detect": 0.06,
+}
+
 func _ready() -> void:
 	for i in POOL_SIZE:
 		var p = AudioStreamPlayer.new()
@@ -24,6 +35,10 @@ func play(sound: String, pitch: float = 1.0) -> void:
 		return
 	var player := _free_player()
 	player.stream = stream
+	# Jitter automático só quando o chamador usou o pitch padrão.
+	if is_equal_approx(pitch, 1.0) and _PITCH_JITTER.has(sound):
+		var j: float = _PITCH_JITTER[sound]
+		pitch = 1.0 + randf_range(-j, j)
 	player.pitch_scale = pitch
 	player.play()
 
