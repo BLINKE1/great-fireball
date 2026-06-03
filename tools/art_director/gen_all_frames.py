@@ -68,17 +68,29 @@ def build():
         )
 
     # ── jump / fall / hurt ──────────────────────────────────────────────────────
-    # Salto: braços pra cima, capa esvoaçante (curta), pés esticados/juntos.
+    # Salto: 2 frames (lançamento ↔ ápice). Capa balança e cabelo levanta no ápice.
     # knee_dy=-2 alonga as pernas até y54 p/ encostar nas botas (sem buraco).
-    frames["soph_jump"] = S.compose(
+    jump_legs  = {"back": (12, 16), "front": (15, 20)}
+    jump_boots = {"back": (11, 16), "front": (15, 21), "back_y": 54, "front_y": 54}
+    frames["soph_jump_0"] = S.compose(                    # lançamento
         mana=5, arms="up", knee_dy=-2, cape_lower=52,
-        legs={"back": (12, 16), "front": (15, 20)},
-        boots={"back": (11, 16), "front": (15, 21), "back_y": 54, "front_y": 54},
+        legs=jump_legs, boots=jump_boots, hem_sway=+1,
     )
-    frames["soph_fall"] = S.compose(
-        mana=5, arms="out",
-        legs={"back": (9, 13), "front": (18, 22)},
-        boots={"back": (8, 13), "front": (18, 23)},
+    frames["soph_jump_1"] = S.compose(                    # ápice (cabelo levanta, hem balança)
+        mana=5, arms="up", knee_dy=-2, cape_lower=51,
+        legs=jump_legs, boots=jump_boots,
+        hair_bob=-1, sway=-1, hem_sway=-1,
+    )
+    # Queda: 2 frames com capa esvoaçante (loop, sensação de flutuar).
+    fall_legs  = {"back": (9, 13), "front": (18, 22)}
+    fall_boots = {"back": (8, 13), "front": (18, 23)}
+    frames["soph_fall_0"] = S.compose(
+        mana=5, arms="out", legs=fall_legs, boots=fall_boots,
+        hair_bob=-1, sway=+1, hem_sway=+1,
+    )
+    frames["soph_fall_1"] = S.compose(
+        mana=5, arms="out", legs=fall_legs, boots=fall_boots,
+        l_dy=-1, r_dy=-1, sway=-1, hem_sway=-1,
     )
     frames["soph_hurt"] = S.compose(
         mana=5, arms="guard",
@@ -87,10 +99,13 @@ def build():
     )
 
     # ── poses de ataque (arma exposta na altura do spawn) ───────────────────────
-    # cast: cajado exposto (magic missile nasce do orbe, ~y16)
-    frames["soph_cast"] = S.compose(mana=5, arms="cast")
-    # slash: lâmina exposta (sword_slash nasce da lâmina, ~y16)
-    frames["soph_slash"] = S.compose(mana=5, arms="slash")
+    # Cast/slash agora têm 2 fases (windup → release/impacto) E variam com mana:
+    # cabelo escurece nas pontas conforme a Soph fica sem energia.
+    for m in range(1, 6):
+        frames[f"soph_cast_{m}_0"]  = S.compose(mana=m, arms="cast",  phase=0)
+        frames[f"soph_cast_{m}_1"]  = S.compose(mana=m, arms="cast",  phase=1)
+        frames[f"soph_slash_{m}_0"] = S.compose(mana=m, arms="slash", phase=0)
+        frames[f"soph_slash_{m}_1"] = S.compose(mana=m, arms="slash", phase=1)
 
     # ── mana states (idle por nível) ────────────────────────────────────────────
     for m in range(1, 6):
@@ -127,8 +142,8 @@ def main():
     sheet = contact_sheet(frames)
     (HERE / "iterations").mkdir(parents=True, exist_ok=True)
     sheet.save(HERE / "iterations" / "all_frames_sheet.png")
-    print(f"{'APLICADO em assets' if args.apply else 'PREVIEW'}: {len(frames)} frames → {out_dir}")
-    print(f"Sheet → {HERE / 'iterations' / 'all_frames_sheet.png'}")
+    print(f"{'APLICADO em assets' if args.apply else 'PREVIEW'}: {len(frames)} frames -> {out_dir}")
+    print(f"Sheet -> {HERE / 'iterations' / 'all_frames_sheet.png'}")
 
 
 if __name__ == "__main__":
