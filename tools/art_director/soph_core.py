@@ -296,7 +296,7 @@ def _arm(img, x0, x1, y0, y1):
     hline(img, x0, x1, y1 + 3, OUTLINE)
 
 
-def draw_arms(img, mode="down", l_dy=0, r_dy=0):
+def draw_arms(img, mode="down", l_dy=0, r_dy=0, phase=1):
     if mode == "up":          # jump: braços erguidos para cima
         rect(img,  7, 12, 10, 22, SUIT)
         vline(img,  6, 12, 22, OUTLINE); vline(img, 11, 12, 22, OUTLINE)
@@ -312,16 +312,28 @@ def draw_arms(img, mode="down", l_dy=0, r_dy=0):
         rect(img, 19, 14, 22, 22, SUIT)                  # antebraço da frente subindo
         vline(img, 18, 14, 22, OUTLINE); vline(img, 23, 14, 22, OUTLINE)
         rect(img, 19, 12, 22, 13, SKIN); hline(img, 19, 22, 12, OUTLINE)
-    elif mode == "cast":      # magic missile: braço da frente estende com o cajado
-        rect(img, 20, 19, 24, 25, SUIT)                  # braço estendido p/ frente
-        vline(img, 19, 19, 25, OUTLINE); vline(img, 25, 19, 25, OUTLINE)
-        rect(img, 23, 17, 26, 19, SKIN)                  # mão erguida segurando
-        hline(img, 23, 26, 17, OUTLINE)
-    elif mode == "slash":     # golpe físico: braço da frente ergue a lâmina
-        rect(img, 20, 15, 23, 23, SUIT)                  # braço erguido
-        vline(img, 19, 15, 23, OUTLINE); vline(img, 24, 15, 23, OUTLINE)
-        rect(img, 22, 13, 25, 15, SKIN)                  # punho
-        hline(img, 22, 25, 13, OUTLINE)
+    elif mode == "cast":      # magic missile: phase 0 = windup, phase 1 = release
+        if phase == 0:                                    # windup: braço dobrado, mão no peito
+            rect(img, 19, 21, 22, 25, SUIT)              # antebraço recolhido
+            vline(img, 18, 21, 25, OUTLINE); vline(img, 23, 21, 25, OUTLINE)
+            rect(img, 21, 19, 24, 21, SKIN)              # mão na altura do peito
+            hline(img, 21, 24, 19, OUTLINE)
+        else:                                             # release: braço estendido p/ frente
+            rect(img, 20, 19, 24, 25, SUIT)
+            vline(img, 19, 19, 25, OUTLINE); vline(img, 25, 19, 25, OUTLINE)
+            rect(img, 23, 17, 26, 19, SKIN)
+            hline(img, 23, 26, 17, OUTLINE)
+    elif mode == "slash":     # golpe físico: phase 0 = windup, phase 1 = impacto
+        if phase == 0:                                    # windup: braço recuado p/ trás-alto
+            rect(img, 13, 17, 16, 23, SUIT)              # antebraço dobrado p/ trás
+            vline(img, 12, 17, 23, OUTLINE); vline(img, 17, 17, 23, OUTLINE)
+            rect(img, 11, 14, 14, 16, SKIN)              # punho atrás da cabeça
+            hline(img, 11, 14, 14, OUTLINE)
+        else:                                             # impacto: braço estendido p/ frente-cima
+            rect(img, 20, 15, 23, 23, SUIT)
+            vline(img, 19, 15, 23, OUTLINE); vline(img, 24, 15, 23, OUTLINE)
+            rect(img, 22, 13, 25, 15, SKIN)
+            hline(img, 22, 25, 13, OUTLINE)
     else:                     # down: braços ao lado (idle/walk/run)
         _arm(img,  8, 11, 22 + l_dy, 36 + l_dy)
         _arm(img, 20, 23, 22 + r_dy, 36 + r_dy)
@@ -370,32 +382,64 @@ def draw_staff(img, mana=5):
         px(img, 22, 20, orb_h); px(img, 32, 21, orb_c)
 
 
-def draw_staff_cast(img, mana=5):
-    """Cajado EXPOSTO no cast: erguido na mão, orbe forte na ALTURA do cast (~y16,
-    onde o magic missile nasce). Conecta a magia ao cajado."""
+def draw_staff_cast(img, mana=5, phase=1):
+    """Cajado EXPOSTO no cast.
+    phase=0 windup: cajado vertical perto do peito, orbe carregando (glow tênue).
+    phase=1 release: cajado erguido p/ frente, orbe no ponto de spawn do míssil (~y16)."""
+    # Cor do orbe degrada com mana (preserva visual original do release)
+    orb_c = ORB if mana >= 3 else ((20, 80, 160, 255) if mana == 2 else (12, 40, 90, 255))
+    orb_h = (ORB_H if mana >= 4 else (80, 160, 220, 255) if mana == 3 else
+             (40, 100, 160, 255) if mana == 2 else (20, 50, 90, 255))
+    if phase == 0:
+        # Cajado quase vertical, encostado no corpo
+        line(img, 22, 26, 24, 18, STAFF_C, hi=STAFF_H)
+        line(img, 23, 27, 25, 19, STAFF_C)
+        # Orbe carregando junto ao peito (~y19-22)
+        rect(img, 22, 17, 26, 21, orb_c)
+        hline(img, 22, 26, 17, OUTLINE); hline(img, 22, 26, 21, OUTLINE)
+        vline(img, 21, 17, 21, OUTLINE); vline(img, 27, 17, 21, OUTLINE)
+        px(img, 23, 18, orb_h); px(img, 24, 18, orb_h)
+        if mana >= 4:
+            px(img, 25, 19, WHITE)                       # núcleo nascente
+        if mana >= 3:
+            px(img, 21, 19, orb_h); px(img, 27, 20, orb_h)  # faísca inicial
+        return
+    # phase 1 — release (visual original)
     line(img, 24, 26, 28, 16, STAFF_C, hi=STAFF_H)       # haste subindo p/ frente
     line(img, 25, 27, 29, 17, STAFF_C)
-    # Orbe (centro ~ y14, na altura do spawn do míssil)
-    rect(img, 26, 12, 30, 16, ORB)
+    rect(img, 26, 12, 30, 16, orb_c)
     hline(img, 26, 30, 12, OUTLINE); hline(img, 26, 30, 16, OUTLINE)
     vline(img, 25, 12, 16, OUTLINE); vline(img, 31, 12, 16, OUTLINE)
-    px(img, 27, 13, ORB_H); px(img, 28, 13, ORB_H); px(img, 28, 14, WHITE)
-    # Raios de energia (carregando)
-    px(img, 31, 11, ORB_H); px(img, 25, 11, ORB_H)
-    px(img, 31, 17, ORB_H); px(img, 24, 16, ORB_H); px(img, 24, 12, ORB_H)
+    px(img, 27, 13, orb_h); px(img, 28, 13, orb_h)
+    if mana >= 4:
+        px(img, 28, 14, WHITE)
+    if mana >= 3:
+        px(img, 31, 11, orb_h); px(img, 25, 11, orb_h)
+        px(img, 31, 17, orb_h); px(img, 24, 16, orb_h); px(img, 24, 12, orb_h)
 
 
-def draw_blade(img):
-    """Lâmina EXPOSTA no golpe físico: apontada p/ frente na ALTURA do slash
-    (~y16, onde o sword_slash nasce). Conecta o corte à lâmina."""
+def draw_blade(img, phase=1):
+    """Lâmina EXPOSTA no golpe físico.
+    phase=0 windup: lâmina recuada por cima do ombro de trás.
+    phase=1 impacto: lâmina apontada p/ frente na ALTURA do slash (~y16)."""
     BLADE   = (215, 225, 240, 255)
     BLADE_H = (255, 255, 255, 255)
     BLADE_D = (150, 160, 180, 255)
-    # Cabo na mão (~x23,y14) + guarda dourada
+    if phase == 0:
+        # Cabo na mão (~x12,y15) atrás do ombro
+        rect(img, 12, 15, 13, 17, BOOT_D)
+        hline(img,  9, 14, 14, GOLD)
+        px(img,  9, 13, GOLD_D); px(img, 14, 13, GOLD_D)
+        # Lâmina p/ trás-cima (ponta ~x2,y6)
+        line(img, 11, 12,  5,  6, BLADE, hi=BLADE_H)
+        line(img, 12, 13,  6,  7, BLADE_D)
+        px(img,  5,  6, BLADE_H); px(img,  6,  7, BLADE_H)
+        px(img,  9, 10, BLADE_H)
+        return
+    # phase 1 — impacto (visual original)
     rect(img, 23, 14, 24, 16, BOOT_D)
     hline(img, 22, 26, 13, GOLD)
     px(img, 22, 13, GOLD_D); px(img, 26, 13, GOLD_D)
-    # Lâmina p/ frente-cima (ponta ~x31,y8) com fio brilhante
     line(img, 25, 12, 31, 8, BLADE, hi=BLADE_H)
     line(img, 26, 13, 31, 9, BLADE_D)
     px(img, 31, 8, BLADE_H); px(img, 30, 9, BLADE_H)
@@ -411,7 +455,7 @@ def mirror_face(img):
 # ── Montagem de um frame ────────────────────────────────────────────────────--
 def compose(mana=5, hair_bob=0, arms="down", l_dy=0, r_dy=0,
             legs=None, boots=None, knee_dy=0, cape_lower=52,
-            staff=False, sway=0, hem_sway=0) -> Image.Image:
+            staff=False, sway=0, hem_sway=0, phase=1) -> Image.Image:
     img = Image.new("RGBA", (W, H), T)
     draw_hair(img, mana=mana, bob=hair_bob, sway=sway)
     draw_face(img, mana=mana)
@@ -421,11 +465,11 @@ def compose(mana=5, hair_bob=0, arms="down", l_dy=0, r_dy=0,
     draw_cape(img, lower_y=cape_lower, hem_sway=hem_sway) # manto FECHADO cobre o corpo
     # Braços só nas poses de ação (saem POR CIMA do manto); na idle ficam cobertos.
     if arms != "down":
-        draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy)
+        draw_arms(img, mode=arms, l_dy=l_dy, r_dy=r_dy, phase=phase)
     if arms == "cast":                                   # cajado exposto no cast
-        draw_staff_cast(img, mana=mana)
+        draw_staff_cast(img, mana=mana, phase=phase)
     elif arms == "slash":                                # lâmina exposta no golpe
-        draw_blade(img)
+        draw_blade(img, phase=phase)
     draw_boots(img, **(boots or {}))                     # botas espiam sob a barra
     if staff:
         draw_staff(img, mana=mana)

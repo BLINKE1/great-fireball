@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dld47gjnmtijs"
-path="res://.godot/imported/soph_jump.png-1767bb550eef8869abcd69dcd9859f7f.ctex"
+uid="uid://wvuxcad3qv2d"
+path="res://.godot/imported/soph_cast_2_1.png-b9ade6ff84f742ccecd1ff32a2e0451c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/player/soph_jump.png"
-dest_files=["res://.godot/imported/soph_jump.png-1767bb550eef8869abcd69dcd9859f7f.ctex"]
+source_file="res://assets/sprites/player/soph_cast_2_1.png"
+dest_files=["res://.godot/imported/soph_cast_2_1.png-b9ade6ff84f742ccecd1ff32a2e0451c.ctex"]
 
 [params]
 

@@ -43,11 +43,11 @@ func _ready() -> void:
 	_build_horde()
 	_build_ui()
 	_build_soph()
-	# Standalone: fade_in inicial e loop voltando pro forest_fight
+	# Clímax: ao entrar como cena própria (vindo da floresta), segue p/ chapter_end.
 	if get_tree().current_scene == self:
 		GameState.fade_in(0.6)
 		finished.connect(func():
-			get_tree().change_scene_to_file("res://scenes/intro/forest_fight.tscn")
+			get_tree().change_scene_to_file("res://scenes/intro/chapter_end.tscn")
 		, CONNECT_ONE_SHOT)
 
 func _build_horde() -> void:

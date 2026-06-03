@@ -716,9 +716,12 @@ func _update_visuals() -> void:
 	var c := base_modulate
 	if iframe_timer > 0.0:
 		c.a = 0.4 if fmod(iframe_timer, 0.15) > 0.075 else 1.0
-	# Mana dim: non-idle anims fade toward a desaturated dark tint as mana drains.
-	# Idle uses baked per-level art (soph_mana_1..5), so skip there to avoid double-darkening.
-	if not sprite.animation.begins_with("idle_"):
+	# Mana dim: non-baked anims fade toward a desaturated dark tint as mana drains.
+	# Idle/cast/slash usam arte por nível com cabelo já bakeado — pula pra evitar
+	# escurecimento duplo.
+	var a := sprite.animation
+	var baked := a.begins_with("idle_") or a.begins_with("cast_") or a.begins_with("slash_")
+	if not baked:
 		var target := Color(c.r * 0.55, c.g * 0.55, c.b * 0.70, c.a)
 		c = c.lerp(target, 1.0 - _mana_ratio)
 	sprite.modulate = c
@@ -727,7 +730,9 @@ func _update_anim() -> void:
 	var spd := absf(velocity.x)
 	var anim: String
 	if _attack_pose_timer > 0.0:
-		anim = _attack_pose                     # cajado/lâmina exposto durante o ataque
+		# Cajado/lâmina exposto durante o ataque. Cada pose tem 5 variantes (1..5)
+		# c/ cabelo escurecido pelo nível de mana atual.
+		anim = "%s_%d" % [_attack_pose, _mana_level]
 	elif not is_on_floor():
 		anim = "fall" if velocity.y > 80.0 else "jump"
 	elif iframe_timer > 0.7:
@@ -755,13 +760,17 @@ func _build_soph_frames_pixel() -> SpriteFrames:
 							  "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
 	# run: 4 frames, 14 fps
 	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2","soph_run_3"], 14.0, true)
-	# single-frame poses
-	_add_anim(sf, "jump",  ["soph_jump"],  8.0, false)
-	_add_anim(sf, "fall",  ["soph_fall"],  8.0, false)
+	# jump/fall: 2 frames cada (lançamento↔ápice e queda esvoaçante)
+	_add_anim(sf, "jump",  ["soph_jump_0", "soph_jump_1"], 6.0, false)
+	_add_anim(sf, "fall",  ["soph_fall_0", "soph_fall_1"], 5.0, true)
 	_add_anim(sf, "hurt",  ["soph_hurt"],  8.0, false)
-	# Poses de ataque: arma exposta na altura do spawn.
-	_add_anim(sf, "cast",  ["soph_cast"],  8.0, false)   # cajado no magic missile
-	_add_anim(sf, "slash", ["soph_slash"], 8.0, false)   # lâmina no golpe físico
+	# Poses de ataque por nível de mana: cada uma com 2 frames (windup → release/impacto).
+	# O cabelo já vem bakeado com o degrade de mana correto pra cada nível.
+	for lvl in range(1, 6):
+		_add_anim(sf, "cast_%d"  % lvl,
+				["soph_cast_%d_0"  % lvl, "soph_cast_%d_1"  % lvl], 12.0, false)
+		_add_anim(sf, "slash_%d" % lvl,
+				["soph_slash_%d_0" % lvl, "soph_slash_%d_1" % lvl], 14.0, false)
 	# mana-state idles (level 5 = full, level 1 = depleted)
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_mana_%d" % lvl], 4.0, true)
@@ -778,8 +787,10 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
 	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
 	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
-	_add_anim(sf, "cast", ["soph_hd_idle_0"], 8.0, false)   # HD = arte conceitual (fallback)
-	_add_anim(sf, "slash", ["soph_hd_idle_0"], 8.0, false)
+	# HD ainda não tem poses de ataque dedicadas — reusa o idle por nível como fallback.
+	for lvl in range(1, 6):
+		_add_anim(sf, "cast_%d"  % lvl, ["soph_hd_idle_0"], 8.0, false)
+		_add_anim(sf, "slash_%d" % lvl, ["soph_hd_idle_0"], 8.0, false)
 	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
@@ -811,8 +822,15 @@ func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bo
 func _on_mana_changed(ratio: float) -> void:
 	_mana_ratio = ratio
 	_mana_level = clampi(ceili(ratio * 5.0), 1, 5)
-	if sprite.animation.begins_with("idle_"):
-		sprite.play("idle_%d" % _mana_level)
+	# Mid-anim swap: se já está em uma anim com cabelo bakeado por nível
+	# (idle/cast/slash), troca pro nível atual sem reiniciar o frame.
+	var a := sprite.animation
+	for base in ["idle", "cast", "slash"]:
+		if a.begins_with(base + "_"):
+			var f := sprite.frame
+			sprite.play("%s_%d" % [base, _mana_level])
+			sprite.frame = f
+			return
 
 func _on_died() -> void:
 	is_dead = true

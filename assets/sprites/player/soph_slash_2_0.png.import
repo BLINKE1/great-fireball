@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fdx0m1aogdj"
-path="res://.godot/imported/soph_slash.png-c5234a2c0efe9b6919a93e19458653df.ctex"
+uid="uid://cqj2ei81gp4gp"
+path="res://.godot/imported/soph_slash_2_0.png-6c954ad4296ddb213f425632985412a5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/player/soph_slash.png"
-dest_files=["res://.godot/imported/soph_slash.png-c5234a2c0efe9b6919a93e19458653df.ctex"]
+source_file="res://assets/sprites/player/soph_slash_2_0.png"
+dest_files=["res://.godot/imported/soph_slash_2_0.png-6c954ad4296ddb213f425632985412a5.ctex"]
 
 [params]
 

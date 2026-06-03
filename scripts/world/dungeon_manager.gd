@@ -18,6 +18,7 @@ const FireGoblinArcherScene = preload("res://scenes/enemies/fire_goblin_archer.t
 @onready var boss_trigger   = $"../Triggers/BossTrigger"
 
 var _area2_done: bool = false
+var _boss_gate: Node = null   # parede de pedras que tranca a arena do boss
 
 func _ready() -> void:
 	GameState.reset_state()
@@ -135,14 +136,66 @@ func _on_boss_room(body: Node) -> void:
 		var cam: Camera2D = player.get_node("Camera2D")
 		cam.create_tween().tween_property(cam, "zoom", Vector2(1.18, 1.18), 1.4).set_ease(Tween.EASE_IN_OUT)
 	MusicManager.play("boss")
+	# Tranca a arena: uma avalanche de pedras desaba atrás da Soph (estilo Megaman).
+	_boss_gate = _drop_rockwall(4020.0)
+	await _say(["As pedras desabaram atrás de mim! Não há volta — só passando por ele."], ["Soph"])
 	var boss = _spawn(GoblinMutantScene, Vector2(4350, 432))
 	boss_hp_bar.show_boss("Goblin Mutante", boss)
 	boss.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
+
+# ── Avalanche de pedras que tranca/destranca a arena ──────────────────────────
+func _drop_rockwall(x: float) -> Node:
+	const FLOOR_Y := 506.0
+	const W := 46.0
+	const H := 170.0
+	var body := StaticBody2D.new()
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(W, H)
+	cs.shape = rect
+	body.add_child(cs)
+	var spr := Sprite2D.new()
+	var tex := SpriteSetup.get_texture("moss_wall")
+	if tex:
+		spr.texture = tex
+		spr.region_enabled = true
+		spr.region_rect = Rect2(0, 0, W, H)
+		spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.modulate = Color(0.62, 0.58, 0.52)   # tom de rocha (mais escuro que musgo)
+	body.add_child(spr)
+	var final_y := FLOOR_Y - H * 0.5
+	body.position = Vector2(x, final_y - 280.0)   # começa no alto e despenca
+	get_parent().add_child(body)
+	AudioManager.play("roar", 0.7)
+	var tw := body.create_tween()
+	tw.tween_property(body, "position:y", final_y, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func():
+		AudioManager.play("stomp")
+		if is_instance_valid(player) and player.has_method("shake"):
+			player.shake(9.0, 0.35)
+		VFX.ground_burst(Vector2(x, FLOOR_Y), get_parent(), Color(0.50, 0.45, 0.38), 26)
+		VFX.burst(Vector2(x, FLOOR_Y - 20), get_parent(), Color(0.40, 0.36, 0.30), 16, 120.0, 60.0))
+	return body
+
+func _clear_rockwall(node: Node) -> void:
+	if not is_instance_valid(node):
+		return
+	VFX.burst(node.position, get_parent(), Color(0.50, 0.45, 0.38), 28, 150.0, 40.0)
+	VFX.ground_burst(Vector2(node.position.x, 506.0), get_parent(), Color(0.45, 0.40, 0.34), 20)
+	AudioManager.play("stomp", 0.8)
+	if is_instance_valid(player) and player.has_method("shake"):
+		player.shake(7.0, 0.3)
+	var tw := node.create_tween()
+	tw.tween_property(node, "scale", Vector2(1.0, 0.0), 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(node, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(node.queue_free)
 
 func _on_ogre_died() -> void:
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e.has_method("take_damage"):
 			e.take_damage(9999.0, e.global_position)
+	_clear_rockwall(_boss_gate)   # a barreira desmorona — caminho livre
 	MusicManager.play("game")
 	AudioManager.play("victory")
 	# White flash
@@ -212,8 +265,9 @@ func _spawn_exit_portal() -> void:
 func _on_portal_entered(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	body.set_cutscene(true)
+	# Clímax do capítulo: o portal leva à Grande Bola de Fogo (anime_fireball).
 	GameState.fade_out_then(func():
-		get_tree().change_scene_to_file("res://scenes/ui/win_screen.tscn")
+		get_tree().change_scene_to_file("res://scenes/intro/anime_fireball.tscn")
 	)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

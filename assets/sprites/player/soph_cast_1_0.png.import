@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://chyrh4nytocgl"
-path="res://.godot/imported/soph_cast.png-dd4054143a948692fdeb72acfe6fcbd2.ctex"
+uid="uid://d1e5t670qecrx"
+path="res://.godot/imported/soph_cast_1_0.png-196026d0300c34d79fc067c6b1340a7d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/player/soph_cast.png"
-dest_files=["res://.godot/imported/soph_cast.png-dd4054143a948692fdeb72acfe6fcbd2.ctex"]
+source_file="res://assets/sprites/player/soph_cast_1_0.png"
+dest_files=["res://.godot/imported/soph_cast_1_0.png-196026d0300c34d79fc067c6b1340a7d.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjct0b5ojiyth"
-path="res://.godot/imported/soph_fall.png-ee411fd7d2414707a10b776eedaf3661.ctex"
+uid="uid://daeu7jchu0ewb"
+path="res://.godot/imported/soph_cast_2_0.png-10e801d3a3f78326151ed19525078834.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/player/soph_fall.png"
-dest_files=["res://.godot/imported/soph_fall.png-ee411fd7d2414707a10b776eedaf3661.ctex"]
+source_file="res://assets/sprites/player/soph_cast_2_0.png"
+dest_files=["res://.godot/imported/soph_cast_2_0.png-10e801d3a3f78326151ed19525078834.ctex"]
 
 [params]
 

@@ -41,6 +41,12 @@ func _ready() -> void:
 	_gen_floor_tile()
 	_gen_platform_tile()
 	_gen_wall_tile()
+	_gen_forest_far()
+	_gen_forest_mid()
+	_gen_grass_floor()
+	_gen_grass_platform()
+	_gen_moss_wall()
+	_gen_forest_tree()
 	_gen_light_tex()
 	_gen_goblin_archer()
 	_gen_goblin_arrow()
@@ -782,6 +788,136 @@ func _gen_cave_mid() -> void:
 	_store("cave_mid", img)
 
 # ── Floor Tile (32x32) ─────────────────────────────────────────────────────────
+
+# ── Floresta procedural: parallax de árvores + tiles de grama/musgo ───────────
+func _tree(img: Image, cx: int, base_y: int, h: int, r: int,
+		trunk_c: Color, canopy_c: Color, hi_c: Color) -> void:
+	var trunk_h := maxi(4, int(h * 0.32))
+	_fr(img, cx - 2, base_y - trunk_h, 4, trunk_h, trunk_c)
+	var top := base_y - h
+	# copa: blobs sobrepostos (árvore folhosa estilizada)
+	_fc(img, cx, top + r, r, canopy_c)
+	_fc(img, cx - int(r * 0.6), top + int(r * 1.4), int(r * 0.8), canopy_c)
+	_fc(img, cx + int(r * 0.6), top + int(r * 1.4), int(r * 0.8), canopy_c)
+	_fc(img, cx, base_y - trunk_h - int(r * 0.5), int(r * 0.9), canopy_c)
+	_fc(img, cx - int(r * 0.35), top + r - 1, maxi(2, int(r * 0.35)), hi_c)  # luz da borda
+
+func _gen_forest_far() -> void:
+	var W := 512; var H := 500
+	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)
+	seed(7731)
+	# Céu de entardecer: índigo no topo → violeta → névoa verde no horizonte
+	for y in range(H):
+		var t := float(y) / float(H - 1)
+		var c: Color
+		if t < 0.60:
+			var tt := t / 0.60
+			c = Color(lerp(0.090, 0.250, tt), lerp(0.100, 0.155, tt), lerp(0.225, 0.180, tt))
+		else:
+			var tt := (t - 0.60) / 0.40
+			c = Color(lerp(0.250, 0.100, tt), lerp(0.155, 0.175, tt), lerp(0.180, 0.120, tt))
+		for x in range(W): img.set_pixel(x, y, c)
+	# Lua + brilho
+	_glow_soft(img, 398, 108, 78, Color(0.62, 0.68, 0.82), 0.42)
+	_fc(img, 398, 108, 20, Color(0.86, 0.89, 0.94))
+	_fc(img, 409, 101, 16, Color(0.055, 0.060, 0.165))  # recorte da crescente (cor do céu)
+	for i in range(40):  # estrelas
+		img.set_pixel(randi() % W, randi() % int(H * 0.5), Color(0.8, 0.85, 0.95, 0.6))
+	# Linha de árvores distantes (azul-esverdeado, baixo contraste = neblina)
+	var fc := Color(0.115, 0.165, 0.150); var ft := Color(0.085, 0.115, 0.110); var fh := Color(0.175, 0.245, 0.205)
+	var x := 6
+	while x < W:
+		_tree(img, x, 452, randi_range(64, 116), randi_range(14, 26), ft, fc, fh)
+		x += randi_range(32, 56)
+	_store("forest_far", img)
+
+func _gen_forest_mid() -> void:
+	var W := 256; var H := 500
+	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)  # topo transparente (vê o far)
+	seed(4422)
+	var mc := Color(0.085, 0.205, 0.120); var mt := Color(0.105, 0.072, 0.048); var mh := Color(0.150, 0.310, 0.180)
+	var x := 4
+	while x < W:
+		_tree(img, x, 484, randi_range(160, 250), randi_range(28, 42), mt, mc, mh)
+		x += randi_range(38, 66)
+	# Solo de neblina embaixo (funde com o chão)
+	for y in range(440, H):
+		var a := (float(y) - 440.0) / 60.0
+		for px_x in range(W):
+			var ex := img.get_pixel(px_x, y)
+			img.set_pixel(px_x, y, ex.lerp(Color(0.05, 0.11, 0.07), clampf(a, 0.0, 0.7)))
+	_store("forest_mid", img)
+
+func _gen_grass_floor() -> void:
+	const GR := Color(0.255, 0.500, 0.165); const GRD := Color(0.160, 0.345, 0.110)
+	const GRL := Color(0.380, 0.660, 0.240); const DIRT := Color(0.300, 0.205, 0.130)
+	const DIRT_D := Color(0.195, 0.130, 0.078); const DIRT_L := Color(0.385, 0.270, 0.165)
+	var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(DIRT)
+	seed(99)
+	for i in range(40):  # textura de terra (pedrinhas/raízes)
+		var px_x := randi() % 32; var py := randi_range(8, 31)
+		img.set_pixel(px_x, py, DIRT_D if randf() < 0.6 else DIRT_L)
+	# Faixa de grama no topo
+	_fr(img, 0, 0, 32, 5, GR)
+	_fr(img, 0, 0, 32, 2, GRL)
+	# Lâminas pendendo (borda irregular grama→terra)
+	for bx in [1, 4, 7, 11, 14, 18, 21, 25, 28, 31]:
+		var bh := randi_range(2, 5)
+		_fr(img, bx, 5, 1, bh, GR if randf() < 0.5 else GRD)
+	_fr(img, 0, 4, 32, 1, GRD)  # sombra sob a grama
+	_store("grass_floor", img)
+
+func _gen_grass_platform() -> void:
+	const GR := Color(0.270, 0.520, 0.175); const GRL := Color(0.400, 0.680, 0.255)
+	const GRD := Color(0.165, 0.355, 0.115); const DIRT := Color(0.315, 0.215, 0.135)
+	const DIRT_D := Color(0.205, 0.135, 0.082)
+	var img := Image.create(32, 16, false, Image.FORMAT_RGBA8)
+	img.fill(DIRT)
+	seed(55)
+	for i in range(14):
+		img.set_pixel(randi() % 32, randi_range(5, 15), DIRT_D)
+	_fr(img, 0, 0, 32, 4, GR)
+	_fr(img, 0, 0, 32, 2, GRL)
+	_fr(img, 0, 4, 32, 1, GRD)
+	for bx in [2, 6, 10, 15, 19, 24, 29]:
+		_fr(img, bx, 4, 1, randi_range(1, 3), GRD)
+	_store("grass_platform", img)
+
+func _gen_moss_wall() -> void:
+	const RK := Color(0.205, 0.180, 0.150); const RKD := Color(0.120, 0.105, 0.088)
+	const RKL := Color(0.275, 0.245, 0.205); const MOSS := Color(0.190, 0.330, 0.130)
+	const MOSS_D := Color(0.130, 0.240, 0.090)
+	var img := Image.create(16, 32, false, Image.FORMAT_RGBA8)
+	img.fill(RK)
+	_fr(img, 0, 0, 2, 32, RKD); _fr(img, 14, 0, 2, 32, RKD)
+	_fr(img, 0, 10, 16, 2, RKD); _fr(img, 0, 22, 16, 2, RKD)
+	_fr(img, 2, 1, 10, 4, RKL)
+	seed(33)
+	for i in range(18):  # manchas de musgo
+		var px_x := randi_range(2, 13); var py := randi() % 32
+		img.set_pixel(px_x, py, MOSS if randf() < 0.6 else MOSS_D)
+	_store("moss_wall", img)
+
+func _gen_forest_tree() -> void:
+	# Árvore decorativa (64x128) p/ povoar a floresta no mundo (atrás do gameplay).
+	const TR := Color(0.34, 0.23, 0.13); const TRD := Color(0.22, 0.15, 0.08); const TRL := Color(0.46, 0.32, 0.18)
+	const CA := Color(0.17, 0.40, 0.16); const CAD := Color(0.105, 0.275, 0.105); const CAH := Color(0.31, 0.58, 0.27)
+	var img := Image.create(64, 128, false, Image.FORMAT_RGBA8)
+	# Tronco
+	_fr(img, 28, 66, 9, 62, TR)
+	_fr(img, 28, 66, 2, 62, TRD); _fr(img, 35, 66, 2, 62, TRL)
+	for ly in [78, 92, 106]: _fr(img, 29, ly, 7, 1, TRD)   # textura de casca
+	_fr(img, 24, 122, 17, 6, TR); _fr(img, 24, 122, 17, 2, TRD)  # base/raízes
+	# Copa (cacho de blobs)
+	_fc(img, 32, 42, 30, CA)
+	_fc(img, 17, 50, 19, CA); _fc(img, 47, 50, 19, CA)
+	_fc(img, 32, 22, 21, CA); _fc(img, 24, 62, 16, CA); _fc(img, 42, 62, 16, CA)
+	# Clumps escuros (volume) + luz de cima-esquerda
+	_fc(img, 42, 40, 11, CAD); _fc(img, 22, 36, 8, CAD); _fc(img, 38, 60, 9, CAD)
+	_fc(img, 25, 28, 9, CAH); _fc(img, 44, 46, 7, CAH); _fc(img, 30, 50, 8, CAH)
+	_glow_soft(img, 26, 26, 12, CAH, 0.4)
+	_store("forest_tree", img)
 
 func _gen_floor_tile() -> void:
 	const ST  := Color(0.265, 0.225, 0.182)
