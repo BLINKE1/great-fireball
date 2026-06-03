@@ -1,7 +1,11 @@
 extends Node
 
-# Attach to any level root. Adds parallax cave background, stone tile textures
-# on all platforms/floors, atmospheric modulate, and point lights.
+# Attach to any level root. Adds parallax background, tile textures on all
+# platforms/floors, atmospheric modulate, and point lights.
+# Níveis com DungeonManager usam o tema FLORESTA (céu de entardecer, parallax
+# de árvores, tiles de grama); o resto (tutorial) usa o tema caverna.
+
+var _forest := false
 
 func _ready() -> void:
 	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
@@ -13,6 +17,7 @@ func _build() -> void:
 	var level := get_parent()
 	if level == null:
 		return
+	_forest = level.has_node("DungeonManager")
 	_add_solid_background(level)
 	_add_parallax(level)
 	_add_canvas_modulate(level)
@@ -39,7 +44,7 @@ func _add_solid_background(level: Node) -> void:
 	cl.layer = -100
 	level.add_child(cl)
 	var rect := ColorRect.new()
-	rect.color = Color(0.012, 0.006, 0.032)
+	rect.color = Color(0.07, 0.09, 0.15) if _forest else Color(0.012, 0.006, 0.032)
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cl.add_child(rect)
 
@@ -51,15 +56,22 @@ func _add_parallax(level: Node) -> void:
 	level.add_child(pb)
 	level.move_child(pb, 0)
 
-	var far_tex := SpriteSetup.get_texture("cave_far")
-	var mid_tex := SpriteSetup.get_texture("cave_mid")
+	var far_tex := SpriteSetup.get_texture("forest_far" if _forest else "cave_far")
+	var mid_tex := SpriteSetup.get_texture("forest_mid" if _forest else "cave_mid")
 
-	# Far layer — barely moves (0.08x horizontal). Sprite y=-250 covers ceiling area.
-	if far_tex:
-		_add_layer(pb, far_tex, Vector2(0.08, 0.08), Vector2(512, 0), Vector2(0, -250))
-	# Mid layer — medium speed (0.22x). Larger stalactites.
-	if mid_tex:
-		_add_layer(pb, mid_tex, Vector2(0.22, 0.16), Vector2(256, 0), Vector2(0, -250))
+	if _forest:
+		# Floresta: linha de árvores assenta perto do horizonte (atrás do chão ~y460).
+		if far_tex:
+			_add_layer(pb, far_tex, Vector2(0.12, 0.05), Vector2(512, 0), Vector2(0, -278))
+		if mid_tex:
+			_add_layer(pb, mid_tex, Vector2(0.30, 0.07), Vector2(256, 0), Vector2(0, -262))
+	else:
+		# Far layer — barely moves (0.08x horizontal). Sprite y=-250 covers ceiling area.
+		if far_tex:
+			_add_layer(pb, far_tex, Vector2(0.08, 0.08), Vector2(512, 0), Vector2(0, -250))
+		# Mid layer — medium speed (0.22x). Larger stalactites.
+		if mid_tex:
+			_add_layer(pb, mid_tex, Vector2(0.22, 0.16), Vector2(256, 0), Vector2(0, -250))
 
 func _add_layer(pb: ParallaxBackground, tex: ImageTexture, scale: Vector2,
 		mirror: Vector2, offset: Vector2) -> void:
@@ -79,15 +91,15 @@ func _add_layer(pb: ParallaxBackground, tex: ImageTexture, scale: Vector2,
 func _add_canvas_modulate(level: Node) -> void:
 	var cm := CanvasModulate.new()
 	cm.name = "CaveAtmosphere"
-	cm.color = Color(0.80, 0.72, 0.96)
+	cm.color = Color(0.88, 0.93, 0.88) if _forest else Color(0.80, 0.72, 0.96)  # luar de floresta vs caverna
 	level.add_child(cm)
 
 # ── Stone tile textures on all platforms/floors/walls ─────────────────────────
 
 func _apply_stone_textures(level: Node) -> void:
-	var ft := SpriteSetup.get_texture("floor_tile")
-	var pt := SpriteSetup.get_texture("platform_tile")
-	var wt := SpriteSetup.get_texture("wall_tile")
+	var ft := SpriteSetup.get_texture("grass_floor" if _forest else "floor_tile")
+	var pt := SpriteSetup.get_texture("grass_platform" if _forest else "platform_tile")
+	var wt := SpriteSetup.get_texture("moss_wall" if _forest else "wall_tile")
 	_visit(level, ft, pt, wt)
 
 func _visit(node: Node, ft: ImageTexture, pt: ImageTexture, wt: ImageTexture) -> void:
