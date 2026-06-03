@@ -46,6 +46,7 @@ func _ready() -> void:
 	_gen_grass_floor()
 	_gen_grass_platform()
 	_gen_moss_wall()
+	_gen_forest_tree()
 	_gen_light_tex()
 	_gen_goblin_archer()
 	_gen_goblin_arrow()
@@ -897,6 +898,26 @@ func _gen_moss_wall() -> void:
 		var px_x := randi_range(2, 13); var py := randi() % 32
 		img.set_pixel(px_x, py, MOSS if randf() < 0.6 else MOSS_D)
 	_store("moss_wall", img)
+
+func _gen_forest_tree() -> void:
+	# Árvore decorativa (64x128) p/ povoar a floresta no mundo (atrás do gameplay).
+	const TR := Color(0.34, 0.23, 0.13); const TRD := Color(0.22, 0.15, 0.08); const TRL := Color(0.46, 0.32, 0.18)
+	const CA := Color(0.17, 0.40, 0.16); const CAD := Color(0.105, 0.275, 0.105); const CAH := Color(0.31, 0.58, 0.27)
+	var img := Image.create(64, 128, false, Image.FORMAT_RGBA8)
+	# Tronco
+	_fr(img, 28, 66, 9, 62, TR)
+	_fr(img, 28, 66, 2, 62, TRD); _fr(img, 35, 66, 2, 62, TRL)
+	for ly in [78, 92, 106]: _fr(img, 29, ly, 7, 1, TRD)   # textura de casca
+	_fr(img, 24, 122, 17, 6, TR); _fr(img, 24, 122, 17, 2, TRD)  # base/raízes
+	# Copa (cacho de blobs)
+	_fc(img, 32, 42, 30, CA)
+	_fc(img, 17, 50, 19, CA); _fc(img, 47, 50, 19, CA)
+	_fc(img, 32, 22, 21, CA); _fc(img, 24, 62, 16, CA); _fc(img, 42, 62, 16, CA)
+	# Clumps escuros (volume) + luz de cima-esquerda
+	_fc(img, 42, 40, 11, CAD); _fc(img, 22, 36, 8, CAD); _fc(img, 38, 60, 9, CAD)
+	_fc(img, 25, 28, 9, CAH); _fc(img, 44, 46, 7, CAH); _fc(img, 30, 50, 8, CAH)
+	_glow_soft(img, 26, 26, 12, CAH, 0.4)
+	_store("forest_tree", img)
 
 func _gen_floor_tile() -> void:
 	const ST  := Color(0.265, 0.225, 0.182)

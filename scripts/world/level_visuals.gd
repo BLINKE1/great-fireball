@@ -20,6 +20,8 @@ func _build() -> void:
 	_forest = level.has_node("DungeonManager")
 	_add_solid_background(level)
 	_add_parallax(level)
+	if _forest:
+		_scatter_trees(level)
 	_add_canvas_modulate(level)
 	_apply_stone_textures(level)
 	_apply_special_objects(level)
@@ -78,11 +80,10 @@ func _add_parallax(level: Node) -> void:
 	var mid_tex := SpriteSetup.get_texture("forest_mid" if _forest else "cave_mid")
 
 	if _forest:
-		# Floresta: linha de árvores assenta perto do horizonte (atrás do chão ~y460).
-		if far_tex:
-			_add_layer(pb, far_tex, Vector2(0.12, 0.05), Vector2(512, 0), Vector2(0, -278))
-		if mid_tex:
-			_add_layer(pb, mid_tex, Vector2(0.30, 0.07), Vector2(256, 0), Vector2(0, -262))
+		# O céu de floresta é o gradiente de _add_solid_background (sempre visível).
+		# O parallax de árvores não renderiza no contexto da dungeon (limites de
+		# câmera), então fica desligado aqui — a linha de árvores vive no gradiente.
+		pass
 	else:
 		# Far layer — barely moves (0.08x horizontal). Sprite y=-250 covers ceiling area.
 		if far_tex:
@@ -103,6 +104,27 @@ func _add_layer(pb: ParallaxBackground, tex: ImageTexture, scale: Vector2,
 	sprite.position = offset
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	layer.add_child(sprite)
+
+# ── Árvores decorativas no mundo (floresta) ──────────────────────────────────
+func _scatter_trees(level: Node) -> void:
+	var tex := SpriteSetup.get_texture("forest_tree")
+	if tex == null:
+		return
+	seed(808)
+	var x := 120.0
+	while x < 5350.0:
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var s := randf_range(1.8, 2.7)
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(x, 492.0 - 64.0 * s)   # base perto do topo do chão
+		spr.z_index = -5                              # atrás do gameplay
+		var d := randf()                              # profundidade: árvores ao fundo + escuras/azuis
+		spr.modulate = Color(0.52 + 0.26 * d, 0.60 + 0.24 * d, 0.56 + 0.20 * d, 0.92)
+		spr.flip_h = randf() < 0.5
+		level.add_child(spr)
+		x += randf_range(300.0, 560.0)
 
 # ── Atmospheric cave tint ─────────────────────────────────────────────────────
 
