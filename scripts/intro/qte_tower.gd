@@ -61,6 +61,7 @@ func _ready() -> void:
 # ── Scene construction ────────────────────────────────────────────────────────
 
 func _build_scene() -> void:
+	_build_tower_backdrop()   # cenário: topo de torre à noite (atrás de tudo)
 	# Golem sprites (added first so Soph renders in front)
 	_golem_l = _mk_sprite("golem", GL_START, GOLEM_SCALE)
 	_golem_l.flip_h  = false
@@ -108,6 +109,63 @@ func _build_scene() -> void:
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.z_index      = 40
 	add_child(_overlay)
+
+func _build_tower_backdrop() -> void:
+	# Céu noturno (gradiente vertical)
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	grad.colors = PackedColorArray([Color(0.04, 0.05, 0.13), Color(0.10, 0.10, 0.20), Color(0.17, 0.13, 0.22)])
+	var gtex := GradientTexture2D.new()
+	gtex.gradient = grad; gtex.fill_from = Vector2(0, 0); gtex.fill_to = Vector2(0, 1)
+	gtex.width = 32; gtex.height = 128
+	var sky := TextureRect.new()
+	sky.texture = gtex; sky.stretch_mode = TextureRect.STRETCH_SCALE
+	sky.size = Vector2(VW, VH); sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(sky)
+	# Estrelas
+	seed(1212)
+	for i in range(36):
+		var st := ColorRect.new()
+		st.color = Color(0.8, 0.85, 0.95, randf_range(0.3, 0.7))
+		st.size = Vector2(2, 2)
+		st.position = Vector2(randf_range(0, VW), randf_range(LB, 170))
+		add_child(st)
+	# Lua (glow suave + núcleo brilhante, redonda)
+	var lt := SpriteSetup.get_texture("light_tex")
+	if lt:
+		var glow := Sprite2D.new()
+		glow.texture = lt; glow.modulate = Color(0.90, 0.92, 0.80, 0.80)
+		glow.scale = Vector2(3.2, 3.2); glow.position = Vector2(532, 96)
+		add_child(glow)
+		var disc := Sprite2D.new()
+		disc.texture = lt; disc.modulate = Color(0.96, 0.97, 0.90, 1.0)
+		disc.scale = Vector2(1.1, 1.1); disc.position = Vector2(532, 96)
+		add_child(disc)
+	# Parapeito de pedra atrás (com ameias) — y ~272-302
+	var wall := ColorRect.new()
+	wall.color = Color(0.16, 0.14, 0.12); wall.size = Vector2(VW, 32); wall.position = Vector2(0, 286)
+	add_child(wall)
+	for mx in range(8, int(VW), 52):
+		var merlon := ColorRect.new()
+		merlon.color = Color(0.19, 0.16, 0.13); merlon.size = Vector2(30, 18); merlon.position = Vector2(mx, 272)
+		add_child(merlon)
+		var lit := ColorRect.new()
+		lit.color = Color(0.27, 0.23, 0.18); lit.size = Vector2(30, 3); lit.position = Vector2(mx, 272)
+		add_child(lit)
+	# Piso de pedra do topo (onde estão a Soph e os golens)
+	var ft := SpriteSetup.get_texture("floor_tile")
+	if ft:
+		var floor_spr := Sprite2D.new()
+		floor_spr.texture = ft; floor_spr.centered = false
+		floor_spr.region_enabled = true; floor_spr.region_rect = Rect2(0, 0, VW, 40)
+		floor_spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		floor_spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		floor_spr.position = Vector2(0, 300)
+		add_child(floor_spr)
+	else:
+		var floor_rect := ColorRect.new()
+		floor_rect.color = Color(0.22, 0.19, 0.15); floor_rect.size = Vector2(VW, 40); floor_rect.position = Vector2(0, 300)
+		add_child(floor_rect)
 
 func _mk_sprite(key: String, pos: Vector2, sc: Vector2) -> Sprite2D:
 	var spr := Sprite2D.new()
