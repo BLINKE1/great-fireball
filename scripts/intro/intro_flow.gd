@@ -64,14 +64,11 @@ func _transition_to_fall() -> void:
 	, 0.40)
 
 func _transition_to_landing() -> void:
+	# Depois da queda da torre, entra no NÍVEL JOGÁVEL DE VERDADE (floresta real:
+	# Player físico, goblins, boss com rockfall) — substitui as cutscenes
+	# scriptadas (landing/goblin/forest_fight) que eram só conceituais.
 	GameState.fade_out_then(func():
-		var scene = load("res://scenes/intro/landing_gameplay.tscn").instantiate()
-		add_child(scene)
-		GameState.fade_in(0.7)
-		scene.finished.connect(func():
-			scene.queue_free()
-			_transition_to_goblin()
-		, CONNECT_ONE_SHOT)
+		get_tree().change_scene_to_file("res://scenes/world/dungeon_1.tscn")
 	, 0.40)
 
 func _transition_to_goblin() -> void:

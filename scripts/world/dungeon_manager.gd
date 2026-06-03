@@ -265,8 +265,9 @@ func _spawn_exit_portal() -> void:
 func _on_portal_entered(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	body.set_cutscene(true)
+	# Clímax do capítulo: o portal leva à Grande Bola de Fogo (anime_fireball).
 	GameState.fade_out_then(func():
-		get_tree().change_scene_to_file("res://scenes/ui/win_screen.tscn")
+		get_tree().change_scene_to_file("res://scenes/intro/anime_fireball.tscn")
 	)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
