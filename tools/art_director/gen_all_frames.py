@@ -53,11 +53,14 @@ def build():
         )
 
     # ── run (4 frames) — passada maior, leve inclinação ────────────────────────
+    # 6 frames p/ uma corrida mais fluida (AAA): contato → recolhe → passagem alta
     run = [
-        (( 9, 13), (18, 22), -3, +3,  0, 0, +5, +3),   # 0 contato amplo
-        ((12, 16), (15, 19), -2, -2, -2, 2, +3,  0),   # 1 passagem alta
-        (( 9, 13), (18, 22), +3, -3,  0, 0, -5, -3),   # 2 contato oposto
-        ((12, 16), (15, 19), -2, -2, -2, 2, -3,  0),   # 3 passagem
+        (( 9, 13), (18, 22), -3, +3,  0, 0, +5, +3),   # 0 contato (frente esticada)
+        ((11, 15), (17, 21), -1, +1, -1, 1, +4, +2),   # 1 recolhe/absorve
+        ((12, 16), (15, 19), -2, -2, -2, 3, +2,  0),   # 2 passagem alta (joelho sobe)
+        (( 9, 13), (18, 22), +3, -3,  0, 0, -5, -3),   # 3 contato oposto
+        ((11, 15), (17, 21), +1, -1, -1, 1, -4, -2),   # 4 recolhe/absorve
+        ((12, 16), (15, 19), -2, -2, -2, 3, -2,  0),   # 5 passagem alta
     ]
     for i, (bk, fr, l, r, hb, kd, sw, hsw) in enumerate(run):
         frames[f"soph_run_{i}"] = S.compose(

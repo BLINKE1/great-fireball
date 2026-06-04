@@ -710,6 +710,8 @@ func _update_visuals() -> void:
 	var tgt_lean := clampf(velocity.x / SPEED, -1.2, 1.2) * 0.13
 	if not is_on_floor():
 		tgt_lean *= 0.5
+	elif sr < 0.06:
+		tgt_lean = 0.022 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.33)   # idle vivo (sway sutil)
 	if is_dashing:
 		tgt_lean = facing * 0.30
 	_lean = lerpf(_lean, tgt_lean, 0.30)
@@ -784,8 +786,9 @@ func _build_soph_frames_pixel() -> SpriteFrames:
 	# walk: 6 frames, 10 fps
 	_add_anim(sf, "walk",  ["soph_walk_0","soph_walk_1","soph_walk_2",
 							  "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
-	# run: 4 frames, 14 fps
-	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2","soph_run_3"], 14.0, true)
+	# run: 6 frames, 16 fps (corrida fluida AAA)
+	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2",
+							  "soph_run_3","soph_run_4","soph_run_5"], 16.0, true)
 	# jump/fall: 2 frames cada (lançamento↔ápice e queda esvoaçante)
 	_add_anim(sf, "jump",  ["soph_jump_0", "soph_jump_1"], 6.0, false)
 	_add_anim(sf, "fall",  ["soph_fall_0", "soph_fall_1"], 5.0, true)
