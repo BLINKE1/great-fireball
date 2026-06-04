@@ -131,6 +131,8 @@ var _look_ahead: float      = 0.0
 
 # Squash & stretch
 var _squash: Vector2 = Vector2.ONE
+var _lean: float = 0.0           # inclinação (skew) na direção do movimento
+var _last_facing: float = 1.0    # p/ detectar virada e dar um "pop"
 
 # Escala base do sprite (1.0 no pixel-art, HD_SCALE no HD). _update_visuals
 # multiplica isso pela squash todo frame; sem essa base, a squash zerava
@@ -694,8 +696,32 @@ func _update_visuals() -> void:
 			and sq.distance_squared_to(Vector2.ONE) < 0.0004:
 		var breathe := 1.0 + 0.018 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.40)
 		sq = Vector2(breathe, breathe)
+
+	# ── Dinamismo de movimento (AAA): stretch por velocidade + lean (skew) ──────
+	var sr := clampf(absf(velocity.x) / SPEED, 0.0, 1.3)
+	if not is_on_floor():
+		var ar := clampf(absf(velocity.y) / 640.0, 0.0, 1.0)   # esticar no ar (sobe/cai rápido)
+		sq.y *= 1.0 + ar * 0.14
+		sq.x *= 1.0 - ar * 0.08
+	elif sr > 0.05:
+		sq.x *= 1.0 + sr * 0.06                                 # esticar correndo
+		sq.y *= 1.0 - sr * 0.04
+	# Inclinação na direção do movimento (corpo/cabelo "se jogam" pra frente)
+	var tgt_lean := clampf(velocity.x / SPEED, -1.2, 1.2) * 0.13
+	if not is_on_floor():
+		tgt_lean *= 0.5
+	if is_dashing:
+		tgt_lean = facing * 0.30
+	_lean = lerpf(_lean, tgt_lean, 0.30)
+	# "Pop" elástico ao trocar de direção no chão
+	if is_on_floor() and signf(facing) != signf(_last_facing):
+		_squash = Vector2(0.82, 1.20)
+	_last_facing = facing
+
 	sprite.scale = _base_scale * sq
 	hair.scale   = sq
+	sprite.skew  = _lean
+	hair.skew    = _lean
 
 	# Flip to face direction
 	sprite.flip_h = facing < 0
