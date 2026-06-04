@@ -36,6 +36,7 @@ func _add_ambient_particles(level: Node) -> void:
 	ap.area_width    = 5200.0 if level.has_node("DungeonManager") else 3800.0
 	ap.area_height   = 580.0
 	ap.particle_count = 40 if level.has_node("DungeonManager") else 25
+	ap.forest = _forest      # floresta → vaga-lumes
 	level.add_child(ap)
 
 # ── Solid background (behind parallax) ───────────────────────────────────────
