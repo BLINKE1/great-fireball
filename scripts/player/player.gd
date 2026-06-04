@@ -419,6 +419,9 @@ func _handle_jump() -> void:
 		jump_buffer_timer = 0.0
 		jumps_remaining = _max_air_jumps()
 		_squash = Vector2(0.78, 1.24)
+		# Pufezinho de poeira no impulso (juice do pulo de solo).
+		VFX.burst(global_position + Vector2(0, 16), get_parent(),
+				Color(0.70, 0.58, 0.42, 0.7), 6, 55.0, -12.0)
 		# (sem som de pulo: a repetição a cada pulo ficava cansativa)
 
 	# Pulo variável: soltou o botão ainda subindo → corta a subida (pulo baixo).
