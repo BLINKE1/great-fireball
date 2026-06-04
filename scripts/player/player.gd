@@ -131,6 +131,8 @@ var _look_ahead: float      = 0.0
 
 # Squash & stretch
 var _squash: Vector2 = Vector2.ONE
+var _lean: float = 0.0           # inclinação (skew) na direção do movimento
+var _last_facing: float = 1.0    # p/ detectar virada e dar um "pop"
 
 # Escala base do sprite (1.0 no pixel-art, HD_SCALE no HD). _update_visuals
 # multiplica isso pela squash todo frame; sem essa base, a squash zerava
@@ -417,6 +419,9 @@ func _handle_jump() -> void:
 		jump_buffer_timer = 0.0
 		jumps_remaining = _max_air_jumps()
 		_squash = Vector2(0.78, 1.24)
+		# Pufezinho de poeira no impulso (juice do pulo de solo).
+		VFX.burst(global_position + Vector2(0, 16), get_parent(),
+				Color(0.70, 0.58, 0.42, 0.7), 6, 55.0, -12.0)
 		# (sem som de pulo: a repetição a cada pulo ficava cansativa)
 
 	# Pulo variável: soltou o botão ainda subindo → corta a subida (pulo baixo).
@@ -694,8 +699,34 @@ func _update_visuals() -> void:
 			and sq.distance_squared_to(Vector2.ONE) < 0.0004:
 		var breathe := 1.0 + 0.018 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.40)
 		sq = Vector2(breathe, breathe)
+
+	# ── Dinamismo de movimento (AAA): stretch por velocidade + lean (skew) ──────
+	var sr := clampf(absf(velocity.x) / SPEED, 0.0, 1.3)
+	if not is_on_floor():
+		var ar := clampf(absf(velocity.y) / 640.0, 0.0, 1.0)   # esticar no ar (sobe/cai rápido)
+		sq.y *= 1.0 + ar * 0.14
+		sq.x *= 1.0 - ar * 0.08
+	elif sr > 0.05:
+		sq.x *= 1.0 + sr * 0.06                                 # esticar correndo
+		sq.y *= 1.0 - sr * 0.04
+	# Inclinação na direção do movimento (corpo/cabelo "se jogam" pra frente)
+	var tgt_lean := clampf(velocity.x / SPEED, -1.2, 1.2) * 0.13
+	if not is_on_floor():
+		tgt_lean *= 0.5
+	elif sr < 0.06:
+		tgt_lean = 0.022 * sin(Time.get_ticks_msec() * 0.001 * TAU * 0.33)   # idle vivo (sway sutil)
+	if is_dashing:
+		tgt_lean = facing * 0.30
+	_lean = lerpf(_lean, tgt_lean, 0.30)
+	# "Pop" elástico ao trocar de direção no chão
+	if is_on_floor() and signf(facing) != signf(_last_facing):
+		_squash = Vector2(0.82, 1.20)
+	_last_facing = facing
+
 	sprite.scale = _base_scale * sq
 	hair.scale   = sq
+	sprite.skew  = _lean
+	hair.skew    = _lean
 
 	# Flip to face direction
 	sprite.flip_h = facing < 0
@@ -758,8 +789,9 @@ func _build_soph_frames_pixel() -> SpriteFrames:
 	# walk: 6 frames, 10 fps
 	_add_anim(sf, "walk",  ["soph_walk_0","soph_walk_1","soph_walk_2",
 							  "soph_walk_3","soph_walk_4","soph_walk_5"], 10.0, true)
-	# run: 4 frames, 14 fps
-	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2","soph_run_3"], 14.0, true)
+	# run: 6 frames, 16 fps (corrida fluida AAA)
+	_add_anim(sf, "run",   ["soph_run_0","soph_run_1","soph_run_2",
+							  "soph_run_3","soph_run_4","soph_run_5"], 16.0, true)
 	# jump/fall: 2 frames cada (lançamento↔ápice e queda esvoaçante)
 	_add_anim(sf, "jump",  ["soph_jump_0", "soph_jump_1"], 6.0, false)
 	_add_anim(sf, "fall",  ["soph_fall_0", "soph_fall_1"], 5.0, true)
