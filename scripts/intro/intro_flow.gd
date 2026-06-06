@@ -11,7 +11,8 @@ func _start() -> void:
 
 func _show_anime() -> void:
 	_qte_packed = load("res://scenes/intro/qte_tower.tscn")
-	var scene = load("res://scenes/intro/anime_placeholder.tscn").instantiate()
+	# Abertura anime de verdade (cinematic) no lugar do placeholder conceitual.
+	var scene = load("res://scenes/intro/anime_opening.tscn").instantiate()
 	add_child(scene)
 	scene.finished.connect(func():
 		scene.queue_free()
