@@ -243,7 +243,7 @@ def draw_bangs(img, b=0):
 # ── Chapéu de mago navy ─────────────────────────────────────────────────────
 def draw_hat(img, b=0):
     hy = -b
-    # CONE com inclinação de bruxa (tombando p/ trás-esquerda) + ponta dobrada.
+    # CONE de maga com inclinação (tombando p/ trás-esquerda) + ponta dobrada.
     # centerline curva: reto subindo e pendendo à esquerda perto do topo.
     base_y, base_cx = 31, 31
     tip_y = 7
