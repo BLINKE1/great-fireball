@@ -16,6 +16,7 @@ const DISPLAY_NAMES = {
 	"double_jump":        "Duplo Salto",
 	"convoke":            "Convocar Juju",
 	"convoke_will":       "Convocar Will",
+	"convoke_gus":        "Convocar Gus",
 }
 
 const KEYS = {
@@ -32,6 +33,7 @@ const KEYS = {
 	"double_jump":        "(auto)",
 	"convoke":            "V",
 	"convoke_will":       "B",
+	"convoke_gus":        "G",
 }
 
 const DESCRIPTIONS = {
@@ -48,6 +50,7 @@ const DESCRIPTIONS = {
 	"magic_shield":     "Cria um escudo que absorve todo dano por alguns segundos.",
 	"convoke":          "Convoca a Juju, que adormece todos os inimigos por 10s.",
 	"convoke_will":     "Convoca o Will, que cai do céu e defende com um escudo gigante por 10s.",
+	"convoke_gus":      "Convoca o Gus, dagger ágil: abate mobs com adagas e finaliza no jiu-jítsu.",
 }
 
 var _unlocked: Dictionary = {
@@ -64,6 +67,7 @@ var _unlocked: Dictionary = {
 	"magic_shield":     false,
 	"convoke":          false,
 	"convoke_will":     false,
+	"convoke_gus":      false,
 }
 
 func reset() -> void:

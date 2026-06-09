@@ -57,6 +57,9 @@ const CONVOKE_CD              = 12.0
 # Convoke do Will — aliado defensivo (escudo gigante). Ultimate de defesa.
 const CONVOKE_WILL_COST       = 50.0
 const CONVOKE_WILL_CD         = 14.0
+# Convoke do Gus — aliado dagger/aventureiro (ofensivo, assassino de mobs).
+const CONVOKE_GUS_COST        = 50.0
+const CONVOKE_GUS_CD          = 14.0
 
 # Fall damage thresholds (pixels fallen from apex/start to landing)
 const FALL_SAFE   = 220.0   # below this: no damage
@@ -78,6 +81,7 @@ const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
 const Juju            = preload("res://scenes/spells/juju.tscn")
 const WillAlly        = preload("res://scenes/spells/will.tscn")
+const GusAlly         = preload("res://scenes/spells/gus.tscn")
 
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var hair: Sprite2D            = $Hair
@@ -113,6 +117,7 @@ var missile_giant_cd: float = 0.0
 var missile_curved_cd: float = 0.0
 var convoke_cd: float = 0.0
 var convoke_will_cd: float = 0.0
+var convoke_gus_cd: float = 0.0
 
 # Shield state
 var shield_timer: float = 0.0
@@ -232,6 +237,7 @@ func _tick_timers(delta: float) -> void:
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
 	convoke_cd          = max(convoke_cd          - delta, 0.0)
 	convoke_will_cd     = max(convoke_will_cd     - delta, 0.0)
+	convoke_gus_cd      = max(convoke_gus_cd      - delta, 0.0)
 	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
 
 	# Shield expiry
@@ -473,6 +479,8 @@ func _handle_spells() -> void:
 		_cast_convoke()
 	if Input.is_action_just_pressed("spell_convoke_will"):
 		_cast_convoke_will()
+	if Input.is_action_just_pressed("spell_convoke_gus"):
+		_cast_convoke_gus()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
 
@@ -616,6 +624,22 @@ func _cast_convoke_will() -> void:
 	get_parent().add_child(will)
 	will.global_position = global_position + Vector2(facing * 70, 0)
 
+func _cast_convoke_gus() -> void:
+	# CONVOKE do Gus: surge por trás da Soph e parte pra cima dos inimigos com as
+	# duas adagas + finalização. Só um Gus por vez.
+	if not SkillManager.has("convoke_gus"): return
+	if convoke_gus_cd > 0.0: return
+	if get_tree().get_first_node_in_group("gus"): return
+	if not mana.spend(CONVOKE_GUS_COST): return
+	convoke_gus_cd = CONVOKE_GUS_CD
+	_set_attack_pose("cast", 0.26)
+	AudioManager.play("dash", 1.0)
+	VFX.sparkle(global_position + Vector2(-facing * 16, -18), get_parent(), Color(0.5, 0.9, 0.8), 12)
+	var gus = GusAlly.instantiate()
+	gus.facing = facing
+	get_parent().add_child(gus)
+	gus.global_position = global_position + Vector2(-facing * 24, 0)   # surge por trás
+
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
@@ -695,6 +719,8 @@ func get_skill_cooldown(skill: String) -> float:
 									else (0.0 if mana.current_mana >= CONVOKE_COST else 0.75)
 		"convoke_will":      return convoke_will_cd / CONVOKE_WILL_CD if convoke_will_cd > 0.0 \
 									else (0.0 if mana.current_mana >= CONVOKE_WILL_COST else 0.75)
+		"convoke_gus":       return convoke_gus_cd / CONVOKE_GUS_CD if convoke_gus_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_GUS_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

@@ -58,6 +58,9 @@ func _ready() -> void:
 	_gen_juju()
 	_gen_will()
 	_gen_will_shield()
+	_gen_gus()
+	_gen_gus_dagger()
+	_gen_mutant_arm()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -649,6 +652,95 @@ func _gen_will_shield() -> void:
 	_fr(img, 5, 15, 9, 2, EMBL)
 	img.set_pixel(9, 16, Color(1, 1, 1))
 	_store("will_shield", img)
+
+# ── Gus (aliado dagger/aventureiro do Convoke) — 28x28, pose ágil c/ 2 adagas ──
+func _gen_gus() -> void:
+	const SK   := Color(0.90, 0.70, 0.52)   # pele
+	const SKD  := Color(0.72, 0.53, 0.38)
+	const HAIR := Color(0.20, 0.13, 0.08)   # cabelo escuro curto
+	const BAND := Color(0.82, 0.18, 0.16)   # faixa vermelha (atlético/jiu-jítsu)
+	const BANDL:= Color(0.95, 0.35, 0.30)
+	const TUN  := Color(0.20, 0.50, 0.42)   # túnica de aventureiro (verde-azulado)
+	const TUND := Color(0.13, 0.34, 0.30)
+	const TUNL := Color(0.30, 0.66, 0.56)
+	const LTH  := Color(0.42, 0.28, 0.16)   # couro (cinto/correias)
+	const STL  := Color(0.78, 0.82, 0.90)   # aço das adagas
+	const STLD := Color(0.50, 0.54, 0.62)
+	const BK   := Color(0.08, 0.08, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Pernas (passada ágil)
+	_fr(img, 10, 22, 4, 5, TUND); _fr(img, 15, 23, 4, 4, TUND)
+	_fr(img, 9, 26, 5, 1, LTH); _fr(img, 15, 26, 5, 1, LTH)   # botas
+	# Tronco (levemente torcido, dinâmico)
+	_fr(img, 9, 13, 9, 10, TUN)
+	_fr(img, 9, 13, 9, 2, TUNL)            # luz no peito
+	_fr(img, 9, 21, 9, 2, TUND)
+	# Correias em X no peito
+	for i in range(0, 8):
+		img.set_pixel(10 + i, 14 + i, LTH)
+		img.set_pixel(17 - i, 14 + i, LTH)
+	_fr(img, 9, 20, 9, 1, LTH)             # cinto
+	# Cabeça
+	_fc(img, 13, 9, 4, SK)
+	img.set_pixel(15, 9, BK); img.set_pixel(16, 9, BK)        # olhos focados
+	img.set_pixel(16, 11, SKD)
+	# Cabelo + faixa vermelha
+	_fr(img, 9, 4, 9, 3, HAIR)
+	img.set_pixel(9, 7, HAIR); img.set_pixel(10, 8, HAIR)
+	_fr(img, 9, 6, 9, 1, BAND); img.set_pixel(9, 6, BANDL)
+	img.set_pixel(18, 7, BAND); img.set_pixel(19, 8, BAND)    # ponta da faixa esvoaçando
+	# Braço/adaga TRASEIRO (pra cima, atrás)
+	_fr(img, 6, 14, 3, 3, SK)
+	img.set_pixel(5, 12, STLD); img.set_pixel(5, 11, STL)
+	img.set_pixel(4, 10, STL);  img.set_pixel(4, 9, STL)
+	img.set_pixel(6, 13, LTH)              # punho/cabo
+	# Braço/adaga DIANTEIRO (estendido pra frente)
+	_fr(img, 18, 16, 4, 3, SK)
+	img.set_pixel(22, 17, LTH)             # cabo
+	img.set_pixel(23, 16, STLD); img.set_pixel(24, 16, STL)
+	img.set_pixel(25, 15, STL);  img.set_pixel(26, 15, STL)
+	_store("gus", img)
+
+# ── Adaga arremessada do Gus — 12x6, apontando pra direita ────────────────────
+func _gen_gus_dagger() -> void:
+	const STL  := Color(0.82, 0.86, 0.94)
+	const STLL := Color(1.0, 1.0, 1.0)
+	const STLD := Color(0.52, 0.56, 0.64)
+	const LTH  := Color(0.42, 0.28, 0.16)
+	const GRD  := Color(0.70, 0.58, 0.30)   # guarda dourada
+	var img := Image.create(12, 6, false, Image.FORMAT_RGBA8)
+	# Cabo
+	_fr(img, 0, 2, 3, 2, LTH)
+	# Guarda
+	img.set_pixel(3, 1, GRD); img.set_pixel(3, 2, GRD); img.set_pixel(3, 3, GRD); img.set_pixel(3, 4, GRD)
+	# Lâmina
+	_fr(img, 4, 2, 5, 2, STL)
+	img.set_pixel(4, 2, STLL); img.set_pixel(5, 2, STLL)   # brilho
+	img.set_pixel(9, 2, STL); img.set_pixel(10, 3, STL)    # ponta
+	img.set_pixel(8, 3, STLD); img.set_pixel(7, 3, STLD)
+	_store("gus_dagger", img)
+
+# ── Pedaço do braço mutante (Gus arranca) — 16x12 ─────────────────────────────
+func _gen_mutant_arm() -> void:
+	const GRN  := Color(0.36, 0.55, 0.24)   # carne goblin
+	const GRND := Color(0.24, 0.38, 0.16)
+	const GRNL := Color(0.48, 0.68, 0.32)
+	const PUR  := Color(0.45, 0.20, 0.50)   # veias da mutação
+	const GORE := Color(0.65, 0.14, 0.16)   # ponta arrancada
+	const BON  := Color(0.85, 0.82, 0.70)   # osso exposto
+	var img := Image.create(16, 12, false, Image.FORMAT_RGBA8)
+	_fr(img, 2, 3, 11, 6, GRN)
+	_fr(img, 2, 3, 11, 2, GRNL)            # luz por cima
+	_fr(img, 2, 8, 11, 1, GRND)
+	_fc(img, 12, 6, 3, GRN)                # punho/garra
+	img.set_pixel(14, 4, GRND); img.set_pixel(15, 5, GRND)   # garras
+	img.set_pixel(14, 8, GRND); img.set_pixel(15, 7, GRND)
+	# Veias roxas da mutação
+	img.set_pixel(5, 5, PUR); img.set_pixel(7, 6, PUR); img.set_pixel(9, 5, PUR); img.set_pixel(6, 7, PUR)
+	# Ponta arrancada (sangue + osso)
+	_fr(img, 1, 4, 2, 4, GORE)
+	img.set_pixel(1, 5, BON); img.set_pixel(2, 6, BON)
+	_store("mutant_arm", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 
