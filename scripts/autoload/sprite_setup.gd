@@ -55,6 +55,21 @@ func _ready() -> void:
 	_gen_ogre_shockwave()
 	_gen_goblin_mutant()
 	_gen_staff()
+	_gen_juju()
+	_gen_will()
+	_gen_will_shield()
+	_gen_gus()
+	_gen_gus_dagger()
+	_gen_mutant_arm()
+	_gen_di()
+	_gen_di_arrow()
+	_gen_gui()
+	_gen_gui_wolf()
+	_gen_gui_sword()
+	_gen_rose()
+	_gen_ze()
+	_gen_ze_fireball()
+	_gen_rose_aurora()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -545,6 +560,492 @@ func _gen_staff() -> void:
 	img.set_pixel(7, 6, Color(1, 1, 1, 1))   # brilho especular
 
 	_store("staff", img)
+
+# ── Juju, a fada aliada (Convoke) — 24x24 ─────────────────────────────────────
+func _gen_juju() -> void:
+	const SK   := Color(0.97, 0.82, 0.62)   # pele
+	const HAIR := Color(0.98, 0.55, 0.78)   # cabelo rosa
+	const HAIRD:= Color(0.80, 0.35, 0.60)
+	const DRS  := Color(0.40, 0.85, 0.55)   # vestido verde-fada
+	const DRSD := Color(0.25, 0.62, 0.38)
+	const WING := Color(0.78, 0.93, 1.0, 0.50)
+	const WINGE:= Color(0.92, 0.98, 1.0, 0.85)
+	const GLOW := Color(0.75, 1.0, 0.65)
+	const BK   := Color(0.10, 0.10, 0.16)
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	# Glow mágico
+	_glow_soft(img, 12, 12, 11, GLOW, 0.40)
+	# Asas (atrás): dois pares translúcidos
+	_fc(img, 6, 8, 4, WING); _fc(img, 18, 8, 4, WING)
+	_fc(img, 7, 14, 3, WING); _fc(img, 17, 14, 3, WING)
+	img.set_pixel(4, 7, WINGE); img.set_pixel(20, 7, WINGE)
+	img.set_pixel(5, 16, WINGE); img.set_pixel(19, 16, WINGE)
+	# Cabelo (topo)
+	_fr(img, 9, 3, 6, 3, HAIR); img.set_pixel(8, 4, HAIR); img.set_pixel(15, 4, HAIR)
+	img.set_pixel(8, 5, HAIRD); img.set_pixel(15, 5, HAIRD)
+	# Cabeça
+	_fc(img, 12, 7, 3, SK)
+	img.set_pixel(11, 7, BK); img.set_pixel(13, 7, BK)         # olhinhos
+	img.set_pixel(12, 9, Color(0.85, 0.45, 0.45))             # boquinha
+	# Corpo / vestido (sino)
+	_fr(img, 10, 10, 5, 3, DRS)
+	_fr(img, 9, 13, 7, 3, DRS); _fr(img, 8, 16, 9, 2, DRS)
+	_fr(img, 8, 16, 9, 1, DRSD)
+	# bracinhos
+	img.set_pixel(9, 11, SK); img.set_pixel(15, 11, SK)
+	# brilho/varinha-fagulha
+	img.set_pixel(16, 11, Color(1, 1, 0.7)); img.set_pixel(17, 10, Color(1, 1, 0.85))
+	_store("juju", img)
+
+# ── Will (aliado defensivo do Convoke) — 28x28, agachado em guarda ────────────
+func _gen_will() -> void:
+	const SK   := Color(0.92, 0.74, 0.56)   # pele
+	const SKD  := Color(0.76, 0.58, 0.42)
+	const HAIR := Color(0.34, 0.22, 0.14)   # cabelo castanho
+	const ARM  := Color(0.40, 0.46, 0.56)   # armadura aço
+	const ARMD := Color(0.26, 0.31, 0.40)
+	const ARML := Color(0.58, 0.64, 0.74)
+	const CAPE := Color(0.55, 0.16, 0.18)   # manto vermelho
+	const CAPED:= Color(0.38, 0.10, 0.12)
+	const BK   := Color(0.10, 0.10, 0.14)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Manto atrás (costas)
+	_fr(img, 7, 11, 7, 13, CAPE); _fr(img, 7, 20, 8, 4, CAPED)
+	# Pernas agachadas (joelho no chão)
+	_fr(img, 9, 22, 4, 5, ARMD); _fr(img, 14, 24, 6, 3, ARM)
+	img.set_pixel(19, 26, ARMD); img.set_pixel(20, 26, ARMD)
+	# Tronco em guarda (inclinado pra frente)
+	_fr(img, 10, 13, 9, 9, ARM)
+	_fr(img, 10, 13, 9, 2, ARML)        # brilho no ombro
+	_fr(img, 10, 20, 9, 2, ARMD)
+	# Cinto
+	_fr(img, 10, 19, 9, 1, Color(0.30, 0.22, 0.12))
+	# Braço da frente (segurando o escudo, estendido)
+	_fr(img, 18, 15, 4, 3, ARM); _fr(img, 21, 15, 2, 4, SK)
+	# Cabeça + elmo aberto
+	_fc(img, 14, 9, 4, SK)
+	_fr(img, 10, 5, 9, 3, ARM)          # testeira do elmo
+	_fr(img, 10, 5, 9, 1, ARML)
+	img.set_pixel(11, 8, HAIR); img.set_pixel(12, 8, HAIR)   # cabelo na nuca
+	img.set_pixel(16, 9, BK); img.set_pixel(17, 9, BK)       # olhos determinados
+	img.set_pixel(15, 7, HAIR); img.set_pixel(16, 7, HAIR)
+	img.set_pixel(17, 11, SKD)          # queixo/sombra
+	_store("will", img)
+
+# ── Escudo gigante do Will — 18x34, torre de aço com emblema ──────────────────
+func _gen_will_shield() -> void:
+	const STL  := Color(0.52, 0.58, 0.68)   # aço
+	const STLD := Color(0.32, 0.37, 0.46)
+	const STLL := Color(0.72, 0.78, 0.88)
+	const RIM  := Color(0.86, 0.70, 0.28)   # borda dourada
+	const RIML := Color(1.00, 0.92, 0.55)
+	const EMB  := Color(0.30, 0.62, 1.00)   # emblema azul (cor da Soph)
+	const EMBL := Color(0.65, 0.85, 1.00)
+	var img := Image.create(18, 34, false, Image.FORMAT_RGBA8)
+	# Corpo do escudo (cantos arredondados via _fr empilhado)
+	_fr(img, 3, 1, 12, 32, STL)
+	_fr(img, 2, 4, 14, 26, STL)
+	_fr(img, 1, 8, 16, 18, STL)
+	# Sombreado interno (volume)
+	_fr(img, 9, 4, 6, 26, STLD)
+	_fr(img, 3, 2, 5, 4, STLL)              # reflexo no topo-esquerda
+	# Borda dourada
+	for y in range(1, 33):
+		img.set_pixel(3, y, RIM); img.set_pixel(14, y, RIM)
+	for x in range(3, 15):
+		img.set_pixel(x, 1, RIM); img.set_pixel(x, 32, RIM)
+	img.set_pixel(3, 2, RIML); img.set_pixel(4, 1, RIML)
+	# Emblema central (losango azul)
+	_fc(img, 9, 16, 4, EMB)
+	_fr(img, 8, 12, 2, 9, EMBL)
+	_fr(img, 5, 15, 9, 2, EMBL)
+	img.set_pixel(9, 16, Color(1, 1, 1))
+	_store("will_shield", img)
+
+# ── Gus (aliado dagger/aventureiro do Convoke) — 28x28, pose ágil c/ 2 adagas ──
+func _gen_gus() -> void:
+	const SK   := Color(0.90, 0.70, 0.52)   # pele
+	const SKD  := Color(0.72, 0.53, 0.38)
+	const HAIR := Color(0.20, 0.13, 0.08)   # cabelo escuro curto
+	const BAND := Color(0.82, 0.18, 0.16)   # faixa vermelha (atlético/jiu-jítsu)
+	const BANDL:= Color(0.95, 0.35, 0.30)
+	const TUN  := Color(0.20, 0.50, 0.42)   # túnica de aventureiro (verde-azulado)
+	const TUND := Color(0.13, 0.34, 0.30)
+	const TUNL := Color(0.30, 0.66, 0.56)
+	const LTH  := Color(0.42, 0.28, 0.16)   # couro (cinto/correias)
+	const STL  := Color(0.78, 0.82, 0.90)   # aço das adagas
+	const STLD := Color(0.50, 0.54, 0.62)
+	const BK   := Color(0.08, 0.08, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Pernas (passada ágil)
+	_fr(img, 10, 22, 4, 5, TUND); _fr(img, 15, 23, 4, 4, TUND)
+	_fr(img, 9, 26, 5, 1, LTH); _fr(img, 15, 26, 5, 1, LTH)   # botas
+	# Tronco (levemente torcido, dinâmico)
+	_fr(img, 9, 13, 9, 10, TUN)
+	_fr(img, 9, 13, 9, 2, TUNL)            # luz no peito
+	_fr(img, 9, 21, 9, 2, TUND)
+	# Correias em X no peito
+	for i in range(0, 8):
+		img.set_pixel(10 + i, 14 + i, LTH)
+		img.set_pixel(17 - i, 14 + i, LTH)
+	_fr(img, 9, 20, 9, 1, LTH)             # cinto
+	# Cabeça
+	_fc(img, 13, 9, 4, SK)
+	img.set_pixel(15, 9, BK); img.set_pixel(16, 9, BK)        # olhos focados
+	img.set_pixel(16, 11, SKD)
+	# Cabelo + faixa vermelha
+	_fr(img, 9, 4, 9, 3, HAIR)
+	img.set_pixel(9, 7, HAIR); img.set_pixel(10, 8, HAIR)
+	_fr(img, 9, 6, 9, 1, BAND); img.set_pixel(9, 6, BANDL)
+	img.set_pixel(18, 7, BAND); img.set_pixel(19, 8, BAND)    # ponta da faixa esvoaçando
+	# Braço/adaga TRASEIRO (pra cima, atrás)
+	_fr(img, 6, 14, 3, 3, SK)
+	img.set_pixel(5, 12, STLD); img.set_pixel(5, 11, STL)
+	img.set_pixel(4, 10, STL);  img.set_pixel(4, 9, STL)
+	img.set_pixel(6, 13, LTH)              # punho/cabo
+	# Braço/adaga DIANTEIRO (estendido pra frente)
+	_fr(img, 18, 16, 4, 3, SK)
+	img.set_pixel(22, 17, LTH)             # cabo
+	img.set_pixel(23, 16, STLD); img.set_pixel(24, 16, STL)
+	img.set_pixel(25, 15, STL);  img.set_pixel(26, 15, STL)
+	_store("gus", img)
+
+# ── Adaga arremessada do Gus — 12x6, apontando pra direita ────────────────────
+func _gen_gus_dagger() -> void:
+	const STL  := Color(0.82, 0.86, 0.94)
+	const STLL := Color(1.0, 1.0, 1.0)
+	const STLD := Color(0.52, 0.56, 0.64)
+	const LTH  := Color(0.42, 0.28, 0.16)
+	const GRD  := Color(0.70, 0.58, 0.30)   # guarda dourada
+	var img := Image.create(12, 6, false, Image.FORMAT_RGBA8)
+	# Cabo
+	_fr(img, 0, 2, 3, 2, LTH)
+	# Guarda
+	img.set_pixel(3, 1, GRD); img.set_pixel(3, 2, GRD); img.set_pixel(3, 3, GRD); img.set_pixel(3, 4, GRD)
+	# Lâmina
+	_fr(img, 4, 2, 5, 2, STL)
+	img.set_pixel(4, 2, STLL); img.set_pixel(5, 2, STLL)   # brilho
+	img.set_pixel(9, 2, STL); img.set_pixel(10, 3, STL)    # ponta
+	img.set_pixel(8, 3, STLD); img.set_pixel(7, 3, STLD)
+	_store("gus_dagger", img)
+
+# ── Pedaço do braço mutante (Gus arranca) — 16x12 ─────────────────────────────
+func _gen_mutant_arm() -> void:
+	const GRN  := Color(0.36, 0.55, 0.24)   # carne goblin
+	const GRND := Color(0.24, 0.38, 0.16)
+	const GRNL := Color(0.48, 0.68, 0.32)
+	const PUR  := Color(0.45, 0.20, 0.50)   # veias da mutação
+	const GORE := Color(0.65, 0.14, 0.16)   # ponta arrancada
+	const BON  := Color(0.85, 0.82, 0.70)   # osso exposto
+	var img := Image.create(16, 12, false, Image.FORMAT_RGBA8)
+	_fr(img, 2, 3, 11, 6, GRN)
+	_fr(img, 2, 3, 11, 2, GRNL)            # luz por cima
+	_fr(img, 2, 8, 11, 1, GRND)
+	_fc(img, 12, 6, 3, GRN)                # punho/garra
+	img.set_pixel(14, 4, GRND); img.set_pixel(15, 5, GRND)   # garras
+	img.set_pixel(14, 8, GRND); img.set_pixel(15, 7, GRND)
+	# Veias roxas da mutação
+	img.set_pixel(5, 5, PUR); img.set_pixel(7, 6, PUR); img.set_pixel(9, 5, PUR); img.set_pixel(6, 7, PUR)
+	# Ponta arrancada (sangue + osso)
+	_fr(img, 1, 4, 2, 4, GORE)
+	img.set_pixel(1, 5, BON); img.set_pixel(2, 6, BON)
+	_store("mutant_arm", img)
+
+# ── Di (elfa Sentinela, esposa do Gus) — 28x28, arqueira com arco ─────────────
+func _gen_di() -> void:
+	const SK   := Color(0.95, 0.80, 0.66)   # pele clara élfica
+	const SKD  := Color(0.80, 0.62, 0.50)
+	const HAIR := Color(0.95, 0.88, 0.55)   # loiro-mel longo
+	const HAIRD:= Color(0.80, 0.68, 0.36)
+	const TUN  := Color(0.24, 0.52, 0.34)   # verde-floresta (ranger)
+	const TUND := Color(0.16, 0.36, 0.24)
+	const TUNL := Color(0.36, 0.66, 0.44)
+	const LTH  := Color(0.46, 0.31, 0.18)   # couro
+	const BOW  := Color(0.60, 0.42, 0.22)   # arco de madeira
+	const BOWL := Color(0.78, 0.58, 0.32)
+	const STR  := Color(0.90, 0.95, 0.85, 0.8)   # corda
+	const BK   := Color(0.08, 0.10, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Cabelo de trás (massa no topo da cabeça)
+	_fr(img, 9, 4, 9, 5, HAIRD)
+	_fr(img, 9, 4, 9, 4, HAIR)
+	# Mechas longas laterais (emolduram o rosto, sem cobrir o tronco)
+	_fr(img, 8, 9, 2, 10, HAIR);  img.set_pixel(8, 9, HAIRD); img.set_pixel(8, 18, HAIRD)
+	_fr(img, 17, 9, 2, 8, HAIR);  img.set_pixel(18, 9, HAIRD)
+	# Pernas (leggings + botas)
+	_fr(img, 10, 22, 3, 5, TUND); _fr(img, 14, 22, 3, 5, TUND)
+	_fr(img, 9, 26, 4, 1, LTH); _fr(img, 14, 26, 4, 1, LTH)
+	# Túnica curta de ranger (por cima do cabelo de trás)
+	_fr(img, 10, 13, 7, 9, TUN)
+	_fr(img, 10, 13, 7, 2, TUNL)
+	_fr(img, 10, 20, 7, 2, TUND)
+	_fr(img, 10, 19, 7, 1, LTH)              # cinto
+	# Cabeça (por cima do cabelo)
+	_fc(img, 13, 9, 3, SK)
+	# Orelha pontuda (elfa!)
+	img.set_pixel(9, 9, SK); img.set_pixel(8, 8, SK)
+	# Franja
+	_fr(img, 10, 5, 7, 2, HAIR)
+	img.set_pixel(10, 7, HAIR); img.set_pixel(16, 7, HAIR)
+	# Olhos
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)
+	img.set_pixel(14, 11, SKD)
+	# Braço que segura o arco (frente, estendido)
+	_fr(img, 16, 13, 4, 2, SK)
+	# Braço que puxa a corda (recolhido)
+	img.set_pixel(11, 14, SK)
+	# ── Arco (à frente, arco vertical curvado pra direita) ──
+	var bx := 22
+	for y in range(3, 22):
+		# curva: afasta no meio
+		var bulge := int(round(2.5 * sin(float(y - 3) / 18.0 * PI)))
+		img.set_pixel(bx + bulge, y, BOW)
+		if y % 3 == 0:
+			img.set_pixel(bx + bulge, y, BOWL)
+	# pontas do arco
+	img.set_pixel(bx, 3, BOWL); img.set_pixel(bx, 21, BOWL)
+	# corda (reta, puxada até a mão)
+	for y in range(3, 22):
+		img.set_pixel(bx, y, STR)
+	# flecha encaixada apontando pra frente
+	img.set_pixel(20, 12, LTH); img.set_pixel(21, 12, Color(0.85,0.9,0.8))
+	img.set_pixel(24, 12, Color(0.7, 1.0, 0.6)); img.set_pixel(25, 12, Color(0.85, 1.0, 0.7))
+	_store("di", img)
+
+# ── Flecha élfica da Di — 14x4, ponta brilhante verde-teal ────────────────────
+func _gen_di_arrow() -> void:
+	const SHF  := Color(0.55, 0.42, 0.26)   # haste de madeira
+	const TIP  := Color(0.65, 1.0, 0.70)    # ponta de energia verde
+	const TIPL := Color(0.92, 1.0, 0.88)
+	const FLE  := Color(0.30, 0.78, 0.50)   # penas verdes
+	var img := Image.create(14, 4, false, Image.FORMAT_RGBA8)
+	# Penas (atrás)
+	img.set_pixel(0, 0, FLE); img.set_pixel(1, 0, FLE)
+	img.set_pixel(0, 3, FLE); img.set_pixel(1, 3, FLE)
+	img.set_pixel(1, 1, FLE); img.set_pixel(1, 2, FLE)
+	# Haste
+	_fr(img, 2, 1, 8, 2, SHF)
+	# Ponta de energia
+	img.set_pixel(10, 1, TIP); img.set_pixel(10, 2, TIP)
+	img.set_pixel(11, 1, TIP); img.set_pixel(11, 2, TIP)
+	img.set_pixel(12, 1, TIPL); img.set_pixel(13, 2, TIPL)
+	img.set_pixel(12, 2, TIP)
+	_store("di_arrow", img)
+
+# ── Gui Fenrir (forma humana) — 28x28, guerreiro de espadão c/ olhar de lobo ──
+func _gen_gui() -> void:
+	const SK   := Color(0.86, 0.66, 0.50)
+	const SKD  := Color(0.66, 0.48, 0.34)
+	const HAIR := Color(0.17, 0.13, 0.11)
+	const FUR  := Color(0.62, 0.60, 0.56)   # gola de pele
+	const FURD := Color(0.42, 0.40, 0.38)
+	const ARM  := Color(0.28, 0.30, 0.38)
+	const ARMD := Color(0.18, 0.20, 0.26)
+	const ARML := Color(0.42, 0.45, 0.54)
+	const STL  := Color(0.82, 0.86, 0.94)
+	const STLD := Color(0.52, 0.56, 0.64)
+	const GRD  := Color(0.58, 0.46, 0.24)
+	const AMB  := Color(0.95, 0.72, 0.20)   # olhos âmbar (o lobo por dentro)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Pernas / botas
+	_fr(img, 10, 22, 3, 5, ARMD); _fr(img, 15, 22, 3, 5, ARMD)
+	_fr(img, 9, 26, 4, 1, Color(0.30, 0.22, 0.14)); _fr(img, 15, 26, 4, 1, Color(0.30, 0.22, 0.14))
+	# Tronco (armadura escura)
+	_fr(img, 9, 13, 9, 9, ARM)
+	_fr(img, 9, 13, 9, 2, ARML)
+	_fr(img, 9, 20, 9, 2, ARMD)
+	_fr(img, 9, 19, 9, 1, Color(0.30, 0.22, 0.12))   # cinto
+	# Gola de pele (ombros)
+	_fr(img, 8, 11, 11, 2, FUR)
+	img.set_pixel(8, 12, FURD); img.set_pixel(18, 12, FURD)
+	# Cabeça
+	_fc(img, 13, 8, 3, SK)
+	# Cabelo selvagem (espetado)
+	_fr(img, 9, 3, 9, 4, HAIR)
+	img.set_pixel(9, 2, HAIR); img.set_pixel(12, 1, HAIR); img.set_pixel(15, 1, HAIR); img.set_pixel(17, 2, HAIR)
+	img.set_pixel(9, 7, HAIR); img.set_pixel(17, 7, HAIR)   # costeletas
+	# Olhos âmbar
+	img.set_pixel(13, 8, AMB); img.set_pixel(15, 8, AMB)
+	img.set_pixel(14, 10, SKD)
+	# Braço dianteiro
+	_fr(img, 17, 14, 3, 2, SK)
+	# Espadão (apoiado, diagonal pra cima-direita)
+	img.set_pixel(20, 15, GRD); img.set_pixel(20, 16, GRD)          # punho
+	img.set_pixel(21, 14, GRD); img.set_pixel(21, 15, GRD); img.set_pixel(21, 16, GRD); img.set_pixel(21, 17, GRD)  # guarda
+	for p in [[22, 14], [23, 13], [24, 11], [25, 10], [26, 8], [26, 9]]:
+		img.set_pixel(p[0], p[1], STL)
+	img.set_pixel(22, 15, STLD); img.set_pixel(23, 14, STLD)
+	_store("gui", img)
+
+# ── Gui Fenrir (lobisomem) — 32x32, fera maior e curvada ──────────────────────
+func _gen_gui_wolf() -> void:
+	const FUR   := Color(0.44, 0.40, 0.40)
+	const FURD  := Color(0.29, 0.26, 0.26)
+	const FURL  := Color(0.58, 0.54, 0.52)
+	const NOSE  := Color(0.16, 0.14, 0.15)
+	const CLAW  := Color(0.93, 0.93, 0.86)
+	const EYE   := Color(0.97, 0.80, 0.15)
+	const FANG  := Color(0.95, 0.95, 0.88)
+	const PANTS := Color(0.32, 0.22, 0.14)
+	var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	# Pernas digitígradas + garras
+	_fr(img, 10, 24, 4, 6, FUR); _fr(img, 18, 24, 4, 6, FUR)
+	for fx in [9, 11, 13]: img.set_pixel(fx, 30, CLAW)
+	for fx in [18, 20, 22]: img.set_pixel(fx, 30, CLAW)
+	# Calça rasgada (resto da forma humana)
+	_fr(img, 9, 22, 14, 3, PANTS); _fr(img, 9, 24, 14, 1, FURD)
+	# Tronco peludo grande
+	_fr(img, 8, 12, 16, 11, FUR)
+	_fr(img, 8, 12, 16, 2, FURL)
+	_fr(img, 8, 20, 16, 2, FURD)
+	_fr(img, 14, 14, 4, 7, FURL)            # peito (V claro)
+	# Braços/ombros grandes
+	_fr(img, 4, 13, 5, 8, FUR); _fr(img, 23, 13, 5, 8, FUR)
+	_fr(img, 4, 13, 5, 2, FURL); _fr(img, 23, 13, 5, 2, FURL)
+	for cy in [21, 22, 23]:
+		img.set_pixel(4, cy, CLAW); img.set_pixel(27, cy, CLAW)
+	img.set_pixel(3, 22, CLAW); img.set_pixel(28, 22, CLAW)
+	# Cabeça de lobo (focinho pra direita)
+	_fc(img, 16, 8, 5, FUR)
+	_fr(img, 16, 7, 7, 3, FUR)
+	img.set_pixel(22, 8, NOSE); img.set_pixel(23, 8, NOSE)   # nariz
+	# Orelhas
+	img.set_pixel(12, 2, FURL); img.set_pixel(12, 3, FUR); img.set_pixel(13, 3, FUR)
+	img.set_pixel(19, 2, FURL); img.set_pixel(19, 3, FUR); img.set_pixel(18, 3, FUR)
+	# Olhos âmbar brilhando
+	img.set_pixel(15, 7, EYE); img.set_pixel(18, 7, EYE)
+	img.set_pixel(15, 8, Color(1, 1, 0.6)); img.set_pixel(18, 8, Color(1, 1, 0.6))
+	# Presas
+	img.set_pixel(19, 11, FANG); img.set_pixel(20, 11, FANG); img.set_pixel(21, 11, FANG)
+	_store("gui_wolf", img)
+
+# ── Espadão do espetinho do Gui — 24x6 ────────────────────────────────────────
+func _gen_gui_sword() -> void:
+	const STL  := Color(0.82, 0.86, 0.94)
+	const STLL := Color(1, 1, 1)
+	const STLD := Color(0.52, 0.56, 0.64)
+	const GRD  := Color(0.60, 0.48, 0.24)
+	const LTH  := Color(0.40, 0.27, 0.16)
+	var img := Image.create(24, 6, false, Image.FORMAT_RGBA8)
+	_fr(img, 0, 2, 3, 2, LTH)               # cabo
+	_fr(img, 3, 1, 1, 4, GRD)               # guarda
+	_fr(img, 4, 2, 17, 2, STL)              # lâmina
+	_fr(img, 4, 2, 17, 1, STLL)             # fio brilhante
+	img.set_pixel(21, 2, STL); img.set_pixel(22, 2, STL); img.set_pixel(23, 3, STL)   # ponta
+	img.set_pixel(20, 3, STLD)
+	_store("gui_sword", img)
+
+# ── Mãe Rose — maga graduada de GELO (28x28) ──────────────────────────────────
+func _gen_rose() -> void:
+	const SK   := Color(0.95, 0.80, 0.68)
+	const SKD  := Color(0.78, 0.62, 0.52)
+	const HAIR := Color(0.46, 0.30, 0.22)   # castanho
+	const HAIRL:= Color(0.60, 0.42, 0.30)
+	const ROBE := Color(0.62, 0.82, 0.95)   # azul-gelo claro
+	const ROBED:= Color(0.40, 0.62, 0.82)
+	const ROBEL:= Color(0.82, 0.94, 1.0)
+	const TRIM := Color(0.85, 0.95, 1.0)    # debrum branco-gelo
+	const STF  := Color(0.55, 0.40, 0.26)   # cajado
+	const ICE  := Color(0.6, 0.95, 1.0)     # cristal de gelo
+	const ICEL := Color(0.92, 1.0, 1.0)
+	const BK   := Color(0.10, 0.12, 0.16)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Vestido longo (sino)
+	_fr(img, 9, 14, 10, 9, ROBE)
+	_fr(img, 8, 21, 12, 4, ROBE)
+	_fr(img, 8, 24, 12, 1, ROBED)
+	_fr(img, 9, 14, 10, 2, ROBEL)
+	_fr(img, 13, 16, 2, 9, ROBEL)           # faixa central
+	_fr(img, 8, 23, 12, 1, TRIM)            # debrum
+	# Cabelo (longo, atrás)
+	_fr(img, 8, 5, 11, 13, HAIRL)
+	_fr(img, 8, 5, 11, 11, HAIR)
+	# Cabeça
+	_fc(img, 13, 9, 3, SK)
+	_fr(img, 10, 5, 7, 2, HAIR)             # franja
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)   # olhos
+	img.set_pixel(14, 11, SKD)
+	# Tiara de gelo
+	img.set_pixel(11, 5, ICEL); img.set_pixel(13, 4, ICE); img.set_pixel(15, 5, ICEL)
+	# Braços
+	_fr(img, 7, 15, 2, 5, ROBED); _fr(img, 19, 15, 2, 5, ROBED)
+	# Cajado com cristal (direita)
+	for y in range(8, 25):
+		img.set_pixel(22, y, STF)
+	_fc(img, 22, 6, 2, ICE)
+	img.set_pixel(22, 5, ICEL); img.set_pixel(22, 6, ICEL)
+	img.set_pixel(20, 6, ICE); img.set_pixel(24, 6, ICE)
+	_store("rose", img)
+
+# ── Pai Zé — mago de FOGO (28x28) ─────────────────────────────────────────────
+func _gen_ze() -> void:
+	const SK   := Color(0.90, 0.72, 0.56)
+	const SKD  := Color(0.72, 0.54, 0.40)
+	const HAIR := Color(0.20, 0.16, 0.14)   # cabelo/barba escuros
+	const GREY := Color(0.55, 0.52, 0.50)   # grisalho
+	const ROBE := Color(0.66, 0.22, 0.14)   # vermelho-fogo
+	const ROBED:= Color(0.46, 0.14, 0.10)
+	const ROBEL:= Color(0.85, 0.38, 0.18)
+	const TRIM := Color(0.95, 0.72, 0.25)   # debrum dourado
+	const STF  := Color(0.40, 0.27, 0.16)
+	const FIRE := Color(1.0, 0.55, 0.12)
+	const FIREL:= Color(1.0, 0.85, 0.35)
+	const BK   := Color(0.10, 0.09, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Túnica longa
+	_fr(img, 9, 14, 10, 9, ROBE)
+	_fr(img, 8, 21, 12, 4, ROBE)
+	_fr(img, 8, 24, 12, 1, ROBED)
+	_fr(img, 9, 14, 10, 2, ROBEL)
+	_fr(img, 13, 16, 2, 9, ROBEL)
+	_fr(img, 8, 23, 12, 1, TRIM)
+	# Cabelo
+	_fr(img, 9, 4, 9, 4, HAIR)
+	img.set_pixel(9, 5, GREY); img.set_pixel(17, 5, GREY)   # têmporas grisalhas
+	# Cabeça
+	_fc(img, 13, 9, 3, SK)
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)      # olhos
+	# Barba (pai!)
+	_fr(img, 11, 11, 5, 3, HAIR)
+	img.set_pixel(12, 13, GREY); img.set_pixel(14, 13, GREY)
+	img.set_pixel(11, 11, SKD)
+	# Braços
+	_fr(img, 7, 15, 2, 5, ROBED); _fr(img, 19, 15, 2, 5, ROBED)
+	# Cajado com orbe de fogo (direita)
+	for y in range(8, 25):
+		img.set_pixel(22, y, STF)
+	_fc(img, 22, 6, 2, FIRE)
+	img.set_pixel(22, 6, FIREL); img.set_pixel(22, 5, FIREL)
+	img.set_pixel(20, 6, FIRE); img.set_pixel(24, 6, FIRE)
+	_store("ze", img)
+
+# ── Grande Bola de Fogo do Zé — 20x20 ─────────────────────────────────────────
+func _gen_ze_fireball() -> void:
+	_t_fireball()
+
+func _t_fireball() -> void:
+	var img := Image.create(20, 20, false, Image.FORMAT_RGBA8)
+	_fc(img, 10, 10, 9, Color(0.85, 0.18, 0.05, 0.55))
+	_fc(img, 10, 10, 7, Color(1.0, 0.42, 0.10))
+	_fc(img, 10, 10, 5, Color(1.0, 0.68, 0.20))
+	_fc(img, 10, 10, 3, Color(1.0, 0.92, 0.65))
+	# labaredas
+	for p in [[10, 0], [3, 3], [17, 3], [1, 10], [19, 10], [4, 17], [16, 17], [10, 19]]:
+		img.set_pixel(p[0], p[1], Color(1.0, 0.5, 0.1, 0.7))
+	_store("ze_fireball", img)
+
+# ── Cortina de aurora boreal (gelo) da Rose — 24x36 ───────────────────────────
+func _gen_rose_aurora() -> void:
+	var img := Image.create(24, 36, false, Image.FORMAT_RGBA8)
+	for x in range(24):
+		var t := float(x) / 24.0
+		var c := Color(0.4, 0.9, 1.0).lerp(Color(0.5, 1.0, 0.7), t)
+		for y in range(36):
+			var a := 1.0 - absf(float(y) - 18.0) / 18.0
+			a *= 0.5 + 0.5 * sin(float(x) * 0.9 + float(y) * 0.22)
+			a = clampf(a * 0.7, 0.0, 0.8)
+			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
+	_store("rose_aurora", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 

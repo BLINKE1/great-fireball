@@ -49,6 +49,14 @@ const DamageNumber  = preload("res://scenes/effects/damage_number.tscn")
 const GoblinScene   = preload("res://scenes/enemies/goblin.tscn")
 const OgreShockwave = preload("res://scenes/enemies/ogre_shockwave.tscn")
 const GoblinArrow   = preload("res://scenes/enemies/goblin_arrow.tscn")
+const BossBeam      = preload("res://scenes/enemies/boss_beam.tscn")
+
+# ── Facho de energia (braço mutante) — canal contínuo; estoura escudo do Will ──
+const BEAM_WINDUP = 0.70
+const BEAM_DUR    = 3.0
+const BEAM_CD     = 6.0
+const BEAM_NEAR   = 120.0
+const BEAM_FAR    = 560.0
 
 @onready var hp_bar = $HPBar
 @onready var sprite = $Sprite2D
@@ -71,6 +79,8 @@ var _global_cd: float = 1.0  # gate entre ataques
 var _summon_cd: float = 4.0
 var _toss_cd: float = 2.0
 var _charge_cd: float = 1.5
+var _beam_cd: float = 3.0
+var _beam: Node = null
 var _charge_hit: bool = false
 var _swipe_hits: int = 0     # p/ duplo golpe na fase 3
 var _base_mod: Color = Color.WHITE
@@ -78,6 +88,7 @@ var _minions: Array = []
 
 func _ready() -> void:
 	add_to_group("enemy")
+	add_to_group("boss")
 	player = get_tree().get_first_node_in_group("player")
 	var tex := SpriteSetup.get_texture("goblin_mutant")
 	if tex:
@@ -132,6 +143,7 @@ func _physics_process(delta: float) -> void:
 	_summon_cd = maxf(_summon_cd - delta, 0.0)
 	_toss_cd   = maxf(_toss_cd   - delta, 0.0)
 	_charge_cd = maxf(_charge_cd - delta, 0.0)
+	_beam_cd   = maxf(_beam_cd   - delta, 0.0)
 
 	match _state:
 		St.IDLE:    _tick_idle(delta)
@@ -178,6 +190,8 @@ func _choose_move(dist: float) -> String:
 		pool.append(["charge", 3.0 if phase != Phase.ONE else 2.0])
 	if dist >= TOSS_NEAR and _toss_cd <= 0.0:
 		pool.append(["toss", 2.5])
+	if phase != Phase.ONE and dist >= BEAM_NEAR and dist <= BEAM_FAR and _beam_cd <= 0.0:
+		pool.append(["beam", 2.2])
 	if _summon_cd <= 0.0 and _alive_minions() < _minion_cap():
 		pool.append(["summon", 2.5])
 	if pool.is_empty():
@@ -203,6 +217,7 @@ func _enter_windup(m: String) -> void:
 		"charge": _t = CHARGE_WINDUP * _windup_mult()
 		"summon": _t = SUMMON_WINDUP
 		"toss":   _t = TOSS_WINDUP * _windup_mult()
+		"beam":   _t = BEAM_WINDUP
 	AudioManager.play("stomp" if m in ["slam", "charge"] else "detect", randf_range(0.7, 0.9))
 	# pequeno "encolher" de antecipação
 	sprite.scale = Vector2(0.94, 1.08)
@@ -219,6 +234,7 @@ func _telegraph_color() -> Color:
 		"summon": return Color(0.8, 2.0, 0.9)    # verde: chamando capangas
 		"slam":   return Color(2.0, 0.7, 0.35)
 		"toss":   return Color(2.0, 1.2, 0.5)
+		"beam":   return Color(1.5, 0.7, 2.0)    # púrpura: carregando o facho mutante
 		_:        return Color(2.0, 0.95, 0.5)    # swipe/charge: laranja quente
 
 # ── ACTIVE (o golpe acontece) ────────────────────────────────────────────────
@@ -232,9 +248,13 @@ func _enter_active() -> void:
 		"charge": _begin_charge()
 		"summon": _do_summon()
 		"toss":   _do_toss()
+		"beam":   _begin_beam()
 
 func _tick_active(delta: float) -> void:
 	_t -= delta
+	if _move == "beam":
+		# Canaliza parado, encarando a Soph; o nó do facho segue o braço sozinho.
+		velocity.x = move_toward(velocity.x, 0.0, _walk() * 10.0 * delta)
 	if _move == "charge":
 		velocity.x = facing * CHARGE_SPEED
 		# acerta o player UMA vez ao passar por ele
@@ -253,6 +273,7 @@ func _tick_active(delta: float) -> void:
 func _enter_recover() -> void:
 	_state = St.RECOVER
 	velocity.x = 0.0
+	sprite.modulate = _base_mod   # limpa o brilho de canal do facho, se houver
 	# Recuperação maior depois de golpes pesados → janela de contra-ataque (justo).
 	match _move:
 		"charge": _t = 0.7
@@ -342,6 +363,34 @@ func _do_toss() -> void:
 		arrow.position = global_position + Vector2(facing * 40.0, -20.0 + i * 12.0)
 		get_parent().add_child(arrow)
 	VFX.burst(global_position + Vector2(facing * 40, -16), get_parent(), Color(0.6, 0.3, 0.5), 8, 60.0, 20.0)
+
+func _begin_beam() -> void:
+	# Solta o facho contínuo pelo braço mutante (dura BEAM_DUR; segue o braço).
+	_beam_cd = BEAM_CD
+	_t = BEAM_DUR
+	if player and is_instance_valid(player):
+		facing = signf(player.global_position.x - global_position.x)
+		if facing == 0.0: facing = -1.0
+		sprite.flip_h = facing < 0
+	AudioManager.play("roar", 0.85)
+	sprite.modulate = Color(1.5, 0.85, 1.7)   # braço incandescente durante o canal
+	VFX.burst(global_position + Vector2(facing * 50, -10), get_parent(), Color(0.7, 1.0, 0.5), 14, 90.0, 20.0)
+	VFX.ring(global_position + Vector2(facing * 50, -10), get_parent(), Color(0.6, 0.95, 1.0, 0.8), 28.0, 0.35)
+	var b = BossBeam.instantiate()
+	b.direction = facing
+	b.shooter = self
+	get_parent().add_child(b)
+	b.global_position = global_position + Vector2(facing * 56.0, -10.0)
+	_beam = b
+
+func force_beam() -> void:
+	# Dispara o facho IMEDIATAMENTE (usado no test room p/ sincronizar vários bosses).
+	if is_dead:
+		return
+	_state = St.ACTIVE
+	_move = "beam"
+	sprite.scale = Vector2.ONE
+	_begin_beam()
 
 func _spawn_shockwave(dir: float, offset: float = 8.0) -> void:
 	var wave = OgreShockwave.instantiate()

@@ -72,6 +72,13 @@ func _ready() -> void:
 	SkillManager.unlock("double_jump")
 	SkillManager.unlock("magic_dash")
 	SkillManager.unlock("magic_missile")
+	SkillManager.unlock("convoke")
+	SkillManager.unlock("convoke_will")
+	SkillManager.unlock("convoke_gus")
+	SkillManager.unlock("convoke_di")
+	SkillManager.unlock("convoke_gui")
+	SkillManager.unlock("convoke_rose")
+	SkillManager.unlock("convoke_ze")
 	# player._ready ja rodou ANTES desse _ready (filho roda antes do pai), entao
 	# jumps_remaining ja foi calculado com double_jump bloqueado. Recarrega.
 	player.jumps_remaining = player._max_air_jumps()
@@ -191,11 +198,15 @@ func _handle_keys() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_G:                       # spawna mais um goblin
+		if event.keycode == KEY_N:                       # N: spawna mais um goblin (G virou Gus)
 			_spawn_goblin(Vector2(randf_range(440, 920), 410))
 		elif event.keycode == KEY_K:                     # limpa todos os inimigos
 			for e in get_tree().get_nodes_in_group("enemy"):
 				e.queue_free()
+		elif event.keycode == KEY_0:                     # 0: TODOS os bosses soltam o facho juntos
+			for b in get_tree().get_nodes_in_group("boss"):
+				if is_instance_valid(b) and b.has_method("force_beam"):
+					b.force_beam()
 		elif ENEMY_SCENES.has(event.keycode):            # 1-6: spawna por tipo
 			_spawn_enemy(load(ENEMY_SCENES[event.keycode]), Vector2(randf_range(460, 900), 400))
 
@@ -234,4 +245,6 @@ func _update_label() -> void:
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
 		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
-		+ "G goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"
+		+ "Convoke: V Juju  B Will  G Gus  T Di  W Gui  M Rose(gelo)  P Ze(fogo)\n" \
+		+ "0 FACHO(bosses)\n" \
+		+ "N goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"

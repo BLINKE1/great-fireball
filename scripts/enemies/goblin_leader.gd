@@ -59,6 +59,14 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	if _sleep_timer > 0.0:                      # dormindo (Convoke / Juju)
+		_sleep_timer -= delta
+		$Sprite2D.modulate = Color(0.55, 0.65, 1.05)
+		velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
+		move_and_slide()
+		if _sleep_timer <= 0.0: _wake()
+		return
+
 	if _winding:
 		velocity.x = move_toward(velocity.x, 0.0, SPEED * 10.0 * delta)
 		_windup_timer -= delta
@@ -131,6 +139,36 @@ func _show_alert() -> void:
 	tw.tween_interval(0.35)
 	tw.tween_property(lbl, "modulate:a", 0.0, 0.24)
 	tw.tween_callback(lbl.queue_free)
+
+var _sleep_timer: float = 0.0
+var _zzz: Label = null
+
+func sleep(dur: float) -> void:
+	if is_dead: return
+	_sleep_timer = dur
+	if has_method("_cancel_windup"): call("_cancel_windup")
+	if has_method("_cancel_draw"): call("_cancel_draw")
+	$Sprite2D.modulate = Color(0.55, 0.65, 1.05)
+	if _zzz == null:
+		_zzz = Label.new()
+		_zzz.text = "z"
+		_zzz.add_theme_font_size_override("font_size", 13)
+		_zzz.add_theme_color_override("font_color", Color(0.75, 0.85, 1.0))
+		_zzz.position = Vector2(2, -34)
+		add_child(_zzz)
+		var tw := _zzz.create_tween().set_loops()
+		tw.tween_property(_zzz, "position:y", -44.0, 0.8)
+		tw.parallel().tween_property(_zzz, "modulate:a", 0.0, 0.8)
+		tw.tween_callback(_reset_zzz)
+
+func _reset_zzz() -> void:
+	if is_instance_valid(_zzz):
+		_zzz.position.y = -34.0; _zzz.modulate.a = 1.0
+
+func _wake() -> void:
+	$Sprite2D.modulate = Color.WHITE
+	if is_instance_valid(_zzz):
+		_zzz.queue_free(); _zzz = null
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:

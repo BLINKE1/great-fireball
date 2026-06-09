@@ -50,6 +50,28 @@ const MAGIC_SHIELD_COST       = 35.0
 const MAGIC_SHIELD_DURATION   = 3.5
 const MAGIC_SHIELD_CD         = 6.0
 
+# Convoke — convoca a Juju (fada) pra adormecer os inimigos. Custo alto e
+# cooldown longo: é uma "ultimate" de suporte, não um spam.
+const CONVOKE_COST            = 45.0
+const CONVOKE_CD              = 12.0
+# Convoke do Will — aliado defensivo (escudo gigante). Ultimate de defesa.
+const CONVOKE_WILL_COST       = 50.0
+const CONVOKE_WILL_CD         = 14.0
+# Convoke do Gus — aliado dagger/aventureiro (ofensivo, assassino de mobs).
+const CONVOKE_GUS_COST        = 50.0
+const CONVOKE_GUS_CD          = 14.0
+# Convoke da Di — elfa Sentinela (arqueira; dano à distância / multi-alvo).
+const CONVOKE_DI_COST         = 50.0
+const CONVOKE_DI_CD           = 14.0
+# Convoke do Gui Fenrir — rush de espadão (espetinho) + lobisomem feroz.
+const CONVOKE_GUI_COST        = 55.0
+const CONVOKE_GUI_CD          = 15.0
+# Convokes da família (Rose=gelo, Zé=fogo) — ultimates de NG+ (overkill geral).
+const CONVOKE_ROSE_COST       = 70.0
+const CONVOKE_ROSE_CD         = 25.0
+const CONVOKE_ZE_COST         = 70.0
+const CONVOKE_ZE_CD           = 25.0
+
 # Fall damage thresholds (pixels fallen from apex/start to landing)
 const FALL_SAFE   = 220.0   # below this: no damage
 const FALL_LIGHT  = 380.0   # 15 HP
@@ -68,6 +90,13 @@ const MissileGiant    = preload("res://scenes/spells/missile_giant.tscn")
 const MissileCurved   = preload("res://scenes/spells/missile_curved.tscn")
 const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
+const Juju            = preload("res://scenes/spells/juju.tscn")
+const WillAlly        = preload("res://scenes/spells/will.tscn")
+const GusAlly         = preload("res://scenes/spells/gus.tscn")
+const DiAlly          = preload("res://scenes/spells/di.tscn")
+const GuiAlly         = preload("res://scenes/spells/gui.tscn")
+const RoseAlly        = preload("res://scenes/spells/rose.tscn")
+const ZeAlly          = preload("res://scenes/spells/ze.tscn")
 
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var hair: Sprite2D            = $Hair
@@ -101,6 +130,13 @@ var missile_spread_cd: float = 0.0
 var missile_piercing_cd: float = 0.0
 var missile_giant_cd: float = 0.0
 var missile_curved_cd: float = 0.0
+var convoke_cd: float = 0.0
+var convoke_will_cd: float = 0.0
+var convoke_gus_cd: float = 0.0
+var convoke_di_cd: float = 0.0
+var convoke_gui_cd: float = 0.0
+var convoke_rose_cd: float = 0.0
+var convoke_ze_cd: float = 0.0
 
 # Shield state
 var shield_timer: float = 0.0
@@ -218,6 +254,13 @@ func _tick_timers(delta: float) -> void:
 	missile_piercing_cd = max(missile_piercing_cd - delta, 0.0)
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
+	convoke_cd          = max(convoke_cd          - delta, 0.0)
+	convoke_will_cd     = max(convoke_will_cd     - delta, 0.0)
+	convoke_gus_cd      = max(convoke_gus_cd      - delta, 0.0)
+	convoke_di_cd       = max(convoke_di_cd       - delta, 0.0)
+	convoke_gui_cd      = max(convoke_gui_cd      - delta, 0.0)
+	convoke_rose_cd     = max(convoke_rose_cd     - delta, 0.0)
+	convoke_ze_cd       = max(convoke_ze_cd       - delta, 0.0)
 	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
 
 	# Shield expiry
@@ -455,6 +498,20 @@ func _handle_spells() -> void:
 		_cast_heal()
 	if Input.is_action_just_pressed("spell_magic_dash"):
 		_cast_magic_dash()
+	if Input.is_action_just_pressed("spell_convoke"):
+		_cast_convoke()
+	if Input.is_action_just_pressed("spell_convoke_will"):
+		_cast_convoke_will()
+	if Input.is_action_just_pressed("spell_convoke_gus"):
+		_cast_convoke_gus()
+	if Input.is_action_just_pressed("spell_convoke_di"):
+		_cast_convoke_di()
+	if Input.is_action_just_pressed("spell_convoke_gui"):
+		_cast_convoke_gui()
+	if Input.is_action_just_pressed("spell_convoke_rose"):
+		_cast_convoke_rose()
+	if Input.is_action_just_pressed("spell_convoke_ze"):
+		_cast_convoke_ze()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
 
@@ -566,6 +623,116 @@ func _cast_magic_dash() -> void:
 	dash_cooldown_timer = DASH_COOLDOWN
 	iframe_timer = max(iframe_timer, DASH_DURATION)
 
+func _cast_convoke() -> void:
+	# CONVOKE: a Soph convoca a Juju (fada). Ela voa ~3s (vulnerável) e então
+	# adormece todos os inimigos por 10s antes de sair. Só uma Juju por vez.
+	if not SkillManager.has("convoke"): return
+	if convoke_cd > 0.0: return
+	if get_tree().get_first_node_in_group("juju"): return
+	if not mana.spend(CONVOKE_COST): return
+	convoke_cd = CONVOKE_CD
+	_set_attack_pose("cast", 0.30)
+	AudioManager.play("time_stop", 1.15)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.72, 1.0, 0.68, 0.85), 40.0, 0.45)
+	VFX.sparkle(global_position + Vector2(0, -18), get_parent(), Color(0.75, 1.0, 0.62), 16)
+	var juju = Juju.instantiate()
+	juju.global_position = global_position + Vector2(facing * 28, -60)
+	get_parent().add_child(juju)
+
+func _cast_convoke_will() -> void:
+	# CONVOKE do Will: cai do céu na frente da Soph, esmaga quem estiver lá e
+	# segura a guarda com o escudo gigante. Só um Will por vez.
+	if not SkillManager.has("convoke_will"): return
+	if convoke_will_cd > 0.0: return
+	if get_tree().get_first_node_in_group("will_shield"): return
+	if not mana.spend(CONVOKE_WILL_COST): return
+	convoke_will_cd = CONVOKE_WILL_CD
+	_set_attack_pose("cast", 0.30)
+	AudioManager.play("time_stop", 0.9)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.85, 0.78, 0.45, 0.85), 40.0, 0.45)
+	var will = WillAlly.instantiate()
+	will.facing = facing
+	get_parent().add_child(will)
+	will.global_position = global_position + Vector2(facing * 70, 0)
+
+func _cast_convoke_gus() -> void:
+	# CONVOKE do Gus: surge por trás da Soph e parte pra cima dos inimigos com as
+	# duas adagas + finalização. Só um Gus por vez.
+	if not SkillManager.has("convoke_gus"): return
+	if convoke_gus_cd > 0.0: return
+	if get_tree().get_first_node_in_group("gus"): return
+	if not mana.spend(CONVOKE_GUS_COST): return
+	convoke_gus_cd = CONVOKE_GUS_CD
+	_set_attack_pose("cast", 0.26)
+	AudioManager.play("dash", 1.0)
+	VFX.sparkle(global_position + Vector2(-facing * 16, -18), get_parent(), Color(0.5, 0.9, 0.8), 12)
+	var gus = GusAlly.instantiate()
+	gus.facing = facing
+	get_parent().add_child(gus)
+	gus.global_position = global_position + Vector2(-facing * 24, 0)   # surge por trás
+
+func _cast_convoke_di() -> void:
+	# CONVOKE da Di: surge ao alto/atrás da Soph e despeja a chuva de flechas.
+	# Só uma Di por vez.
+	if not SkillManager.has("convoke_di"): return
+	if convoke_di_cd > 0.0: return
+	if get_tree().get_first_node_in_group("di"): return
+	if not mana.spend(CONVOKE_DI_COST): return
+	convoke_di_cd = CONVOKE_DI_CD
+	_set_attack_pose("cast", 0.26)
+	AudioManager.play("unlock", 1.2)
+	VFX.sparkle(global_position + Vector2(-facing * 20, -56), get_parent(), Color(0.6, 1.0, 0.7), 14)
+	var di = DiAlly.instantiate()
+	di.facing = facing
+	get_parent().add_child(di)
+	di.global_position = global_position + Vector2(-facing * 30, -56)   # perch ao alto/atrás
+
+func _cast_convoke_gui() -> void:
+	# CONVOKE do Gui Fenrir: rush de espadão (espetinho/estocada) + lobisomem.
+	# Só um Gui por vez.
+	if not SkillManager.has("convoke_gui"): return
+	if convoke_gui_cd > 0.0: return
+	if get_tree().get_first_node_in_group("gui_fenrir"): return
+	if not mana.spend(CONVOKE_GUI_COST): return
+	convoke_gui_cd = CONVOKE_GUI_CD
+	_set_attack_pose("cast", 0.26)
+	AudioManager.play("dash", 0.95)
+	VFX.sparkle(global_position + Vector2(-facing * 18, -18), get_parent(), Color(0.8, 0.78, 0.72), 12)
+	var gui = GuiAlly.instantiate()
+	gui.facing = facing
+	get_parent().add_child(gui)
+	gui.global_position = global_position + Vector2(-facing * 26, 0)   # surge por trás
+
+func _cast_convoke_rose() -> void:
+	# CONVOKE da mãe Rose: paira sobre a Soph e solta a Execução Aurora (gelo).
+	if not SkillManager.has("convoke_rose"): return
+	if convoke_rose_cd > 0.0: return
+	if get_tree().get_first_node_in_group("rose"): return
+	if not mana.spend(CONVOKE_ROSE_COST): return
+	convoke_rose_cd = CONVOKE_ROSE_CD
+	_set_attack_pose("cast", 0.3)
+	AudioManager.play("unlock", 0.9)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.6, 0.95, 1.0, 0.85), 40.0, 0.45)
+	var rose = RoseAlly.instantiate()
+	rose.facing = facing
+	get_parent().add_child(rose)
+	rose.global_position = global_position + Vector2(0, -90)   # paira por cima
+
+func _cast_convoke_ze() -> void:
+	# CONVOKE do pai Zé: paira sobre a Soph e solta a Grande Bola de Fogo.
+	if not SkillManager.has("convoke_ze"): return
+	if convoke_ze_cd > 0.0: return
+	if get_tree().get_first_node_in_group("ze"): return
+	if not mana.spend(CONVOKE_ZE_COST): return
+	convoke_ze_cd = CONVOKE_ZE_CD
+	_set_attack_pose("cast", 0.3)
+	AudioManager.play("unlock", 0.8)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(1.0, 0.6, 0.2, 0.85), 40.0, 0.45)
+	var ze = ZeAlly.instantiate()
+	ze.facing = facing
+	get_parent().add_child(ze)
+	ze.global_position = global_position + Vector2(0, -90)   # paira por cima
+
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
@@ -601,6 +768,13 @@ func is_shielded() -> bool:
 
 func take_damage(amount: float, source_position: Vector2 = global_position) -> void:
 	if iframe_timer > 0.0 or is_dead: return
+	# Guarda do Will: enquanto o escudo aguenta, absorve 100% dos hits comuns
+	# (mobs/boss). O facho do boss NÃO passa por aqui — ele dana o HP do escudo
+	# direto; quando o escudo estoura, este guard some e o dano volta a entrar.
+	var guard := get_tree().get_first_node_in_group("will_shield")
+	if guard and is_instance_valid(guard) and guard.has_method("is_guarding") and guard.is_guarding():
+		guard.block_hit(amount, source_position)
+		return
 	if _shield_active:
 		AudioManager.play("shield_hit")
 		if _shield_visual:
@@ -634,6 +808,20 @@ func get_skill_cooldown(skill: String) -> float:
 									else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
 		"magic_shield":      return shield_cd_timer / MAGIC_SHIELD_CD if shield_cd_timer > 0.0 \
 									else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
+		"convoke":           return convoke_cd / CONVOKE_CD if convoke_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_COST else 0.75)
+		"convoke_will":      return convoke_will_cd / CONVOKE_WILL_CD if convoke_will_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_WILL_COST else 0.75)
+		"convoke_gus":       return convoke_gus_cd / CONVOKE_GUS_CD if convoke_gus_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_GUS_COST else 0.75)
+		"convoke_di":        return convoke_di_cd / CONVOKE_DI_CD if convoke_di_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_DI_COST else 0.75)
+		"convoke_gui":       return convoke_gui_cd / CONVOKE_GUI_CD if convoke_gui_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_GUI_COST else 0.75)
+		"convoke_rose":      return convoke_rose_cd / CONVOKE_ROSE_CD if convoke_rose_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_ROSE_COST else 0.75)
+		"convoke_ze":        return convoke_ze_cd / CONVOKE_ZE_CD if convoke_ze_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_ZE_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0
