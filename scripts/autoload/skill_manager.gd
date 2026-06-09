@@ -19,6 +19,8 @@ const DISPLAY_NAMES = {
 	"convoke_gus":        "Convocar Gus",
 	"convoke_di":         "Convocar Di",
 	"convoke_gui":        "Convocar Gui Fenrir",
+	"convoke_rose":       "Convocar Rose",
+	"convoke_ze":         "Convocar Zé",
 }
 
 const KEYS = {
@@ -38,6 +40,8 @@ const KEYS = {
 	"convoke_gus":        "G",
 	"convoke_di":         "T",
 	"convoke_gui":        "W",
+	"convoke_rose":       "M",
+	"convoke_ze":         "P",
 }
 
 const DESCRIPTIONS = {
@@ -57,6 +61,8 @@ const DESCRIPTIONS = {
 	"convoke_gus":      "Convoca o Gus, dagger ágil: abate mobs com adagas e finaliza no jiu-jítsu.",
 	"convoke_di":       "Convoca a Di, elfa Sentinela: chuva de flechas que finaliza feridos e perfura o boss.",
 	"convoke_gui":      "Convoca o Gui Fenrir: rush de espadão (espetinho de mobs ou estocada no boss) e vira lobisomem feroz.",
+	"convoke_rose":     "Convoca a mãe Rose, maga de gelo: Execução Aurora que congela e estilhaça todos (overkill).",
+	"convoke_ze":       "Convoca o pai Zé, mago de fogo: Grande Bola de Fogo que incinera todos (overkill).",
 }
 
 var _unlocked: Dictionary = {
@@ -76,6 +82,8 @@ var _unlocked: Dictionary = {
 	"convoke_gus":      false,
 	"convoke_di":       false,
 	"convoke_gui":      false,
+	"convoke_rose":     false,
+	"convoke_ze":       false,
 }
 
 func reset() -> void:

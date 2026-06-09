@@ -77,6 +77,8 @@ func _ready() -> void:
 	SkillManager.unlock("convoke_gus")
 	SkillManager.unlock("convoke_di")
 	SkillManager.unlock("convoke_gui")
+	SkillManager.unlock("convoke_rose")
+	SkillManager.unlock("convoke_ze")
 	# player._ready ja rodou ANTES desse _ready (filho roda antes do pai), entao
 	# jumps_remaining ja foi calculado com double_jump bloqueado. Recarrega.
 	player.jumps_remaining = player._max_air_jumps()
@@ -243,5 +245,6 @@ func _update_label() -> void:
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
 		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
-		+ "Convoke: V Juju  B Will  G Gus  T Di  W Gui Fenrir   0 FACHO(bosses)\n" \
+		+ "Convoke: V Juju  B Will  G Gus  T Di  W Gui  M Rose(gelo)  P Ze(fogo)\n" \
+		+ "0 FACHO(bosses)\n" \
 		+ "N goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"

@@ -66,6 +66,10 @@ func _ready() -> void:
 	_gen_gui()
 	_gen_gui_wolf()
 	_gen_gui_sword()
+	_gen_rose()
+	_gen_ze()
+	_gen_ze_fireball()
+	_gen_rose_aurora()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -930,6 +934,118 @@ func _gen_gui_sword() -> void:
 	img.set_pixel(21, 2, STL); img.set_pixel(22, 2, STL); img.set_pixel(23, 3, STL)   # ponta
 	img.set_pixel(20, 3, STLD)
 	_store("gui_sword", img)
+
+# ── Mãe Rose — maga graduada de GELO (28x28) ──────────────────────────────────
+func _gen_rose() -> void:
+	const SK   := Color(0.95, 0.80, 0.68)
+	const SKD  := Color(0.78, 0.62, 0.52)
+	const HAIR := Color(0.46, 0.30, 0.22)   # castanho
+	const HAIRL:= Color(0.60, 0.42, 0.30)
+	const ROBE := Color(0.62, 0.82, 0.95)   # azul-gelo claro
+	const ROBED:= Color(0.40, 0.62, 0.82)
+	const ROBEL:= Color(0.82, 0.94, 1.0)
+	const TRIM := Color(0.85, 0.95, 1.0)    # debrum branco-gelo
+	const STF  := Color(0.55, 0.40, 0.26)   # cajado
+	const ICE  := Color(0.6, 0.95, 1.0)     # cristal de gelo
+	const ICEL := Color(0.92, 1.0, 1.0)
+	const BK   := Color(0.10, 0.12, 0.16)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Vestido longo (sino)
+	_fr(img, 9, 14, 10, 9, ROBE)
+	_fr(img, 8, 21, 12, 4, ROBE)
+	_fr(img, 8, 24, 12, 1, ROBED)
+	_fr(img, 9, 14, 10, 2, ROBEL)
+	_fr(img, 13, 16, 2, 9, ROBEL)           # faixa central
+	_fr(img, 8, 23, 12, 1, TRIM)            # debrum
+	# Cabelo (longo, atrás)
+	_fr(img, 8, 5, 11, 13, HAIRL)
+	_fr(img, 8, 5, 11, 11, HAIR)
+	# Cabeça
+	_fc(img, 13, 9, 3, SK)
+	_fr(img, 10, 5, 7, 2, HAIR)             # franja
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)   # olhos
+	img.set_pixel(14, 11, SKD)
+	# Tiara de gelo
+	img.set_pixel(11, 5, ICEL); img.set_pixel(13, 4, ICE); img.set_pixel(15, 5, ICEL)
+	# Braços
+	_fr(img, 7, 15, 2, 5, ROBED); _fr(img, 19, 15, 2, 5, ROBED)
+	# Cajado com cristal (direita)
+	for y in range(8, 25):
+		img.set_pixel(22, y, STF)
+	_fc(img, 22, 6, 2, ICE)
+	img.set_pixel(22, 5, ICEL); img.set_pixel(22, 6, ICEL)
+	img.set_pixel(20, 6, ICE); img.set_pixel(24, 6, ICE)
+	_store("rose", img)
+
+# ── Pai Zé — mago de FOGO (28x28) ─────────────────────────────────────────────
+func _gen_ze() -> void:
+	const SK   := Color(0.90, 0.72, 0.56)
+	const SKD  := Color(0.72, 0.54, 0.40)
+	const HAIR := Color(0.20, 0.16, 0.14)   # cabelo/barba escuros
+	const GREY := Color(0.55, 0.52, 0.50)   # grisalho
+	const ROBE := Color(0.66, 0.22, 0.14)   # vermelho-fogo
+	const ROBED:= Color(0.46, 0.14, 0.10)
+	const ROBEL:= Color(0.85, 0.38, 0.18)
+	const TRIM := Color(0.95, 0.72, 0.25)   # debrum dourado
+	const STF  := Color(0.40, 0.27, 0.16)
+	const FIRE := Color(1.0, 0.55, 0.12)
+	const FIREL:= Color(1.0, 0.85, 0.35)
+	const BK   := Color(0.10, 0.09, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Túnica longa
+	_fr(img, 9, 14, 10, 9, ROBE)
+	_fr(img, 8, 21, 12, 4, ROBE)
+	_fr(img, 8, 24, 12, 1, ROBED)
+	_fr(img, 9, 14, 10, 2, ROBEL)
+	_fr(img, 13, 16, 2, 9, ROBEL)
+	_fr(img, 8, 23, 12, 1, TRIM)
+	# Cabelo
+	_fr(img, 9, 4, 9, 4, HAIR)
+	img.set_pixel(9, 5, GREY); img.set_pixel(17, 5, GREY)   # têmporas grisalhas
+	# Cabeça
+	_fc(img, 13, 9, 3, SK)
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)      # olhos
+	# Barba (pai!)
+	_fr(img, 11, 11, 5, 3, HAIR)
+	img.set_pixel(12, 13, GREY); img.set_pixel(14, 13, GREY)
+	img.set_pixel(11, 11, SKD)
+	# Braços
+	_fr(img, 7, 15, 2, 5, ROBED); _fr(img, 19, 15, 2, 5, ROBED)
+	# Cajado com orbe de fogo (direita)
+	for y in range(8, 25):
+		img.set_pixel(22, y, STF)
+	_fc(img, 22, 6, 2, FIRE)
+	img.set_pixel(22, 6, FIREL); img.set_pixel(22, 5, FIREL)
+	img.set_pixel(20, 6, FIRE); img.set_pixel(24, 6, FIRE)
+	_store("ze", img)
+
+# ── Grande Bola de Fogo do Zé — 20x20 ─────────────────────────────────────────
+func _gen_ze_fireball() -> void:
+	_t_fireball()
+
+func _t_fireball() -> void:
+	var img := Image.create(20, 20, false, Image.FORMAT_RGBA8)
+	_fc(img, 10, 10, 9, Color(0.85, 0.18, 0.05, 0.55))
+	_fc(img, 10, 10, 7, Color(1.0, 0.42, 0.10))
+	_fc(img, 10, 10, 5, Color(1.0, 0.68, 0.20))
+	_fc(img, 10, 10, 3, Color(1.0, 0.92, 0.65))
+	# labaredas
+	for p in [[10, 0], [3, 3], [17, 3], [1, 10], [19, 10], [4, 17], [16, 17], [10, 19]]:
+		img.set_pixel(p[0], p[1], Color(1.0, 0.5, 0.1, 0.7))
+	_store("ze_fireball", img)
+
+# ── Cortina de aurora boreal (gelo) da Rose — 24x36 ───────────────────────────
+func _gen_rose_aurora() -> void:
+	var img := Image.create(24, 36, false, Image.FORMAT_RGBA8)
+	for x in range(24):
+		var t := float(x) / 24.0
+		var c := Color(0.4, 0.9, 1.0).lerp(Color(0.5, 1.0, 0.7), t)
+		for y in range(36):
+			var a := 1.0 - absf(float(y) - 18.0) / 18.0
+			a *= 0.5 + 0.5 * sin(float(x) * 0.9 + float(y) * 0.22)
+			a = clampf(a * 0.7, 0.0, 0.8)
+			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
+	_store("rose_aurora", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 
