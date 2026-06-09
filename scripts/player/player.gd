@@ -63,6 +63,9 @@ const CONVOKE_GUS_CD          = 14.0
 # Convoke da Di — elfa Sentinela (arqueira; dano à distância / multi-alvo).
 const CONVOKE_DI_COST         = 50.0
 const CONVOKE_DI_CD           = 14.0
+# Convoke do Gui Fenrir — rush de espadão (espetinho) + lobisomem feroz.
+const CONVOKE_GUI_COST        = 55.0
+const CONVOKE_GUI_CD          = 15.0
 
 # Fall damage thresholds (pixels fallen from apex/start to landing)
 const FALL_SAFE   = 220.0   # below this: no damage
@@ -86,6 +89,7 @@ const Juju            = preload("res://scenes/spells/juju.tscn")
 const WillAlly        = preload("res://scenes/spells/will.tscn")
 const GusAlly         = preload("res://scenes/spells/gus.tscn")
 const DiAlly          = preload("res://scenes/spells/di.tscn")
+const GuiAlly         = preload("res://scenes/spells/gui.tscn")
 
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var hair: Sprite2D            = $Hair
@@ -123,6 +127,7 @@ var convoke_cd: float = 0.0
 var convoke_will_cd: float = 0.0
 var convoke_gus_cd: float = 0.0
 var convoke_di_cd: float = 0.0
+var convoke_gui_cd: float = 0.0
 
 # Shield state
 var shield_timer: float = 0.0
@@ -244,6 +249,7 @@ func _tick_timers(delta: float) -> void:
 	convoke_will_cd     = max(convoke_will_cd     - delta, 0.0)
 	convoke_gus_cd      = max(convoke_gus_cd      - delta, 0.0)
 	convoke_di_cd       = max(convoke_di_cd       - delta, 0.0)
+	convoke_gui_cd      = max(convoke_gui_cd      - delta, 0.0)
 	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
 
 	# Shield expiry
@@ -489,6 +495,8 @@ func _handle_spells() -> void:
 		_cast_convoke_gus()
 	if Input.is_action_just_pressed("spell_convoke_di"):
 		_cast_convoke_di()
+	if Input.is_action_just_pressed("spell_convoke_gui"):
+		_cast_convoke_gui()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
 
@@ -664,6 +672,22 @@ func _cast_convoke_di() -> void:
 	get_parent().add_child(di)
 	di.global_position = global_position + Vector2(-facing * 30, -56)   # perch ao alto/atrás
 
+func _cast_convoke_gui() -> void:
+	# CONVOKE do Gui Fenrir: rush de espadão (espetinho/estocada) + lobisomem.
+	# Só um Gui por vez.
+	if not SkillManager.has("convoke_gui"): return
+	if convoke_gui_cd > 0.0: return
+	if get_tree().get_first_node_in_group("gui_fenrir"): return
+	if not mana.spend(CONVOKE_GUI_COST): return
+	convoke_gui_cd = CONVOKE_GUI_CD
+	_set_attack_pose("cast", 0.26)
+	AudioManager.play("dash", 0.95)
+	VFX.sparkle(global_position + Vector2(-facing * 18, -18), get_parent(), Color(0.8, 0.78, 0.72), 12)
+	var gui = GuiAlly.instantiate()
+	gui.facing = facing
+	get_parent().add_child(gui)
+	gui.global_position = global_position + Vector2(-facing * 26, 0)   # surge por trás
+
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
@@ -747,6 +771,8 @@ func get_skill_cooldown(skill: String) -> float:
 									else (0.0 if mana.current_mana >= CONVOKE_GUS_COST else 0.75)
 		"convoke_di":        return convoke_di_cd / CONVOKE_DI_CD if convoke_di_cd > 0.0 \
 									else (0.0 if mana.current_mana >= CONVOKE_DI_COST else 0.75)
+		"convoke_gui":       return convoke_gui_cd / CONVOKE_GUI_CD if convoke_gui_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_GUI_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

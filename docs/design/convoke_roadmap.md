@@ -25,6 +25,16 @@ Da conversa sobre a Di — manter pra próximos aliados/variações:
    crit; finalizações em tandem do casal. (O Will/Juju também podem ganhar
    sinergias.) **O Will pediu pra desenvolvermos convokes combinados.**
 
+## Família (lore + Convoke) — Rose & Zé
+> Personagens da lore que também ganham Convoke. **New Game+**: por serem os pais
+> (magos veteranos), os golpes deles podem ser **OVERKILL até no Boss**. Liberados
+> em NG+, mas já dá pra **adicionar na fase de testes**.
+
+- **Mãe Rose — maga graduada de GELO:** paira por cima da Soph e lança uma
+  *execução aurora* (algo nesse estilo) — nuke de gelo. Overkill em tudo.
+- **Pai Zé — mago de FOGO:** paira por cima da Soph e lança a **Grande Bola de
+  Fogo**. Overkill em tudo (amarra com o clímax "Great Fireball" do jogo).
+
 ## Convokes COMBINADOS (ideias do Will — só anotado, NÃO desenvolver ainda)
 > A ideia é detectar dois aliados em campo (ou um botão de dupla) e disparar uma
 > coreografia conjunta. Anotações cruas:
@@ -40,6 +50,12 @@ Da conversa sobre a Di — manter pra próximos aliados/variações:
 - **Juju + Di:** *a confirmar.*
 - **Will + Di:** *a confirmar.*
 - **Gus + Juju:** *a confirmar.*
+
+### Progressão de Convokes combinados (ideia — só anotado)
+- **Double Convoke** desbloqueado no **New Game+**.
+- **Triple Convoke** liberado conforme o nível sobe.
+- No **nível máximo**: **TODOS os aliados atacando juntos** — o hit mais épico de
+  todos os tempos (full party ultimate).
 
 ## Notas de comportamento por Boss
 - O comportamento do aliado pode mudar por **tipo de boss** (ex.: Gus arranca o

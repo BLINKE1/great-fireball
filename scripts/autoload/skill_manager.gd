@@ -18,6 +18,7 @@ const DISPLAY_NAMES = {
 	"convoke_will":       "Convocar Will",
 	"convoke_gus":        "Convocar Gus",
 	"convoke_di":         "Convocar Di",
+	"convoke_gui":        "Convocar Gui Fenrir",
 }
 
 const KEYS = {
@@ -36,6 +37,7 @@ const KEYS = {
 	"convoke_will":       "B",
 	"convoke_gus":        "G",
 	"convoke_di":         "T",
+	"convoke_gui":        "W",
 }
 
 const DESCRIPTIONS = {
@@ -54,6 +56,7 @@ const DESCRIPTIONS = {
 	"convoke_will":     "Convoca o Will, que cai do céu e defende com um escudo gigante por 10s.",
 	"convoke_gus":      "Convoca o Gus, dagger ágil: abate mobs com adagas e finaliza no jiu-jítsu.",
 	"convoke_di":       "Convoca a Di, elfa Sentinela: chuva de flechas que finaliza feridos e perfura o boss.",
+	"convoke_gui":      "Convoca o Gui Fenrir: rush de espadão (espetinho de mobs ou estocada no boss) e vira lobisomem feroz.",
 }
 
 var _unlocked: Dictionary = {
@@ -72,6 +75,7 @@ var _unlocked: Dictionary = {
 	"convoke_will":     false,
 	"convoke_gus":      false,
 	"convoke_di":       false,
+	"convoke_gui":      false,
 }
 
 func reset() -> void:
