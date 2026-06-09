@@ -61,6 +61,8 @@ func _ready() -> void:
 	_gen_gus()
 	_gen_gus_dagger()
 	_gen_mutant_arm()
+	_gen_di()
+	_gen_di_arrow()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -741,6 +743,87 @@ func _gen_mutant_arm() -> void:
 	_fr(img, 1, 4, 2, 4, GORE)
 	img.set_pixel(1, 5, BON); img.set_pixel(2, 6, BON)
 	_store("mutant_arm", img)
+
+# ── Di (elfa Sentinela, esposa do Gus) — 28x28, arqueira com arco ─────────────
+func _gen_di() -> void:
+	const SK   := Color(0.95, 0.80, 0.66)   # pele clara élfica
+	const SKD  := Color(0.80, 0.62, 0.50)
+	const HAIR := Color(0.95, 0.88, 0.55)   # loiro-mel longo
+	const HAIRD:= Color(0.80, 0.68, 0.36)
+	const TUN  := Color(0.24, 0.52, 0.34)   # verde-floresta (ranger)
+	const TUND := Color(0.16, 0.36, 0.24)
+	const TUNL := Color(0.36, 0.66, 0.44)
+	const LTH  := Color(0.46, 0.31, 0.18)   # couro
+	const BOW  := Color(0.60, 0.42, 0.22)   # arco de madeira
+	const BOWL := Color(0.78, 0.58, 0.32)
+	const STR  := Color(0.90, 0.95, 0.85, 0.8)   # corda
+	const BK   := Color(0.08, 0.10, 0.10)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Cabelo de trás (massa no topo da cabeça)
+	_fr(img, 9, 4, 9, 5, HAIRD)
+	_fr(img, 9, 4, 9, 4, HAIR)
+	# Mechas longas laterais (emolduram o rosto, sem cobrir o tronco)
+	_fr(img, 8, 9, 2, 10, HAIR);  img.set_pixel(8, 9, HAIRD); img.set_pixel(8, 18, HAIRD)
+	_fr(img, 17, 9, 2, 8, HAIR);  img.set_pixel(18, 9, HAIRD)
+	# Pernas (leggings + botas)
+	_fr(img, 10, 22, 3, 5, TUND); _fr(img, 14, 22, 3, 5, TUND)
+	_fr(img, 9, 26, 4, 1, LTH); _fr(img, 14, 26, 4, 1, LTH)
+	# Túnica curta de ranger (por cima do cabelo de trás)
+	_fr(img, 10, 13, 7, 9, TUN)
+	_fr(img, 10, 13, 7, 2, TUNL)
+	_fr(img, 10, 20, 7, 2, TUND)
+	_fr(img, 10, 19, 7, 1, LTH)              # cinto
+	# Cabeça (por cima do cabelo)
+	_fc(img, 13, 9, 3, SK)
+	# Orelha pontuda (elfa!)
+	img.set_pixel(9, 9, SK); img.set_pixel(8, 8, SK)
+	# Franja
+	_fr(img, 10, 5, 7, 2, HAIR)
+	img.set_pixel(10, 7, HAIR); img.set_pixel(16, 7, HAIR)
+	# Olhos
+	img.set_pixel(13, 9, BK); img.set_pixel(15, 9, BK)
+	img.set_pixel(14, 11, SKD)
+	# Braço que segura o arco (frente, estendido)
+	_fr(img, 16, 13, 4, 2, SK)
+	# Braço que puxa a corda (recolhido)
+	img.set_pixel(11, 14, SK)
+	# ── Arco (à frente, arco vertical curvado pra direita) ──
+	var bx := 22
+	for y in range(3, 22):
+		# curva: afasta no meio
+		var bulge := int(round(2.5 * sin(float(y - 3) / 18.0 * PI)))
+		img.set_pixel(bx + bulge, y, BOW)
+		if y % 3 == 0:
+			img.set_pixel(bx + bulge, y, BOWL)
+	# pontas do arco
+	img.set_pixel(bx, 3, BOWL); img.set_pixel(bx, 21, BOWL)
+	# corda (reta, puxada até a mão)
+	for y in range(3, 22):
+		img.set_pixel(bx, y, STR)
+	# flecha encaixada apontando pra frente
+	img.set_pixel(20, 12, LTH); img.set_pixel(21, 12, Color(0.85,0.9,0.8))
+	img.set_pixel(24, 12, Color(0.7, 1.0, 0.6)); img.set_pixel(25, 12, Color(0.85, 1.0, 0.7))
+	_store("di", img)
+
+# ── Flecha élfica da Di — 14x4, ponta brilhante verde-teal ────────────────────
+func _gen_di_arrow() -> void:
+	const SHF  := Color(0.55, 0.42, 0.26)   # haste de madeira
+	const TIP  := Color(0.65, 1.0, 0.70)    # ponta de energia verde
+	const TIPL := Color(0.92, 1.0, 0.88)
+	const FLE  := Color(0.30, 0.78, 0.50)   # penas verdes
+	var img := Image.create(14, 4, false, Image.FORMAT_RGBA8)
+	# Penas (atrás)
+	img.set_pixel(0, 0, FLE); img.set_pixel(1, 0, FLE)
+	img.set_pixel(0, 3, FLE); img.set_pixel(1, 3, FLE)
+	img.set_pixel(1, 1, FLE); img.set_pixel(1, 2, FLE)
+	# Haste
+	_fr(img, 2, 1, 8, 2, SHF)
+	# Ponta de energia
+	img.set_pixel(10, 1, TIP); img.set_pixel(10, 2, TIP)
+	img.set_pixel(11, 1, TIP); img.set_pixel(11, 2, TIP)
+	img.set_pixel(12, 1, TIPL); img.set_pixel(13, 2, TIPL)
+	img.set_pixel(12, 2, TIP)
+	_store("di_arrow", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 
