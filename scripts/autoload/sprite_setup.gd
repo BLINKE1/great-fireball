@@ -55,6 +55,7 @@ func _ready() -> void:
 	_gen_ogre_shockwave()
 	_gen_goblin_mutant()
 	_gen_staff()
+	_gen_juju()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -545,6 +546,42 @@ func _gen_staff() -> void:
 	img.set_pixel(7, 6, Color(1, 1, 1, 1))   # brilho especular
 
 	_store("staff", img)
+
+# ── Juju, a fada aliada (Convoke) — 24x24 ─────────────────────────────────────
+func _gen_juju() -> void:
+	const SK   := Color(0.97, 0.82, 0.62)   # pele
+	const HAIR := Color(0.98, 0.55, 0.78)   # cabelo rosa
+	const HAIRD:= Color(0.80, 0.35, 0.60)
+	const DRS  := Color(0.40, 0.85, 0.55)   # vestido verde-fada
+	const DRSD := Color(0.25, 0.62, 0.38)
+	const WING := Color(0.78, 0.93, 1.0, 0.50)
+	const WINGE:= Color(0.92, 0.98, 1.0, 0.85)
+	const GLOW := Color(0.75, 1.0, 0.65)
+	const BK   := Color(0.10, 0.10, 0.16)
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	# Glow mágico
+	_glow_soft(img, 12, 12, 11, GLOW, 0.40)
+	# Asas (atrás): dois pares translúcidos
+	_fc(img, 6, 8, 4, WING); _fc(img, 18, 8, 4, WING)
+	_fc(img, 7, 14, 3, WING); _fc(img, 17, 14, 3, WING)
+	img.set_pixel(4, 7, WINGE); img.set_pixel(20, 7, WINGE)
+	img.set_pixel(5, 16, WINGE); img.set_pixel(19, 16, WINGE)
+	# Cabelo (topo)
+	_fr(img, 9, 3, 6, 3, HAIR); img.set_pixel(8, 4, HAIR); img.set_pixel(15, 4, HAIR)
+	img.set_pixel(8, 5, HAIRD); img.set_pixel(15, 5, HAIRD)
+	# Cabeça
+	_fc(img, 12, 7, 3, SK)
+	img.set_pixel(11, 7, BK); img.set_pixel(13, 7, BK)         # olhinhos
+	img.set_pixel(12, 9, Color(0.85, 0.45, 0.45))             # boquinha
+	# Corpo / vestido (sino)
+	_fr(img, 10, 10, 5, 3, DRS)
+	_fr(img, 9, 13, 7, 3, DRS); _fr(img, 8, 16, 9, 2, DRS)
+	_fr(img, 8, 16, 9, 1, DRSD)
+	# bracinhos
+	img.set_pixel(9, 11, SK); img.set_pixel(15, 11, SK)
+	# brilho/varinha-fagulha
+	img.set_pixel(16, 11, Color(1, 1, 0.7)); img.set_pixel(17, 10, Color(1, 1, 0.85))
+	_store("juju", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 

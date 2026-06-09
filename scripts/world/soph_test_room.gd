@@ -72,6 +72,7 @@ func _ready() -> void:
 	SkillManager.unlock("double_jump")
 	SkillManager.unlock("magic_dash")
 	SkillManager.unlock("magic_missile")
+	SkillManager.unlock("convoke")
 	# player._ready ja rodou ANTES desse _ready (filho roda antes do pai), entao
 	# jumps_remaining ja foi calculado com double_jump bloqueado. Recarrega.
 	player.jumps_remaining = player._max_air_jumps()
@@ -233,5 +234,5 @@ func _update_label() -> void:
 	var spd := absf(player.velocity.x)
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
-		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
+		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash  V convoke\n" \
 		+ "G goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"

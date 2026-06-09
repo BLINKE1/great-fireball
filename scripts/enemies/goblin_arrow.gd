@@ -14,6 +14,7 @@ func _ready() -> void:
 		$Sprite2D.texture = tex
 		$Sprite2D.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	$Sprite2D.flip_h = direction < 0
+	add_to_group("enemy_projectile")
 	get_tree().create_timer(LIFETIME).timeout.connect(queue_free)
 	body_entered.connect(_on_body_entered)
 

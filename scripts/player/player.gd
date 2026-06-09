@@ -50,6 +50,11 @@ const MAGIC_SHIELD_COST       = 35.0
 const MAGIC_SHIELD_DURATION   = 3.5
 const MAGIC_SHIELD_CD         = 6.0
 
+# Convoke — convoca a Juju (fada) pra adormecer os inimigos. Custo alto e
+# cooldown longo: é uma "ultimate" de suporte, não um spam.
+const CONVOKE_COST            = 45.0
+const CONVOKE_CD              = 12.0
+
 # Fall damage thresholds (pixels fallen from apex/start to landing)
 const FALL_SAFE   = 220.0   # below this: no damage
 const FALL_LIGHT  = 380.0   # 15 HP
@@ -68,6 +73,7 @@ const MissileGiant    = preload("res://scenes/spells/missile_giant.tscn")
 const MissileCurved   = preload("res://scenes/spells/missile_curved.tscn")
 const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
+const Juju            = preload("res://scenes/spells/juju.tscn")
 
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var hair: Sprite2D            = $Hair
@@ -101,6 +107,7 @@ var missile_spread_cd: float = 0.0
 var missile_piercing_cd: float = 0.0
 var missile_giant_cd: float = 0.0
 var missile_curved_cd: float = 0.0
+var convoke_cd: float = 0.0
 
 # Shield state
 var shield_timer: float = 0.0
@@ -218,6 +225,7 @@ func _tick_timers(delta: float) -> void:
 	missile_piercing_cd = max(missile_piercing_cd - delta, 0.0)
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
+	convoke_cd          = max(convoke_cd          - delta, 0.0)
 	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
 
 	# Shield expiry
@@ -455,6 +463,8 @@ func _handle_spells() -> void:
 		_cast_heal()
 	if Input.is_action_just_pressed("spell_magic_dash"):
 		_cast_magic_dash()
+	if Input.is_action_just_pressed("spell_convoke"):
+		_cast_convoke()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
 
@@ -566,6 +576,22 @@ func _cast_magic_dash() -> void:
 	dash_cooldown_timer = DASH_COOLDOWN
 	iframe_timer = max(iframe_timer, DASH_DURATION)
 
+func _cast_convoke() -> void:
+	# CONVOKE: a Soph convoca a Juju (fada). Ela voa ~3s (vulnerável) e então
+	# adormece todos os inimigos por 10s antes de sair. Só uma Juju por vez.
+	if not SkillManager.has("convoke"): return
+	if convoke_cd > 0.0: return
+	if get_tree().get_first_node_in_group("juju"): return
+	if not mana.spend(CONVOKE_COST): return
+	convoke_cd = CONVOKE_CD
+	_set_attack_pose("cast", 0.30)
+	AudioManager.play("time_stop", 1.15)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.72, 1.0, 0.68, 0.85), 40.0, 0.45)
+	VFX.sparkle(global_position + Vector2(0, -18), get_parent(), Color(0.75, 1.0, 0.62), 16)
+	var juju = Juju.instantiate()
+	juju.global_position = global_position + Vector2(facing * 28, -60)
+	get_parent().add_child(juju)
+
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
@@ -634,6 +660,8 @@ func get_skill_cooldown(skill: String) -> float:
 									else (0.0 if mana.current_mana >= MISSILE_CURVED_COST else 0.75)
 		"magic_shield":      return shield_cd_timer / MAGIC_SHIELD_CD if shield_cd_timer > 0.0 \
 									else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
+		"convoke":           return convoke_cd / CONVOKE_CD if convoke_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

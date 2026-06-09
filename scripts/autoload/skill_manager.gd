@@ -14,6 +14,7 @@ const DISPLAY_NAMES = {
 	"magic_dash":         "Dash Mágico",
 	"sword":              "Golpe de Cajado",
 	"double_jump":        "Duplo Salto",
+	"convoke":            "Convocar Juju",
 }
 
 const KEYS = {
@@ -28,6 +29,7 @@ const KEYS = {
 	"magic_dash":         "Shift",
 	"sword":              "Q",
 	"double_jump":        "(auto)",
+	"convoke":            "V",
 }
 
 const DESCRIPTIONS = {
@@ -42,6 +44,7 @@ const DESCRIPTIONS = {
 	"sword":            "Golpeia diretamente com o cajado.",
 	"double_jump":      "Salta uma segunda vez no ar.",
 	"magic_shield":     "Cria um escudo que absorve todo dano por alguns segundos.",
+	"convoke":          "Convoca a Juju, que adormece todos os inimigos por 10s.",
 }
 
 var _unlocked: Dictionary = {
@@ -56,6 +59,7 @@ var _unlocked: Dictionary = {
 	"magic_dash":       false,
 	"double_jump":      false,
 	"magic_shield":     false,
+	"convoke":          false,
 }
 
 func reset() -> void:
