@@ -56,6 +56,8 @@ func _ready() -> void:
 	_gen_goblin_mutant()
 	_gen_staff()
 	_gen_juju()
+	_gen_will()
+	_gen_will_shield()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -582,6 +584,71 @@ func _gen_juju() -> void:
 	# brilho/varinha-fagulha
 	img.set_pixel(16, 11, Color(1, 1, 0.7)); img.set_pixel(17, 10, Color(1, 1, 0.85))
 	_store("juju", img)
+
+# ── Will (aliado defensivo do Convoke) — 28x28, agachado em guarda ────────────
+func _gen_will() -> void:
+	const SK   := Color(0.92, 0.74, 0.56)   # pele
+	const SKD  := Color(0.76, 0.58, 0.42)
+	const HAIR := Color(0.34, 0.22, 0.14)   # cabelo castanho
+	const ARM  := Color(0.40, 0.46, 0.56)   # armadura aço
+	const ARMD := Color(0.26, 0.31, 0.40)
+	const ARML := Color(0.58, 0.64, 0.74)
+	const CAPE := Color(0.55, 0.16, 0.18)   # manto vermelho
+	const CAPED:= Color(0.38, 0.10, 0.12)
+	const BK   := Color(0.10, 0.10, 0.14)
+	var img := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+	# Manto atrás (costas)
+	_fr(img, 7, 11, 7, 13, CAPE); _fr(img, 7, 20, 8, 4, CAPED)
+	# Pernas agachadas (joelho no chão)
+	_fr(img, 9, 22, 4, 5, ARMD); _fr(img, 14, 24, 6, 3, ARM)
+	img.set_pixel(19, 26, ARMD); img.set_pixel(20, 26, ARMD)
+	# Tronco em guarda (inclinado pra frente)
+	_fr(img, 10, 13, 9, 9, ARM)
+	_fr(img, 10, 13, 9, 2, ARML)        # brilho no ombro
+	_fr(img, 10, 20, 9, 2, ARMD)
+	# Cinto
+	_fr(img, 10, 19, 9, 1, Color(0.30, 0.22, 0.12))
+	# Braço da frente (segurando o escudo, estendido)
+	_fr(img, 18, 15, 4, 3, ARM); _fr(img, 21, 15, 2, 4, SK)
+	# Cabeça + elmo aberto
+	_fc(img, 14, 9, 4, SK)
+	_fr(img, 10, 5, 9, 3, ARM)          # testeira do elmo
+	_fr(img, 10, 5, 9, 1, ARML)
+	img.set_pixel(11, 8, HAIR); img.set_pixel(12, 8, HAIR)   # cabelo na nuca
+	img.set_pixel(16, 9, BK); img.set_pixel(17, 9, BK)       # olhos determinados
+	img.set_pixel(15, 7, HAIR); img.set_pixel(16, 7, HAIR)
+	img.set_pixel(17, 11, SKD)          # queixo/sombra
+	_store("will", img)
+
+# ── Escudo gigante do Will — 18x34, torre de aço com emblema ──────────────────
+func _gen_will_shield() -> void:
+	const STL  := Color(0.52, 0.58, 0.68)   # aço
+	const STLD := Color(0.32, 0.37, 0.46)
+	const STLL := Color(0.72, 0.78, 0.88)
+	const RIM  := Color(0.86, 0.70, 0.28)   # borda dourada
+	const RIML := Color(1.00, 0.92, 0.55)
+	const EMB  := Color(0.30, 0.62, 1.00)   # emblema azul (cor da Soph)
+	const EMBL := Color(0.65, 0.85, 1.00)
+	var img := Image.create(18, 34, false, Image.FORMAT_RGBA8)
+	# Corpo do escudo (cantos arredondados via _fr empilhado)
+	_fr(img, 3, 1, 12, 32, STL)
+	_fr(img, 2, 4, 14, 26, STL)
+	_fr(img, 1, 8, 16, 18, STL)
+	# Sombreado interno (volume)
+	_fr(img, 9, 4, 6, 26, STLD)
+	_fr(img, 3, 2, 5, 4, STLL)              # reflexo no topo-esquerda
+	# Borda dourada
+	for y in range(1, 33):
+		img.set_pixel(3, y, RIM); img.set_pixel(14, y, RIM)
+	for x in range(3, 15):
+		img.set_pixel(x, 1, RIM); img.set_pixel(x, 32, RIM)
+	img.set_pixel(3, 2, RIML); img.set_pixel(4, 1, RIML)
+	# Emblema central (losango azul)
+	_fc(img, 9, 16, 4, EMB)
+	_fr(img, 8, 12, 2, 9, EMBL)
+	_fr(img, 5, 15, 9, 2, EMBL)
+	img.set_pixel(9, 16, Color(1, 1, 1))
+	_store("will_shield", img)
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 

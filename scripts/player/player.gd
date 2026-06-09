@@ -54,6 +54,9 @@ const MAGIC_SHIELD_CD         = 6.0
 # cooldown longo: é uma "ultimate" de suporte, não um spam.
 const CONVOKE_COST            = 45.0
 const CONVOKE_CD              = 12.0
+# Convoke do Will — aliado defensivo (escudo gigante). Ultimate de defesa.
+const CONVOKE_WILL_COST       = 50.0
+const CONVOKE_WILL_CD         = 14.0
 
 # Fall damage thresholds (pixels fallen from apex/start to landing)
 const FALL_SAFE   = 220.0   # below this: no damage
@@ -74,6 +77,7 @@ const MissileCurved   = preload("res://scenes/spells/missile_curved.tscn")
 const SwordSlash      = preload("res://scenes/player/sword_slash.tscn")
 const DamageNumber    = preload("res://scenes/effects/damage_number.tscn")
 const Juju            = preload("res://scenes/spells/juju.tscn")
+const WillAlly        = preload("res://scenes/spells/will.tscn")
 
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var hair: Sprite2D            = $Hair
@@ -108,6 +112,7 @@ var missile_piercing_cd: float = 0.0
 var missile_giant_cd: float = 0.0
 var missile_curved_cd: float = 0.0
 var convoke_cd: float = 0.0
+var convoke_will_cd: float = 0.0
 
 # Shield state
 var shield_timer: float = 0.0
@@ -226,6 +231,7 @@ func _tick_timers(delta: float) -> void:
 	missile_giant_cd    = max(missile_giant_cd    - delta, 0.0)
 	missile_curved_cd   = max(missile_curved_cd   - delta, 0.0)
 	convoke_cd          = max(convoke_cd          - delta, 0.0)
+	convoke_will_cd     = max(convoke_will_cd     - delta, 0.0)
 	shield_cd_timer     = max(shield_cd_timer     - delta, 0.0)
 
 	# Shield expiry
@@ -465,6 +471,8 @@ func _handle_spells() -> void:
 		_cast_magic_dash()
 	if Input.is_action_just_pressed("spell_convoke"):
 		_cast_convoke()
+	if Input.is_action_just_pressed("spell_convoke_will"):
+		_cast_convoke_will()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
 
@@ -592,6 +600,22 @@ func _cast_convoke() -> void:
 	juju.global_position = global_position + Vector2(facing * 28, -60)
 	get_parent().add_child(juju)
 
+func _cast_convoke_will() -> void:
+	# CONVOKE do Will: cai do céu na frente da Soph, esmaga quem estiver lá e
+	# segura a guarda com o escudo gigante. Só um Will por vez.
+	if not SkillManager.has("convoke_will"): return
+	if convoke_will_cd > 0.0: return
+	if get_tree().get_first_node_in_group("will_shield"): return
+	if not mana.spend(CONVOKE_WILL_COST): return
+	convoke_will_cd = CONVOKE_WILL_CD
+	_set_attack_pose("cast", 0.30)
+	AudioManager.play("time_stop", 0.9)
+	VFX.ring(global_position + Vector2(0, -18), get_parent(), Color(0.85, 0.78, 0.45, 0.85), 40.0, 0.45)
+	var will = WillAlly.instantiate()
+	will.facing = facing
+	get_parent().add_child(will)
+	will.global_position = global_position + Vector2(facing * 70, 0)
+
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
@@ -627,6 +651,13 @@ func is_shielded() -> bool:
 
 func take_damage(amount: float, source_position: Vector2 = global_position) -> void:
 	if iframe_timer > 0.0 or is_dead: return
+	# Guarda do Will: enquanto o escudo aguenta, absorve 100% dos hits comuns
+	# (mobs/boss). O facho do boss NÃO passa por aqui — ele dana o HP do escudo
+	# direto; quando o escudo estoura, este guard some e o dano volta a entrar.
+	var guard := get_tree().get_first_node_in_group("will_shield")
+	if guard and is_instance_valid(guard) and guard.has_method("is_guarding") and guard.is_guarding():
+		guard.block_hit(amount, source_position)
+		return
 	if _shield_active:
 		AudioManager.play("shield_hit")
 		if _shield_visual:
@@ -662,6 +693,8 @@ func get_skill_cooldown(skill: String) -> float:
 									else (1.0 if _shield_active else (0.0 if mana.current_mana >= MAGIC_SHIELD_COST else 0.75))
 		"convoke":           return convoke_cd / CONVOKE_CD if convoke_cd > 0.0 \
 									else (0.0 if mana.current_mana >= CONVOKE_COST else 0.75)
+		"convoke_will":      return convoke_will_cd / CONVOKE_WILL_CD if convoke_will_cd > 0.0 \
+									else (0.0 if mana.current_mana >= CONVOKE_WILL_COST else 0.75)
 		"time_stop":         return 0.0 if mana.current_mana >= TIME_STOP_COST     else 0.75
 		"heal":              return 0.0 if mana.current_mana >= HEAL_COST          else 0.75
 		"double_jump":       return 0.0 if jumps_remaining > 0                     else 1.0

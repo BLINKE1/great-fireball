@@ -15,6 +15,7 @@ const DISPLAY_NAMES = {
 	"sword":              "Golpe de Cajado",
 	"double_jump":        "Duplo Salto",
 	"convoke":            "Convocar Juju",
+	"convoke_will":       "Convocar Will",
 }
 
 const KEYS = {
@@ -30,6 +31,7 @@ const KEYS = {
 	"sword":              "Q",
 	"double_jump":        "(auto)",
 	"convoke":            "V",
+	"convoke_will":       "B",
 }
 
 const DESCRIPTIONS = {
@@ -45,6 +47,7 @@ const DESCRIPTIONS = {
 	"double_jump":      "Salta uma segunda vez no ar.",
 	"magic_shield":     "Cria um escudo que absorve todo dano por alguns segundos.",
 	"convoke":          "Convoca a Juju, que adormece todos os inimigos por 10s.",
+	"convoke_will":     "Convoca o Will, que cai do céu e defende com um escudo gigante por 10s.",
 }
 
 var _unlocked: Dictionary = {
@@ -60,6 +63,7 @@ var _unlocked: Dictionary = {
 	"double_jump":      false,
 	"magic_shield":     false,
 	"convoke":          false,
+	"convoke_will":     false,
 }
 
 func reset() -> void:

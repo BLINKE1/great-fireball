@@ -73,6 +73,7 @@ func _ready() -> void:
 	SkillManager.unlock("magic_dash")
 	SkillManager.unlock("magic_missile")
 	SkillManager.unlock("convoke")
+	SkillManager.unlock("convoke_will")
 	# player._ready ja rodou ANTES desse _ready (filho roda antes do pai), entao
 	# jumps_remaining ja foi calculado com double_jump bloqueado. Recarrega.
 	player.jumps_remaining = player._max_air_jumps()
@@ -197,6 +198,10 @@ func _input(event: InputEvent) -> void:
 		elif event.keycode == KEY_K:                     # limpa todos os inimigos
 			for e in get_tree().get_nodes_in_group("enemy"):
 				e.queue_free()
+		elif event.keycode == KEY_0:                     # 0: TODOS os bosses soltam o facho juntos
+			for b in get_tree().get_nodes_in_group("boss"):
+				if is_instance_valid(b) and b.has_method("force_beam"):
+					b.force_beam()
 		elif ENEMY_SCENES.has(event.keycode):            # 1-6: spawna por tipo
 			_spawn_enemy(load(ENEMY_SCENES[event.keycode]), Vector2(randf_range(460, 900), 400))
 
@@ -234,5 +239,6 @@ func _update_label() -> void:
 	var spd := absf(player.velocity.x)
 	_label.text = "%s  %s  vx %4.0f  scale %.2f  off %.0f\n" % [
 			"HD" if _hd else "PX", _sprite.animation, spd, _scale, _offset_y] \
-		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash  V convoke\n" \
+		+ "H mode  [ ] scale  ; ' off  R reset  Q sword  Z miss  Shift dash\n" \
+		+ "V Juju  B Will(escudo)  0 FACHO(todos bosses)\n" \
 		+ "G goblin  K clear  1gob 2arch 3lead 4golem 5fire 6ogre 7MUTANTE"
