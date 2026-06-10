@@ -10,9 +10,40 @@
 - **Fundo:** **preto** total. **Sem parallax**, **sem textura de cenário**.
 - **Inimigos:** **formas geométricas procedurais** (sem textura), mas com
   **tamanho de hitbox igual ao do original** e **mesmas mecânicas** de movimento/ataque.
-- **Herói:** a **maga Soph** (nosso asset) no lugar do protagonista; cospe
-  "plasma" (reusar o sistema de míssil dela).
+- **Herói:** a **maga Soph** (nosso asset) no lugar do protagonista.
+- **Projétil:** **míssil mágico** (asset da Soph) NO LUGAR da bolinha de plasma —
+  porém com a **mesma origem/altura e trajetória** do disparo original.
 - **Escopo:** somente o **estágio 1 até o primeiro boss**.
+
+## Mecânicas (FIÉIS) — spec
+> Reimplementar o comportamento/medidas do original (funcional, não-protegido).
+> Os **valores exatos** (velocidades, alturas, ângulos, hitboxes, roster de
+> power-up) serão **fixados a partir de referência pública** na sessão de build —
+> não inventar de cabeça.
+
+### Movimento
+- Correr esquerda/direita (velocidade-base fiel).
+- **Pular** com arco fiel (confirmar: pulo fixo de arcade vs variável).
+- **Agachar:** reduz a hitbox **e** permite **atirar agachado** → o míssil sai
+  **mais baixo** (altura do disparo agachado do original).
+- **Morte: 1 HIT** (estilo Mega Drive — sem barra de vida). Encostou em inimigo/
+  projétil/perigo, morre. Vidas/continues + respawn no checkpoint da fase.
+
+### Disparo (direções iguais ao original)
+- Padrão: **reto à frente**, na **mesma altura** da bolinha original (em pé) e
+  numa altura menor quando agachado.
+- Replicar **todas as direções de tiro** do original (reto / pra cima / diagonais,
+  conforme o power-up). Fixar os ângulos por referência.
+- Cadência/limite de tiros na tela fiéis ao original.
+
+### Power-ups (mesmos efeitos)
+- Replicar o **mesmo conjunto** de power-ups e seus efeitos (tipos de tiro
+  melhorado/spread/contínuo, velocidade de movimento, etc.). **Confirmar o roster
+  exato e os efeitos via referência pública** antes de implementar.
+
+### Medidas / hitboxes
+- Hitbox da Soph em **pé / agachada / no pulo** e a de **cada inimigo** no
+  **mesmo tamanho** do original (mesmo que o visual seja forma procedural).
 
 ## Reaproveitar do Great Fireball (já temos ~80%)
 - `scripts/player/player.gd` — base de CharacterBody2D, pulo (coyote/buffer), dash.
