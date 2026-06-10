@@ -1,7 +1,8 @@
 extends CharacterBody2D
 ## Herói do run-and-gun = a maga Soph. Mecânicas no espírito do gênero clássico:
 ## correr, pular, AGACHAR, atirar em várias direções, power-ups e MORTE EM 1 HIT.
-## Projétil = míssil mágico (em vez de "cuspe"), na mesma altura/origem do tiro.
+## Projétil = míssil mágico LANÇADO COM O CAJADO (não é "cuspe"), porém com a
+## MESMA dinâmica do disparo original (origem/altura/trajetória/cadência).
 ## Tudo original/homenagem — sem assets de terceiros.
 ##
 ## Controles: setas mover, ↓ agachar, ↑ mirar pra cima, Espaço pular, Z atirar.
@@ -124,6 +125,7 @@ func _fire() -> void:
 	if pw_spread:
 		dirs = [dir.rotated(-0.20), dir, dir.rotated(0.20)]
 	AudioManager.play("missile", randf_range(0.95, 1.1))
+	VFX.sparkle(origin, get_parent(), Color(0.6, 0.95, 1.0), 4)   # brilho do cajado
 	for d in dirs:
 		var s := Shot.new()
 		s.vel = d * SHOT_SPEED
@@ -196,4 +198,9 @@ func _make_tex() -> ImageTexture:
 				img.set_pixel(x, y, HAT)
 	for x in range(1, 15):
 		img.set_pixel(x, 9, HATD)   # aba
+	# cajado (lado da frente) + cristal na ponta
+	for y in range(11, 26):
+		img.set_pixel(13, y, Color(0.55, 0.40, 0.24))
+	img.set_pixel(13, 10, Color(0.6, 1.0, 0.95))
+	img.set_pixel(13, 11, Color(0.85, 1.0, 1.0))
 	return ImageTexture.create_from_image(img)

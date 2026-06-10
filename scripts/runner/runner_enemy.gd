@@ -5,6 +5,8 @@ extends CharacterBody2D
 
 const GRAVITY := 1100.0
 
+const Shot := preload("res://scripts/runner/runner_shot.gd")
+
 var kind: String = "walker"
 var hp: int = 1
 var hit_r: float = 16.0
@@ -27,6 +29,7 @@ func _ready() -> void:
 		"walker": r.size = Vector2(22, 22); hit_r = 16.0
 		"hopper": r.size = Vector2(20, 18); hit_r = 15.0
 		"flyer":  r.size = Vector2(24, 16); hit_r = 15.0
+		"turret": r.size = Vector2(22, 18); hit_r = 15.0
 	cs.shape = r
 	cs.position = Vector2(0, -r.size.y / 2.0)
 	add_child(cs)
@@ -36,10 +39,17 @@ func _draw() -> void:
 	match kind:
 		"hopper": col = Color(1.0, 0.9, 0.5)
 		"flyer":  col = Color(0.7, 0.85, 1.0)
+		"turret": col = Color(1.0, 0.55, 0.7)
 	if _flash > 0.0:
 		col = Color(1, 1, 1)
 	var fill := Color(col.r, col.g, col.b, 0.18)
-	if kind == "flyer":
+	if kind == "turret":
+		var rect := Rect2(-11, -16, 22, 16)
+		draw_rect(rect, fill, true)
+		draw_rect(rect, col, false, 2.0)
+		draw_line(Vector2(0, -10), Vector2(facing * 16, -10), col, 3.0)   # cano
+		draw_circle(Vector2(0, -10), 2.0, Color(1, 0.4, 0.4))
+	elif kind == "flyer":
 		var pts := PackedVector2Array([Vector2(-12, -8), Vector2(0, -15), Vector2(12, -8), Vector2(0, -1)])
 		draw_colored_polygon(pts, fill)
 		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]), col, 2.0)
@@ -68,6 +78,17 @@ func _physics_process(delta: float) -> void:
 				velocity.x = signf(_hero.global_position.x - global_position.x) * 72.0
 			velocity.y = sin(_t * 4.0) * 70.0
 			position += velocity * delta
+		"turret":
+			if _hero and is_instance_valid(_hero):
+				facing = signf(_hero.global_position.x - global_position.x)
+			if _t > 1.4:
+				_t = 0.0
+				var s := Shot.new()
+				s.from_enemy = true
+				s.vel = Vector2(facing * 230.0, 0.0)
+				get_parent().add_child(s)
+				s.global_position = global_position + Vector2(facing * 14.0, -10.0)
+				AudioManager.play("arrow", 0.8)
 		"hopper":
 			if not is_on_floor():
 				velocity.y += GRAVITY * delta

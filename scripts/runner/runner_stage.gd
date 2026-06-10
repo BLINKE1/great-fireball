@@ -12,6 +12,9 @@ const PURPLE := Color(0.62, 0.25, 0.95)
 const PURPLE_DIM := Color(0.40, 0.16, 0.66)
 const BOSS_TRIGGER_X := 2150.0
 
+static var boot_stage: int = 1   # qual estágio iniciar (persiste no reload)
+
+var stage_num: int = 1
 var hero: CharacterBody2D
 var lives: int = 3
 var checkpoint_pos: Vector2 = Vector2(90, FLOOR_Y)
@@ -28,6 +31,7 @@ var _boss_bar_bg: ColorRect
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color.BLACK)
+	stage_num = boot_stage
 	_build_level()
 	hero = Hero.new()
 	add_child(hero)
@@ -36,6 +40,12 @@ func _ready() -> void:
 
 # ── Nível ─────────────────────────────────────────────────────────────────────
 func _build_level() -> void:
+	if stage_num == 2:
+		_build_stage2()
+	else:
+		_build_stage1()
+
+func _build_stage1() -> void:
 	# Chãos (gaps no meio, plataforma de apoio no buraco)
 	_ground(0, 920)
 	_plat(925, 395, 90, 16)          # degrau no buraco
@@ -59,6 +69,32 @@ func _build_level() -> void:
 	_enemy("walker", 2300, FLOOR_Y, "")
 	# Marcador de checkpoint (visual)
 	_checkpoint_flag(1150)
+
+func _build_stage2() -> void:
+	# Estágio 2 (layout autoral) — mais vertical, com TORRETAS.
+	_ground(0, 700)
+	_ground(820, 1500)
+	_ground(1620, 2900)              # arena do boss 2
+	_plat(500, 360, 120, 16)
+	_plat(900, 330, 120, 16)
+	_plat(1180, 280, 130, 16)
+	_plat(1380, 360, 120, 16)
+	_plat(1720, 350, 150, 16)
+	_plat(740, 395, 90, 16)          # apoio no buraco
+	_plat(1540, 395, 90, 16)
+	_plat(1600, 200, 20, 260)        # paredes da arena
+	_plat(2880, 200, 20, 260)
+	# Inimigos
+	_enemy("turret", 450, FLOOR_Y, "rapid")
+	_enemy("flyer", 650, 320, "spread")
+	_enemy("turret", 960, 330, "")        # em cima da plataforma
+	_enemy("walker", 1000, FLOOR_Y, "")
+	_enemy("flyer", 1250, 250, "")
+	_enemy("hopper", 1450, FLOOR_Y, "speed")
+	_enemy("turret", 1780, 350, "")
+	_enemy("flyer", 2050, 300, "")
+	_enemy("walker", 2350, FLOOR_Y, "")
+	_checkpoint_flag(1500)
 
 func _ground(x0: float, x1: float) -> void:
 	_plat(x0, FLOOR_Y, x1 - x0, 90)
@@ -154,6 +190,9 @@ func _process(_d: float) -> void:
 func _spawn_boss() -> void:
 	boss_spawned = true
 	boss = Boss.new()
+	boss.pattern = stage_num
+	boss.max_hp = 24 if stage_num == 1 else 32
+	boss.hp = boss.max_hp
 	add_child(boss)
 	boss.global_position = Vector2(2520, FLOOR_Y - 130)
 	boss.defeated.connect(_on_boss_defeated)
@@ -165,8 +204,15 @@ func _on_boss_defeated() -> void:
 	won = true
 	_boss_bar_bg.visible = false
 	_boss_bar.visible = false
-	_msg_lbl.text = "ESTÁGIO 1 CONCLUÍDO!"
 	_msg_lbl.modulate = Color(0.7, 1.0, 0.7)
+	if stage_num == 1:
+		_msg_lbl.text = "ESTÁGIO 1 CONCLUÍDO!  →  ESTÁGIO 2"
+		await get_tree().create_timer(2.4).timeout
+		boot_stage = 2
+		if get_tree().current_scene == self:
+			get_tree().reload_current_scene()   # carrega o estágio 2
+	else:
+		_msg_lbl.text = "VOCÊ VENCEU!  (estágios 1–2)"
 
 # ── Chamado pelo herói ────────────────────────────────────────────────────────
 func hero_died() -> void:

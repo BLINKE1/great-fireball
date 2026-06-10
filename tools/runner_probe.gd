@@ -66,11 +66,47 @@ func _process(d: float) -> bool:
 		4:
 			if t > 0.25:
 				if stage.won:
-					print("[boss]  ✓ derrotado → ESTÁGIO CONCLUÍDO")
+					print("[s1]    ✓ boss 1 derrotado → estágio concluído")
 				else:
-					print("[boss]  ✗ não concluiu"); fails += 1
+					print("[s1]    ✗ não concluiu"); fails += 1
+				# Monta o ESTÁGIO 2 (via static boot_stage)
+				stage.queue_free()
+				var S := load("res://scripts/runner/runner_stage.gd")
+				S.boot_stage = 2
+				stage = load("res://scenes/runner/runner.tscn").instantiate()
+				get_root().add_child(stage)
+				t = 0.0; phase = 5
+		5:
+			if t > 0.2:
+				if stage.stage_num == 2:
+					var turrets := 0
+					for e in get_nodes_in_group("renemy"):
+						if e.kind == "turret": turrets += 1
+					print("[s2]    ✓ estágio 2 montado (%d torretas)" % turrets)
+					if turrets == 0: fails += 1
+				else:
+					print("[s2]    ✗ não entrou no estágio 2"); fails += 1
+				var hero := get_first_node_in_group("rhero")
+				if hero: hero.global_position = Vector2(2200, 440)
+				t = 0.0; phase = 6
+		6:
+			if t > 0.4:
+				var b := get_first_node_in_group("rboss")
+				if b:
+					print("[s2]    ✓ boss 2 apareceu (pattern %d, hp %d)" % [b.pattern, b.max_hp])
+					for i in range(b.max_hp):
+						if is_instance_valid(b): b.take_hit()
+				else:
+					print("[s2]    ✗ boss 2 não apareceu"); fails += 1
+				t = 0.0; phase = 7
+		7:
+			if t > 0.25:
+				if stage.won:
+					print("[s2]    ✓ boss 2 derrotado → VOCÊ VENCEU")
+				else:
+					print("[s2]    ✗ não concluiu"); fails += 1
 				if fails == 0:
-					print("RESULTADO: run-and-gun (estágio 1 → boss) OK ✓")
+					print("RESULTADO: run-and-gun estágios 1 e 2 OK ✓")
 					quit(0)
 				else:
 					print("RESULTADO: %d falha(s) ✗" % fails)

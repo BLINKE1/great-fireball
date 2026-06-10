@@ -11,6 +11,8 @@ var hp: int = 24
 var max_hp: int = 24
 var hit_r: float = 48.0
 var alive: bool = true
+var pattern: int = 1
+var _alt: int = 0
 
 var _home: Vector2
 var _t: float = 0.0
@@ -49,11 +51,15 @@ func _physics_process(delta: float) -> void:
 	global_position.x = _home.x + sin(_t * 1.2) * 130.0
 	global_position.y = _home.y + sin(_t * 2.3) * 16.0
 	if _atk <= 0.0 and _telegraph <= 0.0:
-		_telegraph = 0.5            # pisca antes de atirar (justo)
-		_atk = 1.8
-		await get_tree().create_timer(0.5).timeout
+		_telegraph = 0.45            # pisca antes de atirar (justo)
+		_atk = 1.8 if pattern == 1 else 1.1
+		await get_tree().create_timer(0.45).timeout
 		if alive:
-			_drop_bombs()
+			if pattern >= 2 and _alt == 1:
+				_side_volley()
+			else:
+				_drop_bombs()
+			_alt = 1 - _alt
 	queue_redraw()
 
 func _drop_bombs() -> void:
@@ -64,6 +70,19 @@ func _drop_bombs() -> void:
 		s.vel = Vector2(i * 70.0, 210.0)
 		get_parent().add_child(s)
 		s.global_position = global_position + Vector2(i * 22.0, 34.0)
+
+func _side_volley() -> void:
+	AudioManager.play("enemy_attack", 0.7)
+	var hero := get_tree().get_first_node_in_group("rhero")
+	var dir := -1.0
+	if hero and is_instance_valid(hero):
+		dir = signf(hero.global_position.x - global_position.x)
+	for a in [-0.22, 0.0, 0.22]:
+		var s := Shot.new()
+		s.from_enemy = true
+		s.vel = Vector2(dir, 0.0).rotated(a) * 240.0
+		get_parent().add_child(s)
+		s.global_position = global_position + Vector2(dir * 30.0, 0.0)
 
 func take_hit() -> void:
 	if not alive:
