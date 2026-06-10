@@ -23,6 +23,7 @@ GameState="*res://scripts/autoload/game_state.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 SkillManager="*res://scripts/autoload/skill_manager.gd"
 MusicManager="*res://scripts/autoload/music_manager.gd"
+Nails="*res://scripts/autoload/nails.gd"
 
 [display]
 

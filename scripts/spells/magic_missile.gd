@@ -27,6 +27,7 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("enemy"):
 		body.take_damage(DAMAGE, global_position)  # impacto (som/shake/hitstop) via enemy_impact
+		Nails.on_hit(body, global_position)        # afinidade elemental das unhas
 		VFX.burst(global_position, get_parent(), Color(0.22, 0.82, 1.00), 12, 88.0, 22.0)
 		VFX.ring(global_position, get_parent(), Color(0.25, 0.85, 1.0, 0.75), 20.0, 0.25)
 		queue_free()

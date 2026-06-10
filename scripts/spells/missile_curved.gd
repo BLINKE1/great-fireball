@@ -31,6 +31,7 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("enemy"):
 		body.take_damage(DAMAGE, global_position)  # impacto (som/shake/hitstop) via enemy_impact
+		Nails.on_hit(body, global_position)
 		VFX.burst(global_position, get_parent(), Color(0.68, 0.18, 1.00), 14, 85.0, 24.0)
 		VFX.ring(global_position, get_parent(), Color(0.72, 0.22, 1.0, 0.80), 24.0, 0.28)
 		queue_free()
