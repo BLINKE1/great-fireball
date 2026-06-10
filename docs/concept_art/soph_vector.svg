@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%"  stop-color="#3b2a6b"/>
+      <stop offset="55%" stop-color="#241a4a"/>
+      <stop offset="100%" stop-color="#120e29"/>
+    </radialGradient>
+    <radialGradient id="moon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fdf6d8" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#fdf6d8" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fdf6d8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b3fa8"/>
+      <stop offset="100%" stop-color="#3a2670"/>
+    </linearGradient>
+    <linearGradient id="hatbrim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a2f8e"/>
+      <stop offset="100%" stop-color="#2c1c57"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7a4a2b"/>
+      <stop offset="100%" stop-color="#5a3420"/>
+    </linearGradient>
+    <linearGradient id="robe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f6fb0"/>
+      <stop offset="100%" stop-color="#1d4a82"/>
+    </linearGradient>
+    <radialGradient id="gem" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#eafffb"/>
+      <stop offset="40%" stop-color="#4fe0c8"/>
+      <stop offset="100%" stop-color="#1f8f86"/>
+    </radialGradient>
+    <radialGradient id="gemglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7ffbe6" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#7ffbe6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cheek" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff9aa0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ff9aa0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="470" cy="180" r="150" fill="url(#moon)"/>
+  <g fill="#fff">
+    <circle cx="90" cy="120" r="2.2"/><circle cx="150" cy="240" r="1.6"/>
+    <circle cx="540" cy="90" r="2"/><circle cx="585" cy="300" r="1.8"/>
+    <circle cx="60" cy="360" r="1.5"/><circle cx="520" cy="430" r="1.5"/>
+    <circle cx="300" cy="70" r="1.4"/><circle cx="210" cy="120" r="1.4"/>
+  </g>
+  <g fill="#ffe9a8" opacity="0.9">
+    <path d="M120 470 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z"/>
+    <path d="M548 520 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z"/>
+  </g>
+
+  <!-- Cajado (atrás do braço) -->
+  <g>
+    <line x1="455" y1="250" x2="250" y2="780" stroke="#6b4327" stroke-width="13" stroke-linecap="round"/>
+    <line x1="455" y1="250" x2="250" y2="780" stroke="#8a5a36" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="470" cy="232" r="46" fill="url(#gemglow)"/>
+    <path d="M470 200 l16 30 -16 30 -16 -30z" fill="url(#gem)" stroke="#bafff0" stroke-width="2"/>
+    <circle cx="463" cy="222" r="4" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- Cabelo (atrás) -->
+  <path d="M205 300 C150 470 175 640 235 690 C250 560 255 470 270 410 Z" fill="url(#hair)"/>
+  <path d="M435 300 C495 470 470 640 410 690 C395 560 388 470 372 410 Z" fill="url(#hair)"/>
+
+  <!-- Corpo / manto -->
+  <path d="M225 690 C250 590 390 590 415 690 L455 800 L185 800 Z" fill="url(#robe)"/>
+  <path d="M320 600 L300 690 L320 720 L340 690 Z" fill="#1a3f70"/>
+  <path d="M255 660 C290 620 350 620 385 660 L320 700 Z" fill="#3b80c4"/>
+  <!-- broche -->
+  <circle cx="320" cy="665" r="30" fill="url(#gemglow)"/>
+  <circle cx="320" cy="665" r="13" fill="url(#gem)" stroke="#bafff0" stroke-width="2"/>
+
+  <!-- Pescoço + rosto -->
+  <rect x="298" y="470" width="44" height="60" rx="16" fill="#f2c9a0"/>
+  <ellipse cx="320" cy="385" rx="100" ry="115" fill="#f8d3aa"/>
+  <!-- bochechas -->
+  <circle cx="262" cy="410" r="26" fill="url(#cheek)"/>
+  <circle cx="378" cy="410" r="26" fill="url(#cheek)"/>
+
+  <!-- Franja -->
+  <path d="M222 330 C235 250 405 250 418 330 C405 300 380 285 360 300
+           C350 270 290 270 280 300 C260 285 235 300 222 330 Z" fill="url(#hair)"/>
+  <path d="M300 290 C300 330 290 350 270 372 L250 320 Z" fill="#5a3420"/>
+  <path d="M345 292 C350 332 360 352 378 372 L392 322 Z" fill="#5a3420"/>
+
+  <!-- Sobrancelhas -->
+  <path d="M250 350 q30 -16 56 -4" stroke="#5a3420" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M334 346 q30 -12 58 4" stroke="#5a3420" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!-- Olhos -->
+  <g>
+    <ellipse cx="280" cy="392" rx="26" ry="31" fill="#ffffff"/>
+    <ellipse cx="360" cy="392" rx="26" ry="31" fill="#ffffff"/>
+    <circle cx="282" cy="394" r="19" fill="#6a3fb0"/>
+    <circle cx="358" cy="394" r="19" fill="#6a3fb0"/>
+    <circle cx="282" cy="396" r="9" fill="#241333"/>
+    <circle cx="358" cy="396" r="9" fill="#241333"/>
+    <circle cx="289" cy="386" r="6" fill="#ffffff"/>
+    <circle cx="365" cy="386" r="6" fill="#ffffff"/>
+    <circle cx="276" cy="400" r="3" fill="#ffffff" opacity="0.8"/>
+    <circle cx="352" cy="400" r="3" fill="#ffffff" opacity="0.8"/>
+  </g>
+
+  <!-- Óculos redondos -->
+  <g fill="none" stroke="#caa53a" stroke-width="5">
+    <circle cx="280" cy="392" r="36"/>
+    <circle cx="360" cy="392" r="36"/>
+    <path d="M316 388 q4 -8 8 0"/>
+    <path d="M244 386 l-26 -6"/>
+    <path d="M396 386 l26 -6"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="2" opacity="0.5" fill="none">
+    <path d="M262 372 q14 -10 30 -4"/>
+    <path d="M342 372 q14 -10 30 -4"/>
+  </g>
+
+  <!-- Nariz + boca -->
+  <path d="M318 415 q4 8 -4 12" stroke="#d9a578" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M298 442 q22 22 44 0" stroke="#9c4a48" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M304 446 q16 12 32 0" fill="#c76b66"/>
+
+  <!-- Chapéu de MAGA (pontudo, dobrado) -->
+  <ellipse cx="320" cy="300" rx="180" ry="44" fill="url(#hatbrim)"/>
+  <ellipse cx="320" cy="296" rx="180" ry="40" fill="#5b3fa8" opacity="0.35"/>
+  <path d="M232 300 C250 190 300 120 352 96
+           C402 150 396 235 408 300
+           C380 282 260 282 232 300 Z" fill="url(#hat)"/>
+  <path d="M352 96 C372 92 392 100 398 120 C384 128 366 122 356 132 Z" fill="#3a2670"/>
+  <!-- faixa + fivela + estrela -->
+  <path d="M250 286 C300 268 360 268 392 286 L388 262 C356 248 296 248 256 262 Z" fill="#caa53a"/>
+  <rect x="306" y="258" width="28" height="22" rx="4" fill="#8a6d1f"/>
+  <path d="M320 261 l5 10 11 1 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -1z" fill="#fff0b0"/>
+  <circle cx="356" cy="120" r="6" fill="#fff0b0"/>
+
+  <!-- contorno suave do rosto (sela na arte) -->
+  <path d="M222 360 C214 430 250 492 320 500 C390 492 426 430 418 360"
+        fill="none" stroke="#e0b488" stroke-width="3" opacity="0.5"/>
+
+  <!-- Título -->
+  <text x="320" y="772" text-anchor="middle" font-family="Georgia, serif"
+        font-size="44" fill="#f3e7c0" letter-spacing="6"
+        style="font-weight:bold" opacity="0.95">SOPH</text>
+  <text x="320" y="792" text-anchor="middle" font-family="Georgia, serif"
+        font-size="15" fill="#bfae8a" letter-spacing="9" opacity="0.85">A MAGA</text>
+</svg>
