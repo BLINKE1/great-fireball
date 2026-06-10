@@ -35,6 +35,7 @@ func _ready() -> void:
 	call_deferred("_build_skill_bar")
 	call_deferred("_connect_to_player")
 	call_deferred("_build_vignette")
+	call_deferred("_build_nail_indicator")
 
 func _build_vignette() -> void:
 	_vignette = ColorRect.new()
@@ -172,6 +173,38 @@ func _build_skill_bar() -> void:
 		cd.color = Color(0, 0, 0, 0.78)
 		bg.add_child(cd)
 		_cd_overlays.append(cd)
+
+# ── Indicador da unha equipada (Unhas Poderosas) ──────────────────────────────
+var _nail_icon: TextureRect = null
+var _nail_label: Label = null
+
+func _build_nail_indicator() -> void:
+	var box := HBoxContainer.new()
+	box.position = Vector2(8, 121)   # logo abaixo da barra de skills
+	box.add_theme_constant_override("separation", 4)
+	add_child(box)
+	_nail_icon = TextureRect.new()
+	_nail_icon.custom_minimum_size = Vector2(18, 18)
+	_nail_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_nail_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	box.add_child(_nail_icon)
+	_nail_label = Label.new()
+	_nail_label.add_theme_font_size_override("font_size", 9)
+	_nail_label.modulate = Color(0.92, 0.90, 0.95, 0.9)
+	box.add_child(_nail_label)
+	if Nails.has_signal("nail_changed"):
+		Nails.nail_changed.connect(_on_nail_changed)
+	_on_nail_changed(Nails.equipped)
+
+func _on_nail_changed(id: String) -> void:
+	if _nail_icon == null:
+		return
+	if id == "none":
+		_nail_icon.texture = null
+		_nail_label.text = ""
+		return
+	_nail_icon.texture = SpriteSetup.get_texture("nail_" + id)
+	_nail_label.text = Nails.display_name(id)
 
 func _on_hp_changed(ratio: float) -> void:
 	hp_bar.value = ratio * 100.0
