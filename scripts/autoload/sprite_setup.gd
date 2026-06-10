@@ -70,6 +70,7 @@ func _ready() -> void:
 	_gen_ze()
 	_gen_ze_fireball()
 	_gen_rose_aurora()
+	_gen_nail_icons()
 	_gen_magic_missile()
 	_gen_sword_slash_sprite()
 	_gen_missile_spread()
@@ -957,9 +958,11 @@ func _gen_rose() -> void:
 	_fr(img, 9, 14, 10, 2, ROBEL)
 	_fr(img, 13, 16, 2, 9, ROBEL)           # faixa central
 	_fr(img, 8, 23, 12, 1, TRIM)            # debrum
-	# Cabelo (longo, atrás)
-	_fr(img, 8, 5, 11, 13, HAIRL)
-	_fr(img, 8, 5, 11, 11, HAIR)
+	# Cabelo: massa no topo + mechas longas laterais (emoldura, sem virar bloco)
+	_fr(img, 9, 4, 9, 5, HAIRL)
+	_fr(img, 9, 4, 9, 4, HAIR)
+	_fr(img, 8, 9, 2, 11, HAIR);  img.set_pixel(8, 9, HAIRL); img.set_pixel(8, 19, HAIRL)
+	_fr(img, 17, 9, 2, 11, HAIR); img.set_pixel(18, 9, HAIRL)
 	# Cabeça
 	_fc(img, 13, 9, 3, SK)
 	_fr(img, 10, 5, 7, 2, HAIR)             # franja
@@ -1046,6 +1049,41 @@ func _gen_rose_aurora() -> void:
 			a = clampf(a * 0.7, 0.0, 0.8)
 			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
 	_store("rose_aurora", img)
+
+# ── Ícones das Unhas Poderosas (16x16) — arte detalhada p/ UI e cross-promo ───
+func _gen_nail_icons() -> void:
+	var widths := [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 3, 3, 2, 1, 0]
+	for id in ["lava", "raios", "gelo", "aurora"]:
+		var img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+		for y in range(16):
+			var hw: int = widths[y]
+			if hw == 0:
+				continue
+			for x in range(8 - hw, 8 + hw + 1):
+				if x < 0 or x > 15:
+					continue
+				img.set_pixel(x, y, _nail_px(id, x, y))
+		# Reflexo especular (gel)
+		img.set_pixel(6, 3, Color(1, 1, 1, 0.85)); img.set_pixel(6, 4, Color(1, 1, 1, 0.5))
+		# Cutícula / base
+		img.set_pixel(7, 14, Color(0.95, 0.9, 0.88)); img.set_pixel(8, 14, Color(0.95, 0.9, 0.88))
+		_store("nail_" + id, img)
+
+func _nail_px(id: String, x: int, y: int) -> Color:
+	var t := float(y) / 15.0
+	match id:
+		"lava":
+			var crack := (int(x * 2 + y * 3) % 4 == 0) or (int(absi(x - y)) % 5 == 0)
+			return Color(1.0, 0.55, 0.12) if crack else Color(0.14, 0.10, 0.12)
+		"raios":
+			var bolt := absi(x - 8) == (y % 3)
+			return Color(0.82, 0.95, 1.0) if bolt else Color(0.10, 0.16, 0.32)
+		"gelo":
+			var frost := int(x + y) % 4 == 0
+			return Color(0.92, 0.98, 1.0) if frost else Color(0.46, 0.74, 0.94)
+		"aurora":
+			return Color.from_hsv(fmod(t + x * 0.03, 1.0), 0.5, 1.0)
+	return Color.WHITE
 
 # ── Magic Missile (28x12) ────────────────────────────────────────────────────
 

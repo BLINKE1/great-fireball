@@ -525,6 +525,7 @@ func _cast_magic_missile() -> void:
 	var missile = MagicMissile.instantiate()
 	missile.direction = facing
 	missile.position = global_position + Vector2(facing * 24, -16)
+	missile.modulate = Nails.tint()
 	get_parent().add_child(missile)
 
 func _cast_missile_spread() -> void:
@@ -541,6 +542,7 @@ func _cast_missile_spread() -> void:
 		m.direction    = facing
 		m.angle_offset = ang
 		m.position     = global_position + Vector2(facing * 20, -16)
+		m.modulate     = Nails.tint()
 		get_parent().add_child(m)
 
 func _cast_missile_piercing() -> void:
@@ -553,6 +555,7 @@ func _cast_missile_piercing() -> void:
 	var m = MissilePiercing.instantiate()
 	m.direction = facing
 	m.position  = global_position + Vector2(facing * 24, -16)
+	m.modulate  = Nails.tint()
 	get_parent().add_child(m)
 
 func _cast_missile_giant() -> void:
@@ -566,6 +569,7 @@ func _cast_missile_giant() -> void:
 	var m = MissileGiant.instantiate()
 	m.direction = facing
 	m.position  = global_position + Vector2(facing * 28, -18)
+	m.modulate  = Nails.tint()
 	get_parent().add_child(m)
 
 func _cast_missile_curved() -> void:
@@ -579,6 +583,7 @@ func _cast_missile_curved() -> void:
 	var m = MissileCurved.instantiate()
 	m.direction = facing
 	m.position  = global_position + Vector2(facing * 20, -22)
+	m.modulate  = Nails.tint()
 	get_parent().add_child(m)
 
 func _cast_magic_shield() -> void:
@@ -736,6 +741,8 @@ func _cast_convoke_ze() -> void:
 func _set_attack_pose(p: String, dur: float = 0.22) -> void:
 	_attack_pose = p
 	_attack_pose_timer = dur
+	if p == "cast":   # brilho elemental das unhas nas mãos ao conjurar
+		Nails.cast_glow(global_position + Vector2(facing * 18, -16), get_parent())
 
 func _attack_sword() -> void:
 	if sword_timer > 0.0 or is_dashing: return
