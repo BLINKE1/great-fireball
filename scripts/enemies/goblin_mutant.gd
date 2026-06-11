@@ -407,6 +407,17 @@ func _alive_minions() -> int:
 	return _minions.size()
 
 # ── Dano recebido ────────────────────────────────────────────────────────────
+var _armless: bool = false
+
+## Chamado pelo Gus (Convoke) ao arrancar o braço — o Boss fica sem o braço.
+func lose_arm() -> void:
+	if _armless:
+		return
+	_armless = true
+	var t := SpriteSetup.get_texture("goblin_mutant_noarm")
+	if t:
+		sprite.texture = t
+
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
 		return

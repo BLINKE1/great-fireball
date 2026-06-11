@@ -200,7 +200,7 @@ func _do_finish_boss(target: Node) -> void:
 	_spr.position = Vector2(0, -26)
 	# ARRANCA: dano grande + braço voando + tremor.
 	if is_instance_valid(target) and not target.is_dead:
-		_label("ARRANCOU O BRAÇO!", Color(1.0, 0.4, 0.3))
+		_label("Agora esse braço é meu!", Color(1.0, 0.55, 0.35))
 		AudioManager.play("enemy_die", 0.8)
 		var pl := get_tree().get_first_node_in_group("player")
 		if pl and is_instance_valid(pl) and pl.has_method("shake"):
@@ -208,6 +208,9 @@ func _do_finish_boss(target: Node) -> void:
 		VFX.burst(target.global_position + Vector2(facing * 20, -10), get_parent(), Color(0.4, 0.7, 0.2), 30, 200.0, 60.0)
 		VFX.burst(target.global_position + Vector2(facing * 20, -10), get_parent(), Color(0.6, 0.2, 0.5), 16, 140.0, 40.0)
 		VFX.ring(target.global_position + Vector2(0, -10), get_parent(), Color(0.7, 0.3, 0.3, 0.8), 60.0, 0.4)
+		# O Boss FICA SEM O BRAÇO de verdade (troca o sprite).
+		if target.has_method("lose_arm"):
+			target.lose_arm()
 		_fling_arm(target.global_position + Vector2(facing * 26, -12))
 		target.take_damage(ARM_RIP_DMG, global_position)
 	await _wait(0.22)

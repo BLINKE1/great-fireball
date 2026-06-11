@@ -54,6 +54,7 @@ func _ready() -> void:
 	_gen_forest_ogre()
 	_gen_ogre_shockwave()
 	_gen_goblin_mutant()
+	_gen_goblin_mutant_noarm()
 	_gen_staff()
 	_gen_juju()
 	_gen_will()
@@ -428,6 +429,18 @@ func _gen_goblin_leader() -> void:
 # couro vermelho + bandoleira de bombas (vibe Siege-Gang Commander), olhos que
 # brilham. Trocável por um PNG "goblin_mutant.png" se o Will quiser arte autoral.
 func _gen_goblin_mutant() -> void:
+	var img := Image.create(80, 112, false, Image.FORMAT_RGBA8)
+	_paint_mutant(img, true)
+	_store("goblin_mutant", img)
+
+func _gen_goblin_mutant_noarm() -> void:
+	# Igual ao mutante, mas SEM o braço gigante (o Gus arranca no Convoke).
+	var img := Image.create(80, 112, false, Image.FORMAT_RGBA8)
+	_paint_mutant(img, false)
+	_paint_mutant_stump(img)
+	_store("goblin_mutant_noarm", img)
+
+func _paint_mutant(img: Image, with_arm: bool) -> void:
 	const GB  := Color(0.28, 0.40, 0.15)   # verde base
 	const GL  := Color(0.46, 0.60, 0.24)   # verde claro (luz/barriga)
 	const GD  := Color(0.18, 0.26, 0.09)   # verde sombra
@@ -444,8 +457,6 @@ func _gen_goblin_mutant() -> void:
 	const BK  := Color(0.06, 0.06, 0.07)
 	const BMB := Color(0.10, 0.10, 0.13)   # bomba
 	const FUS := Color(0.95, 0.60, 0.10)   # pavio
-
-	var img := Image.create(80, 112, false, Image.FORMAT_RGBA8)
 
 	# ── Pernas + pés garrudos ──
 	_fr(img, 24, 86, 14, 26, GB); _fr(img, 24, 86, 4, 26, GD)
@@ -508,24 +519,37 @@ func _gen_goblin_mutant() -> void:
 		img.set_pixel(cx, 86, BON)          # garras
 
 	# ── Braço GIGANTE MUTANTE (direita da tela) ──
-	_fr(img, 58, 44, 20, 18, GB)            # ombro/úmero massivo
-	_fr(img, 60, 60, 20, 26, GB)            # antebraço
-	_fr(img, 58, 44, 20, 4, GL)
-	# Veias da mutação
-	for vy in range(48, 84, 4):
-		img.set_pixel(66, vy, MVN); img.set_pixel(72, vy + 2, MUT)
-	_fc(img, 70, 56, 4, MUT)               # protuberância
-	# PUNHO descomunal
-	_fc(img, 68, 94, 13, GB)
-	_fc(img, 64, 92, 8, GL)
-	_fc(img, 68, 94, 13, GB)               # contorno
-	for ky in [86, 92, 98]:                # espinhos ósseos nos nós
-		_fr(img, 78, ky, 2, 4, BON)
-	for ky2 in [88, 96]:
-		img.set_pixel(56, ky2, BON)
-	_glow_soft(img, 70, 94, 6, MVN, 0.35)  # brilho mutante no punho
+	if with_arm:
+		_fr(img, 58, 44, 20, 18, GB)            # ombro/úmero massivo
+		_fr(img, 60, 60, 20, 26, GB)            # antebraço
+		_fr(img, 58, 44, 20, 4, GL)
+		# Veias da mutação
+		for vy in range(48, 84, 4):
+			img.set_pixel(66, vy, MVN); img.set_pixel(72, vy + 2, MUT)
+		_fc(img, 70, 56, 4, MUT)               # protuberância
+		# PUNHO descomunal
+		_fc(img, 68, 94, 13, GB)
+		_fc(img, 64, 92, 8, GL)
+		_fc(img, 68, 94, 13, GB)               # contorno
+		for ky in [86, 92, 98]:                # espinhos ósseos nos nós
+			_fr(img, 78, ky, 2, 4, BON)
+		for ky2 in [88, 96]:
+			img.set_pixel(56, ky2, BON)
+		_glow_soft(img, 70, 94, 6, MVN, 0.35)  # brilho mutante no punho
 
-	_store("goblin_mutant", img)
+func _paint_mutant_stump(img: Image) -> void:
+	# Coto sangrento onde ficava o braço gigante (o Gus arrancou).
+	const GB := Color(0.28, 0.40, 0.15)
+	const GL := Color(0.46, 0.60, 0.24)
+	const GORE := Color(0.66, 0.12, 0.12)
+	const GORD := Color(0.42, 0.06, 0.06)
+	const BON := Color(0.90, 0.86, 0.70)
+	_fr(img, 58, 46, 9, 14, GB)             # ombro restante
+	_fr(img, 58, 46, 9, 3, GL)
+	_fr(img, 60, 50, 7, 8, GORE)            # carne exposta
+	_fr(img, 60, 56, 7, 2, GORD)
+	img.set_pixel(63, 52, BON); img.set_pixel(65, 54, BON); img.set_pixel(62, 57, BON)
+	img.set_pixel(64, 61, GORE); img.set_pixel(66, 64, GORD)
 
 # ── Cajado da Soph (16x64) — avulso, p/ a cena do pickup/flourish ─────────────
 func _gen_staff() -> void:
