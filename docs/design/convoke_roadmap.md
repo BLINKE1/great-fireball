@@ -57,6 +57,18 @@ Da conversa sobre a Di — manter pra próximos aliados/variações:
 - No **nível máximo**: **TODOS os aliados atacando juntos** — o hit mais épico de
   todos os tempos (full party ultimate).
 
+## Evolução dos Convokes (NÍVEIS) — pipeline
+> Cada aliado pode ter **níveis** (upgrade do mesmo convoke). O nível 1 é a
+> versão "base/balanceada"; níveis maiores são mais fortes/vistosos, liberados
+> por progressão (XP do convoke, itens, NG+ — a definir).
+
+- **Di — nível 1 (atual):** chuva de flechas **curta** (`VOLLEY_TIME = 2.0`) —
+  reduzida pra não ficar overkill.
+- **Di — nível 2 (reservado):** a chuva **longa** original (`VOLLEY_TIME = 4.0`,
+  ~dobro de flechas). É só restaurar a constante quando formos implementar os
+  níveis. (Mesma lógica vale pra dar nível 2/3 aos outros: Juju dorme mais tempo,
+  Will escudo mais forte, Gus dano maior, Gui mais fases de fúria, etc.)
+
 ## Notas de comportamento por Boss
 - O comportamento do aliado pode mudar por **tipo de boss** (ex.: Gus arranca o
   braço do Goblin Mutante). `gus.gd::_do_finish_boss` está isolado pra ramificar

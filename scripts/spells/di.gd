@@ -8,7 +8,9 @@ extends Node2D
 ## Princípio de equilíbrio (como Gus/Will): sozinha NÃO mata um Boss cheio.
 
 const ENTER_TIME    := 0.30
-const VOLLEY_TIME   := 4.0
+# Di NÍVEL 1: chuva curta (metade das flechadas) — estava overkill. A versão
+# longa (VOLLEY_TIME 4.0) fica reservada pra evolução "Convoke nível 2".
+const VOLLEY_TIME   := 2.0
 const FIRE_INTERVAL := 0.16
 const ARROW_FLY     := 0.14
 const DI_ARROW_MOB  := 30.0
