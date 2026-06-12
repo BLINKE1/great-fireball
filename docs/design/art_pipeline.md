@@ -39,15 +39,20 @@ de arte procedural. `.env` tem `GEMINI_API_KEY` (gitignored).
   **egress de rede** neste ambiente.
 
 ## Motor de imagem do óculos (status)
-- **Pollinations.ai** (grátis, sem chave, modelo Flux) é o motor escolhido:
+- ✅ **FUNCIONANDO (testado 2026-06-12).** **Pollinations.ai** (modelo Flux) via
+  a **API nova `gen.pollinations.ai`**:
   `tools/art_director/gen_pollinations.py "<prompt>" <saida> [w] [h] [seed] [model]`.
-- **Requer** o host `image.pollinations.ai` na **allowlist de rede** do ambiente
-  (Network access: Custom/Full no claude.ai/code).
-- ⚠️ A política de rede é **fixada no início da sessão**. Depois de liberar o
-  host, é preciso **iniciar uma sessão NOVA** pra valer — a sessão já aberta
-  mantém a allowlist antiga (responde 403 "Host not in allowlist").
-- Alternativa paga (host já liberado por padrão): Gemini com billing
-  (`tools/art_director/gen_image.py`).
+- **Requer** chave gratuita `sk_...` de <https://enter.pollinations.ai>,
+  exportada como **`POLLINATIONS_TOKEN`** (env var do ambiente no
+  claude.ai/code), e o host **`gen.pollinations.ai`** na allowlist de rede.
+- ⚠️ Config de ambiente (rede e env vars) é **fixada no início da sessão** —
+  depois de mudar, **iniciar sessão NOVA**.
+- ⚠️ O host antigo `image.pollinations.ai` virou **legacy**: em cloud (IP de
+  saída compartilhado) responde **402 "Queue full for IP"** sempre, mesmo com
+  chave — não usar.
+- Modelos disponíveis na API nova: `flux`, `zimage`, `gptimage`, `kontext`,
+  `seedream5`.
+- Alternativa paga: Gemini com billing (`tools/art_director/gen_image.py`).
 
 1. Adicionar um **engine de GERAÇÃO** (Gemini imagem) ao `art_director` ao lado dos
    de crítica → loop "rascunho → imagem boa → eu critico → refina".
