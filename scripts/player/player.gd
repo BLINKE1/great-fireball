@@ -19,8 +19,8 @@ const APEX_GRAVITY_MULT  = 0.55   # gravidade reduzida perto do topo
 # pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
 # e sao gerados por tools/art_director/soph_dream.py --apply-game.
 const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo Hollow Knight
-const HD_SCALE := 0.34            # frames de 192px de altura → ~65px na tela
-const HD_OFFSET := Vector2(0, 1)  # +1px: encaixa os pes no chao (medido no test room)
+const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
+const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
 const MAGIC_MISSILE_COST  = 15.0
 const MAGIC_MISSILE_CD    = 0.18
