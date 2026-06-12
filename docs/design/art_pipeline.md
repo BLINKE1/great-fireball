@@ -38,7 +38,17 @@ de arte procedural. `.env` tem `GEMINI_API_KEY` (gitignored).
   Nano Banana free / Flux; vídeo: pago). Já temos chave Gemini; falta confirmar
   **egress de rede** neste ambiente.
 
-## Primeiros ganhos sugeridos (ordem)
+## Motor de imagem do óculos (status)
+- **Pollinations.ai** (grátis, sem chave, modelo Flux) é o motor escolhido:
+  `tools/art_director/gen_pollinations.py "<prompt>" <saida> [w] [h] [seed] [model]`.
+- **Requer** o host `image.pollinations.ai` na **allowlist de rede** do ambiente
+  (Network access: Custom/Full no claude.ai/code).
+- ⚠️ A política de rede é **fixada no início da sessão**. Depois de liberar o
+  host, é preciso **iniciar uma sessão NOVA** pra valer — a sessão já aberta
+  mantém a allowlist antiga (responde 403 "Host not in allowlist").
+- Alternativa paga (host já liberado por padrão): Gemini com billing
+  (`tools/art_director/gen_image.py`).
+
 1. Adicionar um **engine de GERAÇÃO** (Gemini imagem) ao `art_director` ao lado dos
    de crítica → loop "rascunho → imagem boa → eu critico → refina".
 2. Pipeline **imagem→sprite procedural** (skill "referência→sprite"), com **andar
