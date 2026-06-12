@@ -46,6 +46,12 @@ de arte procedural. `.env` tem `GEMINI_API_KEY` (gitignored).
 - ⚠️ A política de rede é **fixada no início da sessão**. Depois de liberar o
   host, é preciso **iniciar uma sessão NOVA** pra valer — a sessão já aberta
   mantém a allowlist antiga (responde 403 "Host not in allowlist").
+- ⚠️ **Testado em 2026-06-12: rede OK, mas o tier anônimo NÃO funciona daqui.**
+  O ambiente cloud usa IP de saída compartilhado e a Pollinations responde
+  **402 "Queue full for IP"** (fila grátis de 1 por IP, sempre ocupada).
+  Solução: token grátis em <https://enter.pollinations.ai>, exportado como
+  **`POLLINATIONS_TOKEN`** (env var do ambiente no claude.ai/code; sessão nova
+  pra valer). O script já usa o token automaticamente se a var existir.
 - Alternativa paga (host já liberado por padrão): Gemini com billing
   (`tools/art_director/gen_image.py`).
 
