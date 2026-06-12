@@ -38,6 +38,24 @@ de arte procedural. `.env` tem `GEMINI_API_KEY` (gitignored).
   Nano Banana free / Flux; vídeo: pago). Já temos chave Gemini; falta confirmar
   **egress de rede** neste ambiente.
 
+## Soph HD definitiva — fluxo da base (status)
+- **Referência base** em `docs/concept_art/soph_base_ref.png` (a "naked"):
+  leotard preto sem mangas/pernas, descalça, sem acessórios. Rosto guiado
+  pelas fotos da musa (irmã do Will) + espírito Little Witch Academia:
+  rosto redondo, olhos castanho-escuros, franja reta, sorriso gentil.
+- **Cabelo = pool de mana** (ver CLAUDE.md): preto na raiz com degradê
+  **azul-mana nas pontas** — a base retrata ~meia mana, o visual
+  "cabelo pintado" da musa. Gasto raiz→pontas, regen pontas→raiz
+  (a pixel-art atual faz o inverso; inverter ao regenerar estados).
+- **Receita de geração** (reproduzível): `flux` 640x1280 **seed 7** — a seed
+  fixa preserva o rosto entre variações de roupa/cabelo. Chroma verde +
+  recorte tratando verde-dominante fechado e mantendo o maior componente
+  conexo (mata assinaturas fantasma e buracos entre ondas do cabelo).
+- **Próximos passos**: vestir a base (robe, botas, luvas, chapéu, óculos,
+  báculo) via img2img (`kontext`/`klein`/`gptimage` aceitam imagem de
+  entrada) → idle definitivo → conjunto completo → estados de mana do
+  cabelo HD.
+
 ## Motor de imagem do óculos (status)
 - ✅ **FUNCIONANDO (testado 2026-06-12).** **Pollinations.ai** (modelo Flux) via
   a **API nova `gen.pollinations.ai`**:
