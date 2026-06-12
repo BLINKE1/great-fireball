@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-gen_pollinations.py — GERA imagem com a Pollinations.ai (GRÁTIS, sem chave).
+gen_pollinations.py — GERA imagem com a Pollinations.ai.
 
-É o "motor" do óculos para arte de fonte real. Só funciona se o host
-'image.pollinations.ai' estiver na ALLOWLIST de rede do ambiente (Network
-access: Custom/Full no claude.ai/code). Se não estiver, a Pollinations
-responde 403 "Host not in allowlist".
+É o "motor" do óculos para arte de fonte real. Usa a API NOVA
+(gen.pollinations.ai), que exige uma chave gratuita criada em
+https://enter.pollinations.ai — exportada como POLLINATIONS_TOKEN (ou
+passada em --token). O host antigo (image.pollinations.ai) virou "legacy"
+e responde 402 em IP compartilhado de cloud, então não serve daqui.
 
-Em ambiente cloud (IP de saída compartilhado) o tier anônimo responde 402
-"Queue full for IP" — é preciso um token gratuito de https://enter.pollinations.ai,
-exportado como POLLINATIONS_TOKEN (ou passado em --token).
+Hosts necessários na allowlist de rede do ambiente (Network access:
+Custom/Full no claude.ai/code): gen.pollinations.ai. A política de rede é
+fixada no início da sessão — depois de mudar, iniciar sessão NOVA.
 
 Uso:
     python tools/art_director/gen_pollinations.py "<prompt>" <saida.jpg> \
-        [largura] [altura] [seed] [modelo]
+        [largura] [altura] [seed] [modelo] [--token sk_...]
 
 Ex.:
     python tools/art_director/gen_pollinations.py \
@@ -23,38 +24,38 @@ from __future__ import annotations
 import os, sys, urllib.parse, urllib.request
 from pathlib import Path
 
-BASE = "https://image.pollinations.ai/prompt/"
+BASE = "https://gen.pollinations.ai/image/"
 
 def generate(prompt: str, out: str, width: int = 768, height: int = 1024,
              seed: int = 7, model: str = "flux", token: str | None = None) -> int:
+    token = token or os.environ.get("POLLINATIONS_TOKEN") \
+                  or os.environ.get("POLLINATIONS_API_KEY")
+    if not token:
+        print("✗ falta a chave: defina POLLINATIONS_TOKEN (sk_... de "
+              "https://enter.pollinations.ai) ou passe --token.")
+        return 1
     enc = urllib.parse.quote(prompt, safe="")
-    query = {
-        "width": width, "height": height, "seed": seed,
-        "model": model, "nologo": "true", "enhance": "true",
-    }
-    token = token or os.environ.get("POLLINATIONS_TOKEN")
-    if token:
-        query["token"] = token
-    params = urllib.parse.urlencode(query)
+    params = urllib.parse.urlencode({
+        "width": width, "height": height, "seed": seed, "model": model,
+    })
     url = f"{BASE}{enc}?{params}"
-    headers = {"User-Agent": "great-fireball-art-director"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    req = urllib.request.Request(url, headers=headers)
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "great-fireball-art-director",
+        "Authorization": f"Bearer {token}",
+    })
     try:
-        with urllib.request.urlopen(req, timeout=150) as r:
+        with urllib.request.urlopen(req, timeout=180) as r:
             ct = r.headers.get("Content-Type", "")
             data = r.read()
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "ignore")[:200]
         print(f"✗ HTTP {e.code}: {body}")
         if e.code == 403 and "allowlist" in body:
-            print("  → Libere 'image.pollinations.ai' na allowlist do ambiente e "
+            print("  → Libere 'gen.pollinations.ai' na allowlist do ambiente e "
                   "INICIE UMA SESSÃO NOVA (a política de rede é fixada no início).")
-        if e.code == 402:
-            print("  → Tier anônimo bloqueado pro IP compartilhado do ambiente. "
-                  "Pegue um token grátis em https://enter.pollinations.ai e "
-                  "defina POLLINATIONS_TOKEN no ambiente (env var) — sessão nova pra valer.")
+        if e.code in (401, 402):
+            print("  → Chave ausente/ inválida? Crie uma sk_ grátis em "
+                  "https://enter.pollinations.ai e defina POLLINATIONS_TOKEN.")
         return 1
     except Exception as e:
         print(f"✗ rede: {type(e).__name__}: {e}")
@@ -74,7 +75,7 @@ def main() -> int:
         token = args[i + 1]
         del args[i:i + 2]
     if len(args) < 2:
-        print("uso: gen_pollinations.py \"<prompt>\" <saida> [w] [h] [seed] [model] [--token T]")
+        print("uso: gen_pollinations.py \"<prompt>\" <saida> [w] [h] [seed] [model] [--token sk_...]")
         return 2
     prompt = args[0]
     out = args[1]
