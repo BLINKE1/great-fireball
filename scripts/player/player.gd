@@ -1014,10 +1014,12 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
 	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
 	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
-	# HD ainda não tem poses de ataque dedicadas — reusa o idle por nível como fallback.
+	# Poses de ataque HD do set1 (cast = magia com a gema; slash = golpe com o cajado).
+	# Mesmos frames pra todo nível de mana por ora — variantes de cabelo virão da
+	# recoloração procedural por máscara (ver CLAUDE.md: mana no cabelo).
 	for lvl in range(1, 6):
-		_add_anim(sf, "cast_%d"  % lvl, ["soph_hd_idle_0"], 8.0, false)
-		_add_anim(sf, "slash_%d" % lvl, ["soph_hd_idle_0"], 8.0, false)
+		_add_anim(sf, "cast_%d"  % lvl, ["soph_hd_cast_0", "soph_hd_cast_1"], 12.0, false)
+		_add_anim(sf, "slash_%d" % lvl, ["soph_hd_slash_0", "soph_hd_slash_1"], 14.0, false)
 	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
 	for lvl in range(1, 6):
 		_add_anim(sf, "idle_%d" % lvl, ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
