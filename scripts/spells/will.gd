@@ -15,6 +15,14 @@ const FALL_HEIGHT    := 340.0
 const SMASH_RADIUS   := 64.0
 const SMASH_BOSS_DMG := 60.0    # no boss é um trancão, não overkill
 
+# Tamanho do cavaleiro GIGANTE (quase a altura do Goblin Mutante ~112px), com
+# ênfase vertical. Centralizado aqui pra body/escudo ficarem alinhados.
+const BODY_SCALE   := Vector2(3.0, 3.6)
+const BODY_Y       := -50.0
+const SHIELD_SCALE := Vector2(2.7, 3.7)
+const SHIELD_X     := 38.0
+const SHIELD_Y     := -52.0
+
 enum St { FALL, GUARD, LEAVE }
 
 var facing: float = 1.0
@@ -34,15 +42,15 @@ func _ready() -> void:
 	_body = Sprite2D.new()
 	_body.texture = SpriteSetup.get_texture("will")
 	_body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_body.scale = Vector2(2.0, 2.0)
-	_body.position = Vector2(0, -26)
+	_body.scale = BODY_SCALE
+	_body.position = Vector2(0, BODY_Y)
 	_body.flip_h = facing < 0
 	_rig.add_child(_body)
 	_shield = Sprite2D.new()
 	_shield.texture = SpriteSetup.get_texture("will_shield")
 	_shield.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_shield.scale = Vector2(2.0, 2.0)
-	_shield.position = Vector2(facing * 26.0, -24.0)
+	_shield.scale = SHIELD_SCALE
+	_shield.position = Vector2(facing * SHIELD_X, SHIELD_Y)
 	_rig.add_child(_shield)
 	# Começa lá no alto e despenca.
 	_rig.position = Vector2(0, -FALL_HEIGHT)
@@ -89,7 +97,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_guard_t -= delta
 	# Pequena respiração de guarda + brilho do emblema.
-	_shield.position.y = -24.0 + sin(_guard_t * 4.0) * 0.6
+	_shield.position.y = SHIELD_Y + sin(_guard_t * 4.0) * 0.6
 	if _guard_t <= 0.0:
 		_leave(false)
 
@@ -104,8 +112,8 @@ func block_hit(_amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var kick := signf(from.x - global_position.x)
 	if kick == 0.0: kick = -facing
 	var tw := create_tween()
-	tw.tween_property(_shield, "position:x", facing * 26.0 - kick * 4.0, 0.05)
-	tw.tween_property(_shield, "position:x", facing * 26.0, 0.12)
+	tw.tween_property(_shield, "position:x", facing * SHIELD_X - kick * 4.0, 0.05)
+	tw.tween_property(_shield, "position:x", facing * SHIELD_X, 0.12)
 	VFX.hit_spark(_shield.global_position, get_parent(), -kick)
 
 # Dano de verdade ao escudo (SÓ o facho do boss chama isto).
@@ -131,7 +139,7 @@ func _break(from: Vector2) -> void:
 	VFX.ring(_shield.global_position, get_parent(), Color(1.0, 0.85, 0.4, 0.8), 50.0, 0.4)
 	var tw := _shield.create_tween()
 	tw.tween_property(_shield, "modulate:a", 0.0, 0.25)
-	tw.parallel().tween_property(_shield, "scale", Vector2(2.4, 2.4), 0.25)
+	tw.parallel().tween_property(_shield, "scale", SHIELD_SCALE * 1.2, 0.25)
 	tw.parallel().tween_property(_shield, "rotation", randf_range(-0.6, 0.6), 0.25)
 	# Sem escudo, ele não tem o que fazer: recua e sai.
 	await get_tree().create_timer(0.5).timeout
