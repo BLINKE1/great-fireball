@@ -8,9 +8,20 @@
   com "bruxa"/"witch"** em código, comentários, diálogos, nomes de assets, arte
   e até nas conversas. O chapéu pontudo é **"chapéu de maga"** (não de bruxa).
 
+## 🔵 Mana no cabelo — mecânica assinatura
+- O **cabelo da Soph é o pool de mana**. Mana cheia = cabelo todo azul-mana.
+- **Gasto: da RAIZ → PONTAS** (escurece de cima pra baixo). Vazio = todo escuro.
+- **Regen: das PONTAS → RAIZ** (o azul "sobe" pelas pontas).
+- **Meia mana = raiz escura + pontas azuis** — o visual "cabelo pintado"
+  (homenagem ao cabelo da musa real). Referência base:
+  `docs/concept_art/soph_base_ref.png`.
+- ⚠️ A pixel-art atual faz o INVERSO (gasta das pontas → raiz): **inverter**
+  quando regenerar os estados de mana (`gen_mana_states.py` / sprites).
+
 ## 🎨 Arte / sprites
-- **Pixel-art é o padrão** (`USE_HD_SOPH = false` em `player.gd`). A HD é arte
-  conceitual.
+- **HD via óculos é o caminho da Soph definitiva** (idle HD já no master;
+  `USE_HD_SOPH = true` em `player.gd`). Pixel-art segue como fallback
+  (`USE_HD_SOPH = false`) e padrão dos inimigos/cenário.
 - Sprites são **procedurais** (`tools/art_director/soph_core.py` + `gen_all_frames.py`,
   e enemies/cenário em `scripts/autoload/sprite_setup.gd`) **+ overrides PNG**:
   o `SpriteSetup` carrega automaticamente um PNG cujo nome casa com a "chave"

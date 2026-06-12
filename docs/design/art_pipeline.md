@@ -38,6 +38,31 @@ de arte procedural. `.env` tem `GEMINI_API_KEY` (gitignored).
   Nano Banana free / Flux; vídeo: pago). Já temos chave Gemini; falta confirmar
   **egress de rede** neste ambiente.
 
+## Soph HD definitiva — fluxo da base (status)
+- **Referência base** em `docs/concept_art/soph_base_ref.png` (a "naked"):
+  leotard preto sem mangas/pernas, descalça, sem acessórios. Rosto guiado
+  pelas fotos da musa (irmã do Will) + espírito Little Witch Academia:
+  rosto redondo, olhos castanho-escuros, franja reta, sorriso gentil.
+- **Cabelo = pool de mana** (ver CLAUDE.md): preto na raiz com degradê
+  **azul-mana nas pontas** — a base retrata ~meia mana, o visual
+  "cabelo pintado" da musa. Gasto raiz→pontas, regen pontas→raiz
+  (a pixel-art atual faz o inverso; inverter ao regenerar estados).
+- **Receita de geração** (reproduzível): `flux` 640x1280 **seed 7** — a seed
+  fixa preserva o rosto entre variações de roupa/cabelo. Chroma verde +
+  recorte tratando verde-dominante fechado e mantendo o maior componente
+  conexo (mata assinaturas fantasma e buracos entre ondas do cabelo).
+- **Vestida (canônica)**: `docs/concept_art/soph_dressed_ref.png` (3/4 olhando
+  pra direita, posição de jogador) + `soph_dressed_front.png` (frontal, útil
+  pra retratos). Robe e chapéu de maga VERMELHOS (homenagem Chariot/LWA),
+  botas marrons de cano alto, óculos redondos, sem cajado por ora.
+- **img2img que funciona**: `POST gen.pollinations.ai/v1/images/edits`
+  (multipart: image=@arquivo, prompt, model=kontext, seed). O kontext
+  preserva a personagem; pedir o giro de vista num SEGUNDO passe (de uma
+  vez só ele quase não gira). Resposta JSON: data[0].b64_json.
+- **Próximos passos**: idle definitivo a partir da vestida → conjunto
+  completo (walk/run/jump/fall/hurt/cast) → estados de mana do cabelo HD
+  (recoloração procedural por máscara, raiz→pontas).
+
 ## Motor de imagem do óculos (status)
 - ✅ **FUNCIONANDO (testado 2026-06-12).** **Pollinations.ai** (modelo Flux) via
   a **API nova `gen.pollinations.ai`**:
