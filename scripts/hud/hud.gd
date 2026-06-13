@@ -216,6 +216,10 @@ func _on_hp_changed(ratio: float) -> void:
 func _on_mana_changed(ratio: float) -> void:
 	mana_bar.value = ratio * 100.0
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F1:
+		visible = not visible
+
 func _on_time_stop_start() -> void:
 	time_stop_overlay.visible = true
 	var tw := time_stop_overlay.create_tween()
