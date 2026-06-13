@@ -8,3 +8,16 @@ assets/sprites/player/*_bak_*.png
 
 # Screenshots de teste gerados pelo harness do Godot (regeraveis)
 tools/art_director/iterations/godot_shots/
+
+# Soph HD regen workspace (staging/backup/preview/raw)
+assets/sprites/player/_backup_pre_regen/
+assets/sprites/player/_pending_regen/
+assets/sprites/player/_preview/
+assets/sprites/player/_raw/
+
+# Diagnostic comparison images
+docs/concept_art/diag/
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

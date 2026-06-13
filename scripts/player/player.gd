@@ -40,13 +40,14 @@ const HD_ANIM_BBOX := {                           # altura do conteúdo (alpha>0
 	"slash": 190.0,
 }
 const HD_ANIM_NATIVE_LEFT := {                    # anims desenhadas olhando p/ esquerda na fonte
+	"idle":  true,
 	"walk":  true,
 	"jump":  true,
 	"fall":  true,
 	"hurt":  true,
 	"cast":  true,
 	"slash": true,
-	# idle e run: maioria das poses olha pra direita — mantém convenção padrão.
+	# run: maioria dos frames olha pra direita (run_2 destoa, mas é minoria).
 }
 
 const MAGIC_MISSILE_COST  = 15.0
