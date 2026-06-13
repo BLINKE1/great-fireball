@@ -22,6 +22,33 @@ const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo 
 const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
 const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
+# Compensação per-anim do HD: os PNGs do Pollinations vieram com bbox/orientação
+# inconsistentes entre anims. Sem isto, ao andar/correr a Soph fica MAIOR (bbox
+# maior no canvas → ocupa mais tela na mesma escala) e walk/cast/slash/jump/
+# fall/hurt aparecem INVERTIDAS (foram geradas olhando pra esquerda na fonte).
+# Plano B = regerar com bbox/orientação normalizadas e zerar estas tabelas.
+const HD_BASE_BBOX := 150.0                       # altura alvo (idle ≈ 150px no canvas 192)
+const HD_FRAME_H   := 192.0
+const HD_ANIM_BBOX := {                           # altura do conteúdo (alpha>0) por anim
+	"idle":  150.0,
+	"walk":  167.0,
+	"run":   178.0,
+	"jump":  190.0,
+	"fall":  190.0,
+	"hurt":  190.0,
+	"cast":  190.0,
+	"slash": 190.0,
+}
+const HD_ANIM_NATIVE_LEFT := {                    # anims desenhadas olhando p/ esquerda na fonte
+	"walk":  true,
+	"jump":  true,
+	"fall":  true,
+	"hurt":  true,
+	"cast":  true,
+	"slash": true,
+	# idle e run: maioria das poses olha pra direita — mantém convenção padrão.
+}
+
 const MAGIC_MISSILE_COST  = 15.0
 const MAGIC_MISSILE_CD    = 0.18
 const TIME_STOP_COST      = 30.0
@@ -918,17 +945,34 @@ func _update_visuals() -> void:
 		_squash = Vector2(0.82, 1.20)
 	_last_facing = facing
 
-	sprite.scale = _base_scale * sq
+	# Animation state ANTES da escala/flip pra sabermos qual anim usar
+	# na compensação per-anim do HD.
+	_update_anim()
+
+	var anim_scale := 1.0
+	var anim_flip_left := false
+	if USE_HD_SOPH:
+		var ab := _hd_anim_base()
+		var bbox: float = HD_ANIM_BBOX.get(ab, HD_BASE_BBOX)
+		anim_scale = HD_BASE_BBOX / bbox
+		# Mantém os pés no mesmo Y na tela ao reduzir a escala da anim
+		# (sem isto, escalas menores deixam a Soph "flutuando" um pouco).
+		var target_feet := HD_OFFSET.y + (HD_FRAME_H * 0.5) * HD_SCALE
+		var feet_now := (HD_FRAME_H * 0.5) * (HD_SCALE * anim_scale)
+		sprite.position = Vector2(HD_OFFSET.x, target_feet - feet_now)
+		anim_flip_left = HD_ANIM_NATIVE_LEFT.get(ab, false)
+
+	sprite.scale = _base_scale * sq * anim_scale
 	hair.scale   = sq
 	sprite.skew  = _lean
 	hair.skew    = _lean
 
-	# Flip to face direction
-	sprite.flip_h = facing < 0
-	hair.flip_h   = facing < 0
-
-	# Animation state
-	_update_anim()
+	# Flip to face direction (HD: XOR com a orientação nativa da anim).
+	var flip := facing < 0
+	if anim_flip_left:
+		flip = not flip
+	sprite.flip_h = flip
+	hair.flip_h   = flip
 
 	if is_dashing:
 		sprite.modulate = Color(0.5, 0.85, 1.0, 1.0)
@@ -951,6 +995,12 @@ func _update_visuals() -> void:
 		var target := Color(c.r * 0.55, c.g * 0.55, c.b * 0.70, c.a)
 		c = c.lerp(target, 1.0 - _mana_ratio)
 	sprite.modulate = c
+
+func _hd_anim_base() -> String:
+	# "cast_3"/"idle_5" → "cast"/"idle"; "walk"/"run"/"jump" → mesmo nome.
+	var a := sprite.animation
+	var us := a.find("_")
+	return a.substr(0, us) if us >= 0 else a
 
 func _update_anim() -> void:
 	var spd := absf(velocity.x)
