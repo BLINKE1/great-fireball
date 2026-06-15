@@ -30,6 +30,19 @@
 - Dinamismo de movimento da Soph (lean/stretch/squash) vive em
   `player.gd::_update_visuals`.
 
+### 🛑 Rig PARADO — NÃO refatorar `player.gd` pra rig (decisão 2026-06-15)
+- **NÃO** refatorar o `player.gd` pra ancorar animação em rig (Skeleton2D/
+  Bone2D/cutout). O rig de T-pose frontal **não gera 3/4 nem lateral de ação**
+  (bones 2D só transladam/rotacionam/escalam pixels existentes — não revelam o
+  outro lado nem mudam silhueta). Está **engavetado** até entendermos o método
+  do Hollow Knight.
+- O caminho HD **é frame-by-frame** (`AnimatedSprite2D` + `SpriteFrames` em
+  `_build_soph_frames_hd`) — que **já é** o método do HK. Manter assim.
+- Frente ATIVA: **sheet única → fatiar frames** via
+  `tools/art_director/gen_hd_sheet.py` (gera muitas poses numa geração só p/
+  travar identidade, depois corta). Não conflitar com isso.
+- Racional completo (HK + ferramentas de ancoragem): `docs/animacao_hk_notas.md`.
+
 ## 🌲 Mundo
 - A "dungeon" (`dungeon_1`) é tematizada como **floresta** (céu de entardecer +
   grama + árvores + vaga-lumes) via `level_visuals.gd` (modo floresta quando o
