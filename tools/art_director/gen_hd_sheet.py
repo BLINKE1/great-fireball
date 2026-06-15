@@ -85,18 +85,24 @@ def key_bg_to_alpha(im: Image.Image, bg: str) -> Image.Image:
 # Descricao curta do personagem (repetida no prompt do sheet).
 CHAR_SHORT = (
     "anime mage girl: pointed red wizard hat, long blue hair, round "
-    "black-framed glasses, red robe with dark lining, brown boots, blue "
-    "glowing crystal staff"
+    "black-framed glasses, red robe with dark lining, brown boots"
 )
+# A arma (cajado/lamina) NAO faz parte da descricao base — segue o principio HK:
+# locomocao sem arma, arma so na acao. Sets de acao reintroduzem a arma na pose.
+WEAPON = "blue glowing crystal staff"
 
 # Poses em CONJUNTOS TEMATICOS. Estrategia (vide HK): nao cabe tudo numa sheet
 # sem perder identidade — o sweet spot e' ~12-16 poses/sheet. P/ cobrir muitas
 # poses, gera-se varios sheets TEMATICOS ancorados na MESMA referencia (ou,
 # melhor, no 1o sheet aprovado via --anchor). Ordem = leitura (esq->dir, cima->baixo).
+# Sets de LOCOMOCAO sao sem arma (maos vazias). Sets de ACAO (em WEAPON_SETS)
+# reintroduzem a arma na descricao da pose. Vide principio HK em CLAUDE.md.
+WEAPON_SETS = {"combat", "attack_phys", "cast_special", "core16"}
+
 POSE_SETS: dict[str, list[tuple[str, str]]] = {
-    # so locomocao essencial num 3x3 — celulas grandes, max nitidez. Bom 1o teste.
+    # so locomocao essencial num 3x3 — celulas grandes, max nitidez. SEM arma.
     "walkrun9": [
-        ("idle",   "idle standing, staff at side"),
+        ("idle",   "idle standing, empty hands, relaxed"),
         ("walk_0", "walking right, right foot forward contact"),
         ("walk_1", "walking right, passing pose mid-stride"),
         ("walk_2", "walking right, left foot forward contact"),
@@ -105,6 +111,41 @@ POSE_SETS: dict[str, list[tuple[str, str]]] = {
         ("run_1",  "running right, mid-air passing, both feet off ground"),
         ("run_2",  "running right, full sprint, left foot extended"),
         ("run_3",  "running right, mid-air passing opposite"),
+    ],
+    # locomocao completa, SEM arma (idle/walk/run/dash/jump/fall/hurt).
+    "locomotion": [
+        ("idle",   "idle standing, empty hands, relaxed"),
+        ("walk_0", "walking right, right foot forward contact"),
+        ("walk_1", "walking right, passing pose mid-stride"),
+        ("walk_2", "walking right, left foot forward contact"),
+        ("run_0",  "running right, full sprint, right foot extended"),
+        ("run_1",  "running right, mid-air passing, both feet off ground"),
+        ("dash",   "dashing forward, leaning hard, speed motion, empty hands"),
+        ("jump",   "jumping up, legs tucked, robe billowing, empty hands"),
+        ("fall",   "falling, legs extended, robe blown upward, empty hands"),
+        ("hurt",   "hit reaction, recoiling backward, pained, empty hands"),
+    ],
+    # ATAQUE FISICO (frente): iaido draw-slash. O smear esconde o movimento
+    # rapido e e' generoso p/ a geracao (um risco nao exige consistencia).
+    "attack_phys": [
+        ("ready",  "front view facing camera, battle ready stance, hand on "
+                   "sword hilt at hip, anticipation crouch"),
+        ("draw",   "front view, fast sword DRAW, blade is a motion-blur smear "
+                   "streak across the body, dynamic"),
+        ("cut",    "front view, clean finished slash, red-bladed sword extended "
+                   "across, strong silhouette, sharp"),
+        ("follow", "front view, slash follow-through, blade lowered, recovery"),
+    ],
+    # CAST ESPECIAL (3/4 -> costas, UMA mao): caro em mana, estilo Reigun.
+    # Uma mao ergue o cajado; a outra escondida sob o manto.
+    "cast_special": [
+        ("turn",    "three-quarter back view turning away, cape swirl motion-"
+                    "blur smear hiding the turn, dynamic"),
+        ("charge",  "back view from behind, one hand raising the " + WEAPON +
+                    " overhead, other hand hidden under cloak, long hair down "
+                    "the back, mana gathering, charging"),
+        ("release", "back view from behind, " + WEAPON + " raised high, powerful "
+                    "magic beam launching upward, cape billowing"),
     ],
     # ~16 poses curadas: cobre o essencial num sheet so. Default.
     "core16": [
@@ -125,24 +166,7 @@ POSE_SETS: dict[str, list[tuple[str, str]]] = {
         ("victory", "victory pose, staff raised high, cheerful"),
         ("dash",    "dashing forward, leaning into motion, speed lines"),
     ],
-    # locomocao detalhada (walk 6 + run 4 + air)
-    "locomotion": [
-        ("idle",   "idle standing, staff at side"),
-        ("walk_0", "walking right, right foot forward contact"),
-        ("walk_1", "walking right, passing pose, right leg under body"),
-        ("walk_2", "walking right, recoil, left foot lifting behind"),
-        ("walk_3", "walking right, left foot forward contact"),
-        ("walk_4", "walking right, passing pose, left leg under body"),
-        ("walk_5", "walking right, recoil, right foot lifting behind"),
-        ("run_0",  "running right, full sprint, right foot extended"),
-        ("run_1",  "running right, mid-air passing, both feet off ground"),
-        ("run_2",  "running right, full sprint, left foot extended"),
-        ("run_3",  "running right, mid-air passing opposite"),
-        ("jump",   "jumping up, legs tucked, robe billowing"),
-        ("fall",   "falling, legs extended, robe blown upward"),
-        ("dash",   "dashing forward, leaning hard into motion"),
-    ],
-    # combate: cast + slash + variacoes de golpe
+    # combate: cast + slash + variacoes de golpe (COM arma)
     "combat": [
         ("cast_0",   "casting windup, raising staff overhead, orb glowing"),
         ("cast_1",   "casting, staff aimed forward, beam of magic"),
@@ -155,13 +179,18 @@ POSE_SETS: dict[str, list[tuple[str, str]]] = {
         ("block",    "defensive guard, staff held across body"),
         ("parry",    "parry, staff knocking attack aside"),
     ],
+    # TESTE paper doll: base "naked" (bodysuit) + vestida, MESMO corpo (1x2).
+    "paperdoll": [
+        ("base",    "base body layer"),
+        ("dressed", "fully dressed over the base"),
+    ],
     # reacoes e estados
     "reactions": [
         ("hurt_0",  "hit reaction, recoiling backward, pained"),
         ("hurt_1",  "heavy hit, knocked off balance"),
         ("death",   "defeated, collapsing to the ground"),
         ("crouch",  "crouching low, knees bent"),
-        ("victory", "victory pose, staff raised high, cheerful"),
+        ("victory", "victory pose, both arms raised high, cheerful"),
         ("taunt",   "taunting, hand on hip, confident"),
         ("cheer",   "celebrating, both arms up"),
         ("think",   "thinking, hand on chin"),
@@ -180,14 +209,21 @@ def grid_dims(n: int, cols: int) -> tuple[int, int]:
 
 
 def build_sheet_prompt(poses: list[tuple[str, str]], cols: int,
-                       bg: str = "green") -> str:
+                       bg: str = "green", weapon: bool = False) -> str:
     rows, cols = grid_dims(len(poses), cols)
     numbered = "; ".join(f"{i+1}) {d}" for i, (_, d) in enumerate(poses))
     bg_desc = BG_PROMPT.get(bg, BG_PROMPT["green"])
     gap = "GREEN" if bg == "green" else "WHITE"
+    # Principio HK: locomocao SEM arma (maos vazias); a camera dela e' perfil.
+    # Sets de acao trazem a arma e cada pose dita seu proprio angulo (frente/
+    # costas), entao nao forcamos "side view".
+    if weapon:
+        view = "consistent design across all poses (camera per pose as described)"
+    else:
+        view = ("side view facing right, EMPTY HANDS, NO weapon, no staff, no "
+                "sword, consistent design across all poses")
     # Isolamento AGGRESSIVO: a kontext tende a empacotar as poses coladas, o que
-    # impede o auto-corte por blobs. Forcamos espaco vazio enorme e proibimos
-    # sobreposicao/toque entre poses.
+    # impede o auto-corte. Forcamos espaco vazio enorme e proibimos toque.
     return (
         f"character reference sheet of the SAME character: {CHAR_SHORT}. "
         f"{len(poses)} small full-body poses laid out on a {rows} by {cols} "
@@ -195,10 +231,28 @@ def build_sheet_prompt(poses: list[tuple[str, str]], cols: int,
         f"the others by LARGE EMPTY {gap} MARGINS; the poses MUST NOT touch, "
         f"overlap, or connect; thick empty space between every pose on all "
         f"sides; each pose centered in its own cell, equal size and scale. "
-        f"All poses full character head-to-feet, side view facing right, "
-        f"consistent design across all poses. {bg_desc}, no panels, no borders, "
-        f"no lines, no scenery, no shadow, no gradient, no text, no labels, no "
-        f"signature. Game sprite cutout style. Poses: {numbered}."
+        f"All poses full character head-to-feet, {view}. {bg_desc}, no panels, "
+        f"no borders, no lines, no scenery, no shadow, no gradient, no text, no "
+        f"labels, no signature. Game sprite cutout style. Poses: {numbered}."
+    )
+
+
+def build_paperdoll_prompt(bg: str = "green") -> str:
+    """Prompt dedicado do teste paper doll: MESMA garota, 2 vezes lado a lado —
+    esquerda so' o corpo-base (bodysuit preto + oculos), direita vestida."""
+    bg_desc = BG_PROMPT.get(bg, BG_PROMPT["green"])
+    return (
+        "character paper-doll reference: the SAME anime mage girl shown TWICE "
+        "side by side, three-quarter view, identical face/body/proportions, "
+        "long blue hair, round black-framed glasses. "
+        "LEFT figure = BASE LAYER: wearing ONLY a plain skin-tight solid BLACK "
+        "full-body bodysuit, NO hat, NO robe, NO cloak, bare base, glasses on. "
+        "RIGHT figure = SAME girl fully dressed OVER that body: closed long red "
+        "robe with dark lining, pointed red wizard hat, brown boots (boots "
+        "hidden under the robe if not visible), empty hands. "
+        "The two figures ISOLATED, separated by a LARGE EMPTY margin, MUST NOT "
+        f"touch or overlap. {bg_desc}, no panels, no borders, no scenery, no "
+        "shadow, no gradient, no text, no labels, no signature. Game art."
     )
 
 
@@ -526,9 +580,15 @@ def main() -> int:
 
     poses = POSE_SETS[args.pose_set]
     anchor = args.anchor or ANCHOR_URL
+    weapon = args.pose_set in WEAPON_SETS
+    paper = args.pose_set == "paperdoll"
+
+    def _prompt() -> str:
+        return (build_paperdoll_prompt(args.bg) if paper
+                else build_sheet_prompt(poses, args.cols, args.bg, weapon))
 
     if args.dry:
-        prompt = build_sheet_prompt(poses, args.cols, args.bg)
+        prompt = _prompt()
         rows, cols = grid_dims(len(poses), args.cols)
         print(f"set={args.pose_set} grade {rows}x{cols}, {len(poses)} poses, "
               f"bg={args.bg}, seed={args.seed}")
@@ -547,7 +607,7 @@ def main() -> int:
         if not token:
             print("x defina POLLINATIONS_TOKEN ou passe --token")
             return 1
-        prompt = build_sheet_prompt(poses, args.cols, args.bg)
+        prompt = _prompt()
         url = build_sheet_url(prompt, args.seed, anchor)
         print(f"-> gerando sheet set={args.pose_set} ({len(poses)} poses, "
               f"bg={args.bg}, seed={args.seed})")
