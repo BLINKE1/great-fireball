@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import cairosvg
+from PIL import Image, ImageFilter
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
@@ -28,6 +29,24 @@ import soph_svg                              # noqa: E402  (meu "lápis" SVG)
 from gen_continuous_animation import img2img_edit  # noqa: E402  (POST multipart)
 
 OUT = HERE / "iterations" / "repaint"
+
+
+def render_cel(path: str, w: int = 768, h: int = 1536, bg=None) -> str:
+    cairosvg.svg2png(bytestring=soph_svg.build_svg().encode(), write_to=path,
+                     output_width=w, output_height=h, background_color=bg)
+    return path
+
+
+def render_lineart(path: str, w: int = 768, h: int = 1536) -> str:
+    """Traço puro (estrutura) por deteccao de borda do cel — guia melhor o
+    img2img que a versao colorida (da' forma sem 'prender' a cor)."""
+    tmp = str(OUT / "_cel.png")
+    render_cel(tmp, w, h, bg="white")
+    edges = Image.open(tmp).convert("RGB").filter(ImageFilter.FIND_EDGES)
+    g = edges.convert("L").filter(ImageFilter.MaxFilter(3))
+    line = g.point(lambda v: 0 if v > 28 else 255)
+    Image.merge("RGB", (line, line, line)).save(path)
+    return path
 
 # Prompt de repintura: manter pose/identidade/composição, adicionar polimento.
 PROMPT = (
@@ -56,23 +75,27 @@ def main() -> int:
     token = _arg(args, "--token") or os.environ.get("POLLINATIONS_TOKEN")
     inp = _arg(args, "--input")
     model = _arg(args, "--model") or "gptimage"
+    lineart = "--lineart" in args
+    if lineart:
+        args.remove("--lineart")
     OUT.mkdir(parents=True, exist_ok=True)
 
-    # 1) estrutura: renderiza meu SVG (a menos que venha --input)
+    # 1) estrutura: lineart puro, cel colorido, ou --input
+    tag = "input"
     if inp is None:
-        svg = soph_svg.build_svg()
-        inp = str(OUT / "_structure.png")
-        cairosvg.svg2png(bytestring=svg.encode(), write_to=inp,
-                         output_width=768, output_height=1536)
-        print("estrutura (lápis SVG) ->", inp)
+        if lineart:
+            inp = render_lineart(str(OUT / "_lineart.png")); tag = "lineart"
+        else:
+            inp = render_cel(str(OUT / "_structure.png"), bg="white"); tag = "cel"
+        print(f"estrutura ({tag}) ->", inp)
 
     if not token:
         print("sem token: estrutura pronta. rode com --token pra repintar (gasta pollen).")
         return 0
 
     # 2) repintura via img2img
-    out_file = str(OUT / "soph_repaint.png")
-    print(f"repintando ({model}) a partir de {inp} ...")
+    out_file = str(OUT / f"soph_repaint_{tag}.png")
+    print(f"repintando ({model}) a partir de {tag} ...")
     return img2img_edit(inp, PROMPT, out_file, token, model=model)
 
 
