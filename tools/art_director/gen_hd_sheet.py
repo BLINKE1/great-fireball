@@ -61,26 +61,74 @@ CHAR_SHORT = (
     "glowing crystal staff"
 )
 
-# Lista COMPLETA de poses pra estressar o modelo. Ordem = leitura
-# (esq->dir, cima->baixo). Cada item: (chave, descricao curta da pose).
-POSES: list[tuple[str, str]] = [
-    ("idle",    "idle standing, staff at side, facing right"),
-    ("walk_0",  "walking right, right foot forward contact"),
-    ("walk_1",  "walking right, passing pose mid-stride"),
-    ("walk_2",  "walking right, left foot forward contact"),
-    ("run_0",   "running right, full sprint stride, hair streaming"),
-    ("run_1",   "running right, mid-air passing, both feet off ground"),
-    ("jump",    "jumping up, legs tucked, robe billowing"),
-    ("fall",    "falling, legs extended, robe blown upward"),
-    ("hurt",    "hit reaction, recoiling backward, pained"),
-    ("crouch",  "crouching low, knees bent, staff braced"),
-    ("cast_0",  "casting, raising staff overhead, orb glowing"),
-    ("cast_1",  "casting, staff aimed forward, beam of magic"),
-    ("slash_0", "staff swing windup, drawn back over shoulder"),
-    ("slash_1", "staff swing release, swung forward-down"),
-    ("victory", "victory pose, staff raised high, cheerful"),
-    ("dash",    "dashing forward, leaning into motion, speed lines"),
-]
+# Poses em CONJUNTOS TEMATICOS. Estrategia (vide HK): nao cabe tudo numa sheet
+# sem perder identidade — o sweet spot e' ~12-16 poses/sheet. P/ cobrir muitas
+# poses, gera-se varios sheets TEMATICOS ancorados na MESMA referencia (ou,
+# melhor, no 1o sheet aprovado via --anchor). Ordem = leitura (esq->dir, cima->baixo).
+POSE_SETS: dict[str, list[tuple[str, str]]] = {
+    # ~16 poses curadas: cobre o essencial num sheet so. Default.
+    "core16": [
+        ("idle",    "idle standing, staff at side, facing right"),
+        ("walk_0",  "walking right, right foot forward contact"),
+        ("walk_1",  "walking right, passing pose mid-stride"),
+        ("walk_2",  "walking right, left foot forward contact"),
+        ("run_0",   "running right, full sprint stride, hair streaming"),
+        ("run_1",   "running right, mid-air passing, both feet off ground"),
+        ("jump",    "jumping up, legs tucked, robe billowing"),
+        ("fall",    "falling, legs extended, robe blown upward"),
+        ("hurt",    "hit reaction, recoiling backward, pained"),
+        ("crouch",  "crouching low, knees bent, staff braced"),
+        ("cast_0",  "casting, raising staff overhead, orb glowing"),
+        ("cast_1",  "casting, staff aimed forward, beam of magic"),
+        ("slash_0", "staff swing windup, drawn back over shoulder"),
+        ("slash_1", "staff swing release, swung forward-down"),
+        ("victory", "victory pose, staff raised high, cheerful"),
+        ("dash",    "dashing forward, leaning into motion, speed lines"),
+    ],
+    # locomocao detalhada (walk 6 + run 4 + air)
+    "locomotion": [
+        ("idle",   "idle standing, staff at side"),
+        ("walk_0", "walking right, right foot forward contact"),
+        ("walk_1", "walking right, passing pose, right leg under body"),
+        ("walk_2", "walking right, recoil, left foot lifting behind"),
+        ("walk_3", "walking right, left foot forward contact"),
+        ("walk_4", "walking right, passing pose, left leg under body"),
+        ("walk_5", "walking right, recoil, right foot lifting behind"),
+        ("run_0",  "running right, full sprint, right foot extended"),
+        ("run_1",  "running right, mid-air passing, both feet off ground"),
+        ("run_2",  "running right, full sprint, left foot extended"),
+        ("run_3",  "running right, mid-air passing opposite"),
+        ("jump",   "jumping up, legs tucked, robe billowing"),
+        ("fall",   "falling, legs extended, robe blown upward"),
+        ("dash",   "dashing forward, leaning hard into motion"),
+    ],
+    # combate: cast + slash + variacoes de golpe
+    "combat": [
+        ("cast_0",   "casting windup, raising staff overhead, orb glowing"),
+        ("cast_1",   "casting, staff aimed forward, beam of magic"),
+        ("cast_2",   "casting, both hands channeling, magic swirl"),
+        ("slash_0",  "staff swing windup, drawn back over shoulder"),
+        ("slash_1",  "staff swing release, swung forward-down"),
+        ("slash_2",  "staff swing follow-through, body extended low"),
+        ("thrust",   "staff thrust forward, lunging stab"),
+        ("uppercut", "upward staff swing, rising arc"),
+        ("block",    "defensive guard, staff held across body"),
+        ("parry",    "parry, staff knocking attack aside"),
+    ],
+    # reacoes e estados
+    "reactions": [
+        ("hurt_0",  "hit reaction, recoiling backward, pained"),
+        ("hurt_1",  "heavy hit, knocked off balance"),
+        ("death",   "defeated, collapsing to the ground"),
+        ("crouch",  "crouching low, knees bent"),
+        ("victory", "victory pose, staff raised high, cheerful"),
+        ("taunt",   "taunting, hand on hip, confident"),
+        ("cheer",   "celebrating, both arms up"),
+        ("think",   "thinking, hand on chin"),
+    ],
+}
+# default exportado p/ selftest/compat
+POSES: list[tuple[str, str]] = POSE_SETS["core16"]
 
 
 # ----------------------------------------------------------------------------
@@ -94,22 +142,27 @@ def grid_dims(n: int, cols: int) -> tuple[int, int]:
 def build_sheet_prompt(poses: list[tuple[str, str]], cols: int) -> str:
     rows, cols = grid_dims(len(poses), cols)
     numbered = "; ".join(f"{i+1}) {d}" for i, (_, d) in enumerate(poses))
+    # Isolamento AGGRESSIVO: a kontext tende a empacotar as poses coladas, o que
+    # impede o auto-corte por blobs. Forcamos espaco vazio enorme e proibimos
+    # sobreposicao/toque entre poses.
     return (
-        f"character model sheet / sprite sheet of the SAME character: "
-        f"{CHAR_SHORT}. {len(poses)} full-body poses arranged in a clean "
-        f"{rows} by {cols} grid, reading order left-to-right top-to-bottom, "
-        f"every pose EQUAL SIZE and same scale, each pose centered in its own "
-        f"cell with generous WHITE GUTTERS between cells, all poses full "
-        f"character head-to-feet, side view facing right, consistent design "
-        f"across all poses, PURE FLAT WHITE BACKGROUND, no scenery, no shadow, "
-        f"no gradient, no text labels, game sprite cutout style. Poses: {numbered}."
+        f"character reference sheet of the SAME character: {CHAR_SHORT}. "
+        f"{len(poses)} small full-body poses laid out on a {rows} by {cols} "
+        f"grid. CRITICAL: each pose is SMALL and ISOLATED, fully separated from "
+        f"the others by LARGE EMPTY WHITE MARGINS; the poses MUST NOT touch, "
+        f"overlap, or connect; thick white space between every pose on all "
+        f"sides; each pose centered in its own cell, equal size and scale. "
+        f"All poses full character head-to-feet, side view facing right, "
+        f"consistent design across all poses. PURE FLAT WHITE BACKGROUND, no "
+        f"panels, no borders, no lines, no scenery, no shadow, no gradient, no "
+        f"text, no labels, no signature. Game sprite cutout style. Poses: {numbered}."
     )
 
 
-def build_sheet_url(prompt: str, seed: int) -> str:
+def build_sheet_url(prompt: str, seed: int, anchor: str = ANCHOR_URL) -> str:
     enc = urllib.parse.quote(prompt, safe="")
     params = urllib.parse.urlencode({
-        "model": MODEL, "image": ANCHOR_URL,
+        "model": MODEL, "image": anchor,
         "width": SHEET_W, "height": SHEET_H,
         "seed": seed, "nologo": "true", "private": "true",
     })
@@ -117,70 +170,129 @@ def build_sheet_url(prompt: str, seed: int) -> str:
 
 
 # ----------------------------------------------------------------------------
-# Fatiador: deteccao de calhas (gutters) brancas com fallback uniforme
+# Fatiador: deteccao de BLOBS (connected components) — robusto a layout
+# irregular (o kontext NAO desenha grade limpa). Cada pose e' uma silhueta
+# conectada; achamos cada ilha de pixels, juntamos partes coladas (cajado
+# solto), filtramos ruido (assinatura/textinho) e ordenamos em leitura.
+# Python puro + downsample p/ velocidade (sem numpy/scipy no ambiente).
 # ----------------------------------------------------------------------------
-def _runs(profile: list[int], thresh: int, min_gap: int, min_run: int):
-    """Acha runs contiguos onde profile>thresh, ignorando lacunas < min_gap."""
-    runs, start = [], None
-    gap = 0
-    for i, v in enumerate(profile):
-        if v > thresh:
-            if start is None:
-                start = i
-            gap = 0
+SEG_TARGET_W = 256      # largura do mask reduzido p/ a busca de blobs
+
+
+def _components(mask: list[bool], w: int, h: int):
+    """Rotula componentes 8-conexos; retorna lista de (x0,y0,x1,y1,area)."""
+    from collections import deque
+    labels = [0] * (w * h)
+    boxes, cur = [], 0
+    for i in range(w * h):
+        if mask[i] and labels[i] == 0:
+            cur += 1
+            labels[i] = cur
+            dq = deque([i])
+            x0 = x1 = i % w
+            y0 = y1 = i // w
+            area = 0
+            while dq:
+                p = dq.popleft()
+                px, py = p % w, p // w
+                area += 1
+                if px < x0: x0 = px
+                if px > x1: x1 = px
+                if py < y0: y0 = py
+                if py > y1: y1 = py
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        nx, ny = px + dx, py + dy
+                        if 0 <= nx < w and 0 <= ny < h:
+                            q = ny * w + nx
+                            if mask[q] and labels[q] == 0:
+                                labels[q] = cur
+                                dq.append(q)
+            boxes.append((x0, y0, x1 + 1, y1 + 1, area))
+    return boxes
+
+
+def _merge_close(boxes, margin):
+    """Funde bboxes que se sobrepoem quando expandidos por `margin` (junta
+    cajado/peca solta a' silhueta da mesma pose)."""
+    changed = True
+    boxes = [list(b) for b in boxes]
+    while changed:
+        changed = False
+        out = []
+        while boxes:
+            a = boxes.pop()
+            ax0, ay0, ax1, ay1 = a[0], a[1], a[2], a[3]
+            merged = True
+            while merged:
+                merged = False
+                rest = []
+                for b in boxes:
+                    if (ax0 - margin < b[2] and b[0] - margin < ax1 and
+                            ay0 - margin < b[3] and b[1] - margin < ay1):
+                        ax0, ay0 = min(ax0, b[0]), min(ay0, b[1])
+                        ax1, ay1 = max(ax1, b[2]), max(ay1, b[3])
+                        merged = changed = True
+                    else:
+                        rest.append(b)
+                boxes = rest
+            out.append([ax0, ay0, ax1, ay1])
+        boxes = out
+    return boxes
+
+
+def _reading_order(boxes):
+    """Ordena em leitura: agrupa por linhas (overlap vertical) e ordena x."""
+    if not boxes:
+        return boxes
+    boxes = sorted(boxes, key=lambda b: b[1])
+    med_h = sorted(b[3] - b[1] for b in boxes)[len(boxes) // 2]
+    rows, cur = [], [boxes[0]]
+    for b in boxes[1:]:
+        if b[1] - cur[-1][1] < med_h * 0.5:
+            cur.append(b)
         else:
-            if start is not None:
-                gap += 1
-                if gap >= min_gap:
-                    end = i - gap + 1
-                    if end - start >= min_run:
-                        runs.append((start, end))
-                    start = None
-                    gap = 0
-    if start is not None:
-        end = len(profile) - gap
-        if end - start >= min_run:
-            runs.append((start, end))
-    return runs
+            rows.append(cur); cur = [b]
+    rows.append(cur)
+    ordered = []
+    for row in rows:
+        ordered.extend(sorted(row, key=lambda b: b[0]))
+    return ordered
 
 
 def segment_cells(alpha_im: Image.Image, expected: int, cols: int):
-    """Retorna lista de bboxes (x0,y0,x1,y1) das celulas em ordem de leitura.
-
-    1) perfil por linha -> bandas (linhas com conteudo);
-    2) dentro de cada banda, perfil por coluna -> celulas.
-    Fallback p/ split uniforme se a contagem destoar muito do esperado.
-    """
+    """Retorna bboxes (x0,y0,x1,y1) das poses em ordem de leitura via blobs.
+    Fallback p/ split uniforme se achar pouquissimo (<3)."""
     w, h = alpha_im.size
-    a = alpha_im.split()[3].load()
-    # perfil de linhas
-    row_prof = [sum(1 for x in range(w) if a[x, y] > OPAQUE_A) for y in range(h)]
-    row_thresh = max(2, int(w * 0.004))
-    bands = _runs(row_prof, row_thresh, min_gap=max(4, h // 60),
-                  min_run=max(8, h // 30))
-    cells = []
-    for (y0, y1) in bands:
-        col_prof = [sum(1 for y in range(y0, y1) if a[x, y] > OPAQUE_A)
-                    for x in range(w)]
-        col_thresh = max(1, int((y1 - y0) * 0.02))
-        runs = _runs(col_prof, col_thresh, min_gap=max(4, w // 80),
-                     min_run=max(6, w // 60))
-        for (x0, x1) in runs:
-            cells.append((x0, y0, x1, y1))
-    rows, cols = grid_dims(expected, cols)
-    # fallback: contagem muito fora do esperado -> grade uniforme
-    if not cells or abs(len(cells) - expected) > max(2, expected // 3):
-        print(f"   [seg] detectou {len(cells)} celulas; esperado ~{expected}. "
-              f"fallback p/ grade uniforme {rows}x{cols}.")
-        cells = []
+    s = max(1, w // SEG_TARGET_W)
+    sw, sh = w // s, h // s
+    small = alpha_im.resize((sw, sh), Image.NEAREST).split()[3].load()
+    mask = [small[x, y] > OPAQUE_A for y in range(sh) for x in range(sw)]
+    raw = _components(mask, sw, sh)
+    # filtra ruido: area minima e dimensao minima (tira assinatura/textinho)
+    min_area = max(20, int(sw * sh * 0.004))
+    min_dim = max(4, sw // 40)
+    blobs = [(b[0], b[1], b[2], b[3]) for b in raw
+             if b[4] >= min_area and (b[2] - b[0]) >= min_dim
+             and (b[3] - b[1]) >= min_dim]
+    # merge minimo: so cola pecas quase encostadas (cajado solto), sem fundir
+    # poses vizinhas (que no sheet ficam proximas).
+    blobs = _merge_close(blobs, margin=1)
+    blobs = _reading_order(blobs)
+    if len(blobs) < 3:
+        rows, cols = grid_dims(expected, cols)
+        print(f"   [seg] blobs={len(blobs)} (<3); fallback grade {rows}x{cols}.")
         cw, ch = w // cols, h // rows
-        for r in range(rows):
-            for c in range(cols):
-                cells.append((c * cw, r * ch, (c + 1) * cw, (r + 1) * ch))
-        cells = cells[:expected]
-    else:
-        print(f"   [seg] detectou {len(cells)} celulas (esperado ~{expected}).")
-    return cells
+        return [(c * cw, r * ch, (c + 1) * cw, (r + 1) * ch)
+                for r in range(rows) for c in range(cols)][:expected]
+    # escala de volta p/ resolucao cheia + pad de seguranca
+    pad = s
+    out = []
+    for (x0, y0, x1, y1) in blobs:
+        out.append((max(0, x0 * s - pad), max(0, y0 * s - pad),
+                    min(w, x1 * s + pad), min(h, y1 * s + pad)))
+    print(f"   [seg] {len(out)} poses por blob (esperado ~{expected}).")
+    return out
 
 
 # ----------------------------------------------------------------------------
@@ -216,11 +328,14 @@ def slice_sheet(sheet_im: Image.Image, out_dir: Path,
     alpha = whiten_to_alpha(sheet_im.convert("RGB"))
     alpha.save(out_dir / "sheet_alpha.png")
     boxes = segment_cells(alpha, expected=len(poses), cols=cols)
+    # so casa nome-de-pose quando a contagem bate exatamente (ex.: selftest);
+    # senao numera por indice (kontext nao garante ordem/contagem).
+    exact = (len(boxes) == len(poses))
     norm_imgs, labels = [], []
     for i, box in enumerate(boxes):
         cell = alpha.crop(box)
         sprite = normalize_to_canvas(cell)
-        key = poses[i][0] if i < len(poses) else f"extra_{i}"
+        key = poses[i][0] if exact else f"p{i:02d}"
         sprite.save(cells_dir / f"cell_{i:02d}_{key}.png")
         norm_imgs.append(sprite)
         labels.append(key)
@@ -297,9 +412,12 @@ def parse_args() -> argparse.Namespace:
     g.add_argument("--dry", action="store_true", help="mostra o prompt do sheet")
     g.add_argument("--gen", action="store_true", help="1 chamada -> sheet + celulas")
     g.add_argument("--slice", metavar="PNG", help="re-fatia um sheet ja baixado")
+    ap.add_argument("--set", dest="pose_set", default="core16",
+                    choices=sorted(POSE_SETS), help="conjunto de poses (tema)")
     ap.add_argument("--cols", type=int, default=4, help="colunas da grade")
     ap.add_argument("--seed", type=int, default=BASE_SEED)
-    ap.add_argument("--name", default="soph_hd", help="nome da pasta de saida")
+    ap.add_argument("--name", help="nome da pasta de saida (default = nome do set)")
+    ap.add_argument("--anchor", help="URL de ancora alt. (ex.: 1o sheet aprovado)")
     ap.add_argument("--token", help="POLLINATIONS_TOKEN (ou usa env)")
     return ap.parse_args()
 
@@ -309,34 +427,37 @@ def main() -> int:
     if args.selftest:
         return selftest()
 
+    poses = POSE_SETS[args.pose_set]
+    anchor = args.anchor or ANCHOR_URL
+
     if args.dry:
-        prompt = build_sheet_prompt(POSES, args.cols)
-        rows, cols = grid_dims(len(POSES), args.cols)
-        print(f"grade {rows}x{cols}, {len(POSES)} poses, seed={args.seed}")
-        print(f"URL: {build_sheet_url(prompt, args.seed)[:160]}...")
+        prompt = build_sheet_prompt(poses, args.cols)
+        rows, cols = grid_dims(len(poses), args.cols)
+        print(f"set={args.pose_set} grade {rows}x{cols}, {len(poses)} poses, seed={args.seed}")
+        print(f"URL: {build_sheet_url(prompt, args.seed, anchor)[:160]}...")
         print(f"\nPROMPT:\n{prompt}")
         return 0
 
-    out_dir = ASSETS / "_preview" / f"sheet_{args.name}"
+    out_dir = ASSETS / "_preview" / f"sheet_{args.name or args.pose_set}"
 
     if args.slice:
         sheet = Image.open(args.slice)
-        return slice_sheet(sheet, out_dir, POSES, args.cols)
+        return slice_sheet(sheet, out_dir, poses, args.cols)
 
     if args.gen:
         token = args.token or os.environ.get("POLLINATIONS_TOKEN", "")
         if not token:
             print("x defina POLLINATIONS_TOKEN ou passe --token")
             return 1
-        prompt = build_sheet_prompt(POSES, args.cols)
-        url = build_sheet_url(prompt, args.seed)
-        print(f"-> gerando sheet ({len(POSES)} poses, seed={args.seed})")
+        prompt = build_sheet_prompt(poses, args.cols)
+        url = build_sheet_url(prompt, args.seed, anchor)
+        print(f"-> gerando sheet set={args.pose_set} ({len(poses)} poses, seed={args.seed})")
         data = fetch(url, token)
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "_raw_sheet.png").write_bytes(data)
         sheet = Image.open(io.BytesIO(data))
         print(f"   sheet {sheet.size}, {len(data)}b")
-        return slice_sheet(sheet, out_dir, POSES, args.cols)
+        return slice_sheet(sheet, out_dir, poses, args.cols)
 
     return 1
 
