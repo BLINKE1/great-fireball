@@ -161,11 +161,14 @@ def build_svg_34() -> str:
 
     s.append('<ellipse cx="112" cy="424" rx="60" ry="9" fill="#000" opacity="0.22" filter="url(#soft)"/>')
 
-    # CABELO de tras — mais massa a' ESQUERDA (lado de tras na virada)
+    # CABELO de tras — MASSA SOLIDA (sem buracos) + mechas largas por cima
     s.append(f'<g fill="url(#hair)" {go}>')
-    for p in [lock(82, 142, 34, 250, 20, 30), lock(90, 140, 46, 350, 18, 22),
-              lock(98, 138, 74, 398, 16, 8), lock(120, 138, 150, 384, 14, -8),
-              lock(128, 142, 166, 300, 14, -18)]:
+    s.append('<path d="M96,136 C58,150 42,212 48,292 C52,352 70,388 96,392 '
+             'L130,392 C158,386 174,346 176,288 C180,210 160,150 128,136 '
+             'C118,150 106,150 96,136 Z"/>')
+    for p in [lock(80, 142, 32, 250, 24, 30), lock(88, 140, 44, 356, 22, 22),
+              lock(98, 138, 72, 398, 20, 8), lock(120, 138, 152, 388, 20, -8),
+              lock(130, 142, 170, 300, 22, -20)]:
         s.append(f'<path d="{p}"/>')
     s.append('</g>')
 

@@ -18,16 +18,23 @@ func _process(_d: float) -> bool:
 		return false
 	if _phase == 0:
 		_p.set_physics_process(false); _p.set_process(false)
-		_p.sprite.animation = "idle"; _p.sprite.frame = 0; _p.sprite.pause()
+		_p.sprite.animation = "idle"; _p.sprite.pause()
 		_cam.zoom = Vector2(3.0, 3.0); _cam.make_current()
 		_phase = 1
 		return false
 	_cam.global_position = _p.global_position + Vector2(0, -6)
-	if _f >= 8:
-		var img := get_root().get_texture().get_image()
-		var path := _out + "idle_new.png"
-		img.save_png(ProjectSettings.globalize_path(path))
-		print("shot -> ", path)
-		quit(0)
-		return true
+	# frame 0 (aberto) no tick 8, frame 1 (blink) no tick 16
+	if _f == 8:
+		_p.sprite.frame = 0
+	elif _f == 10:
+		_save("idle_open")
+	elif _f == 12:
+		_p.sprite.frame = 1
+	elif _f == 14:
+		_save("idle_blink"); quit(0); return true
 	return false
+
+func _save(tag: String) -> void:
+	var img := get_root().get_texture().get_image()
+	img.save_png(ProjectSettings.globalize_path(_out + tag + ".png"))
+	print("shot -> ", tag)
