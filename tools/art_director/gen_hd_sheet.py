@@ -303,13 +303,65 @@ def _reading_order(boxes):
     return ordered
 
 
+def _profile(small, sw: int, sh: int, axis: str) -> list[int]:
+    """Densidade de pixels opacos por coluna (axis='x') ou linha ('y')."""
+    if axis == "x":
+        return [sum(1 for y in range(sh) if small[x, y] > OPAQUE_A)
+                for x in range(sw)]
+    return [sum(1 for x in range(sw) if small[x, y] > OPAQUE_A)
+            for y in range(sh)]
+
+
+def _grid_cuts(profile: list[int], n: int, length: int) -> list[int]:
+    """n-1 linhas de corte: ponto de MENOR densidade numa janela em torno de
+    cada fronteira esperada i*length/n. Uma ponte fina (cajado) nao preenche o
+    vao, entao o vale ainda e' achado."""
+    cuts = [0]
+    cell = length / n
+    win = max(2, int(cell * 0.35))
+    for i in range(1, n):
+        c = int(i * cell)
+        lo, hi = max(1, c - win), min(length - 1, c + win)
+        cuts.append(min(range(lo, hi), key=lambda p: profile[p]))
+    cuts.append(length)
+    return cuts
+
+
+def split_grid_gutters(small, sw: int, sh: int, rows: int, cols: int):
+    """Corta grade rows x cols pelos vales de densidade. Retorna None se alguma
+    celula vier quase vazia (layout irregular -> usar blobs)."""
+    xc = _grid_cuts(_profile(small, sw, sh, "x"), cols, sw)
+    yc = _grid_cuts(_profile(small, sw, sh, "y"), rows, sh)
+    min_occ = (sw * sh) / (rows * cols) * 0.03
+    cells = []
+    for r in range(rows):
+        for c in range(cols):
+            x0, x1, y0, y1 = xc[c], xc[c + 1], yc[r], yc[r + 1]
+            occ = sum(1 for y in range(y0, y1) for x in range(x0, x1)
+                      if small[x, y] > OPAQUE_A)
+            if occ < min_occ:
+                return None
+            cells.append((x0, y0, x1, y1))
+    return cells
+
+
 def segment_cells(alpha_im: Image.Image, expected: int, cols: int):
-    """Retorna bboxes (x0,y0,x1,y1) das poses em ordem de leitura via blobs.
-    Fallback p/ split uniforme se achar pouquissimo (<3)."""
+    """Retorna bboxes (x0,y0,x1,y1) das poses em ordem de leitura.
+    1) corte por vaos numa grade rows x cols (regular); senao
+    2) blobs (layout irregular); senao 3) split uniforme."""
     w, h = alpha_im.size
     s = max(1, w // SEG_TARGET_W)
     sw, sh = w // s, h // s
     small = alpha_im.resize((sw, sh), Image.NEAREST).split()[3].load()
+    rows, gcols = grid_dims(expected, cols)
+    # 1) grade regular por vaos (caso da Soph com prompt de isolamento)
+    grid = split_grid_gutters(small, sw, sh, rows, gcols)
+    if grid is not None:
+        out = [(max(0, x0 * s), max(0, y0 * s), min(w, x1 * s), min(h, y1 * s))
+               for (x0, y0, x1, y1) in grid]
+        print(f"   [seg] grade {rows}x{gcols} por vaos -> {len(out)} celulas.")
+        return out
+    # 2) blobs (connected components)
     mask = [small[x, y] > OPAQUE_A for y in range(sh) for x in range(sw)]
     raw = _components(mask, sw, sh)
     # filtra ruido: area minima e dimensao minima (tira assinatura/textinho)
