@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-gen_continuous_animation.py — gera animação contínua da Soph HD iterando via img2img.
+gen_continuous_animation.py — gera frames de ação da Soph HD via img2img.
 
-Começa com a imagem idle, então gera uma sequência contínua mostrando:
-walk (10 frames) → run (8 frames) → jump (8 frames) → fall (6 frames) →
-attack com espada (8 frames) → cast mágico (8 frames) → dano (6 frames).
+Sequência: walk (10) → run (8) → jump (8) → fall (6) → attack (8) →
+cast (8) → dano (6). ~54 frames. Usa gptimage (~0.009 pollen/frame).
 
-Total: ~54 frames. Usa gptimage (~0.009 pollen/frame).
+⚠️ DRIFT: o modo encadeado (cada frame parte do anterior) acumula erro —
+estilo/identidade/cor derivam (vide iterations/continuous_anim/, frames 1→11
+viram outro personagem). Por isso o DEFAULT ancora todo frame na idle MASTER
+(identidade travada, resolução cheia por pose). Use --chain p/ o modo morph.
 
 Uso:
-    python tools/art_director/gen_continuous_animation.py [--token sk_...]
+    python tools/art_director/gen_continuous_animation.py [--token sk_...] [--chain]
 """
 from __future__ import annotations
 import os, sys, urllib.parse, urllib.request, json, base64
@@ -178,6 +180,13 @@ def main() -> int:
         token = args[i + 1]
         del args[i:i + 2]
 
+    # --chain: modo antigo (ancora no frame anterior -> DRIFT acumulado).
+    # Default: ancora SEMPRE na idle master -> identidade travada, resolucao
+    # cheia por pose. A continuidade do ciclo e' do sistema de animacao.
+    chain = "--chain" in args
+    if chain:
+        args.remove("--chain")
+
     token = token or os.environ.get("POLLINATIONS_TOKEN")
 
     base_image = Path("assets/sprites/player/soph_hd_idle_0.png")
@@ -188,9 +197,10 @@ def main() -> int:
     out_dir = Path("tools/art_director/iterations/continuous_anim")
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    mode = "chain (DRIFT)" if chain else "anchor-master (identidade travada)"
     print(f"gerando animação contínua em {out_dir}/ ...")
     print(f"base: {base_image}")
-    print(f"model: gptimage (~0.009 pollen/frame)")
+    print(f"model: gptimage (~0.009 pollen/frame) | modo: {mode}")
     print()
 
     current_frame = base_image
@@ -205,7 +215,9 @@ def main() -> int:
             print(f"✗ falhou na sequência. parando.")
             return 1
 
-        current_frame = out_file
+        # anchor-master: proximo frame parte SEMPRE da idle (sem drift).
+        # chain: parte do frame recem-gerado (efeito morph, acumula erro).
+        current_frame = out_file if chain else base_image
 
     print()
     print(f"✓ sequência concluída! {len(SEQUENCE)} frames em {out_dir}/")
