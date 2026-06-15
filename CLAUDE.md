@@ -43,6 +43,27 @@
   travar identidade, depois corta). Não conflitar com isso.
 - Racional completo (HK + ferramentas de ancoragem): `docs/animacao_hk_notas.md`.
 
+### ⚔️ Combate & armas (princípio HK — decisão 2026-06-15)
+- **Arma só na AÇÃO.** Locomoção (idle/walk/run/dash/jump/fall/hurt) é **sem
+  arma, mãos vazias** — silhueta limpa, menos drift, fatiamento trivial (foi o
+  cajado que fazia ponte entre células). Refletido nos `POSE_SETS` do
+  `gen_hd_sheet.py` (`WEAPON_SETS` controla quem mostra arma).
+- **Ataque padrão = FÍSICO** (frente): iaido draw-slash — anticipação → **smear**
+  (lâmina borrada, esconde o movimento rápido e é generoso p/ a geração) →
+  corte limpo (1 frame de silhueta forte) → recuperação. Set `attack_phys`.
+- **Cast = ESPECIAL caro, estilo Reigun do Yusuke** (3/4 → costas, **uma mão**
+  ergue o cajado, outra escondida). Mais frames, mais dano, **custa muita mana**
+  → o gasto **drena o cabelo** (a mecânica do cabelo-mana vira o medidor de
+  custo). De costas esconde o rosto (menos drift). Set `cast_special`.
+- **Smear frame** (quadro borrado) é a ferramenta-chave: esconde transições
+  difíceis (a virada lado→costas do cast e a lâmina sendo sacada).
+
+### 🪆 Paper doll — só REFERÊNCIA, não runtime (decisão 2026-06-15)
+- Gerar base-corpo (bodysuit) + vestida com identidade travada **funciona** e é
+  útil como model sheet / troca de skins (`gen_hd_sheet.py --set paperdoll`).
+- **NÃO** usar como layering em tempo real: a robe **deforma por pose** (pano),
+  logo cada frame de ação é desenhado inteiro — mesma razão do rig engavetado.
+
 ## 🌲 Mundo
 - A "dungeon" (`dungeon_1`) é tematizada como **floresta** (céu de entardecer +
   grama + árvores + vaga-lumes) via `level_visuals.gd` (modo floresta quando o
