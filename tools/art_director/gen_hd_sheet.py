@@ -54,6 +54,34 @@ SHEET_W, SHEET_H = 1536, 1024
 BASE_SEED = 11
 OPAQUE_A = 24            # alpha > isso = pixel "de conteudo"
 
+# Fundos suportados. Verde = chroma key (recorte limpo: nao come brilho/branco
+# da Soph). Branco = fallback por brilho (arriscado em destaques claros).
+BG_PROMPT = {
+    "green": ("PURE FLAT CHROMA KEY GREEN SCREEN BACKGROUND, solid bright "
+              "green #00b140, uniform green backdrop"),
+    "white": "PURE FLAT WHITE BACKGROUND, solid white",
+}
+
+
+def key_bg_to_alpha(im: Image.Image, bg: str) -> Image.Image:
+    """RGB -> RGBA com fundo removido. green=chroma key + despill; white=brilho."""
+    if bg == "white":
+        return whiten_to_alpha(im)
+    im = im.convert("RGBA")
+    px = im.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            # verde dominante e' fundo -> transparente
+            if g > 80 and g > r * 1.2 and g > b * 1.2:
+                px[x, y] = (r, g, b, 0)
+            elif g > max(r, b):
+                # despill: derruba o vazamento verde nas bordas
+                ng = (max(r, b) + g) // 2
+                px[x, y] = (r, ng, b, a)
+    return im
+
 # Descricao curta do personagem (repetida no prompt do sheet).
 CHAR_SHORT = (
     "anime mage girl: pointed red wizard hat, long blue hair, round "
@@ -66,6 +94,18 @@ CHAR_SHORT = (
 # poses, gera-se varios sheets TEMATICOS ancorados na MESMA referencia (ou,
 # melhor, no 1o sheet aprovado via --anchor). Ordem = leitura (esq->dir, cima->baixo).
 POSE_SETS: dict[str, list[tuple[str, str]]] = {
+    # so locomocao essencial num 3x3 — celulas grandes, max nitidez. Bom 1o teste.
+    "walkrun9": [
+        ("idle",   "idle standing, staff at side"),
+        ("walk_0", "walking right, right foot forward contact"),
+        ("walk_1", "walking right, passing pose mid-stride"),
+        ("walk_2", "walking right, left foot forward contact"),
+        ("walk_3", "walking right, recoil, foot lifting behind"),
+        ("run_0",  "running right, full sprint, right foot extended"),
+        ("run_1",  "running right, mid-air passing, both feet off ground"),
+        ("run_2",  "running right, full sprint, left foot extended"),
+        ("run_3",  "running right, mid-air passing opposite"),
+    ],
     # ~16 poses curadas: cobre o essencial num sheet so. Default.
     "core16": [
         ("idle",    "idle standing, staff at side, facing right"),
@@ -139,9 +179,12 @@ def grid_dims(n: int, cols: int) -> tuple[int, int]:
     return rows, cols
 
 
-def build_sheet_prompt(poses: list[tuple[str, str]], cols: int) -> str:
+def build_sheet_prompt(poses: list[tuple[str, str]], cols: int,
+                       bg: str = "green") -> str:
     rows, cols = grid_dims(len(poses), cols)
     numbered = "; ".join(f"{i+1}) {d}" for i, (_, d) in enumerate(poses))
+    bg_desc = BG_PROMPT.get(bg, BG_PROMPT["green"])
+    gap = "GREEN" if bg == "green" else "WHITE"
     # Isolamento AGGRESSIVO: a kontext tende a empacotar as poses coladas, o que
     # impede o auto-corte por blobs. Forcamos espaco vazio enorme e proibimos
     # sobreposicao/toque entre poses.
@@ -149,13 +192,13 @@ def build_sheet_prompt(poses: list[tuple[str, str]], cols: int) -> str:
         f"character reference sheet of the SAME character: {CHAR_SHORT}. "
         f"{len(poses)} small full-body poses laid out on a {rows} by {cols} "
         f"grid. CRITICAL: each pose is SMALL and ISOLATED, fully separated from "
-        f"the others by LARGE EMPTY WHITE MARGINS; the poses MUST NOT touch, "
-        f"overlap, or connect; thick white space between every pose on all "
+        f"the others by LARGE EMPTY {gap} MARGINS; the poses MUST NOT touch, "
+        f"overlap, or connect; thick empty space between every pose on all "
         f"sides; each pose centered in its own cell, equal size and scale. "
         f"All poses full character head-to-feet, side view facing right, "
-        f"consistent design across all poses. PURE FLAT WHITE BACKGROUND, no "
-        f"panels, no borders, no lines, no scenery, no shadow, no gradient, no "
-        f"text, no labels, no signature. Game sprite cutout style. Poses: {numbered}."
+        f"consistent design across all poses. {bg_desc}, no panels, no borders, "
+        f"no lines, no scenery, no shadow, no gradient, no text, no labels, no "
+        f"signature. Game sprite cutout style. Poses: {numbered}."
     )
 
 
@@ -321,11 +364,11 @@ def make_contact(cells_imgs: list[Image.Image], labels: list[str]) -> Image.Imag
 
 
 def slice_sheet(sheet_im: Image.Image, out_dir: Path,
-                poses: list[tuple[str, str]], cols: int) -> int:
+                poses: list[tuple[str, str]], cols: int, bg: str = "green") -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     cells_dir = out_dir / "cells"
     cells_dir.mkdir(exist_ok=True)
-    alpha = whiten_to_alpha(sheet_im.convert("RGB"))
+    alpha = key_bg_to_alpha(sheet_im.convert("RGB"), bg)
     alpha.save(out_dir / "sheet_alpha.png")
     boxes = segment_cells(alpha, expected=len(poses), cols=cols)
     # so casa nome-de-pose quando a contagem bate exatamente (ex.: selftest);
@@ -378,7 +421,7 @@ def selftest() -> int:
     n, cols = len(POSES), 4
     print(f"[selftest] sheet sintetico {n} poses, {cols} colunas")
     sheet = make_synthetic_sheet(n, cols)
-    alpha = whiten_to_alpha(sheet)
+    alpha = key_bg_to_alpha(sheet, "white")
     boxes = segment_cells(alpha, expected=n, cols=cols)
     ok = (len(boxes) == n)
     # cada celula tem conteudo opaco?
@@ -398,7 +441,7 @@ def selftest() -> int:
     out = ASSETS / "_preview" / "sheet_selftest"
     out.mkdir(parents=True, exist_ok=True)
     sheet.save(out / "_raw_sheet.png")
-    slice_sheet(sheet, out, POSES, cols)
+    slice_sheet(sheet, out, POSES, cols, bg="white")
     good = ok and nonempty == len(boxes) and sample.size == (CANVAS_W, CANVAS_H)
     print(f"[selftest] {'PASSOU' if good else 'REVISAR'} — artefatos em {out}")
     return 0 if good else 2
@@ -414,6 +457,8 @@ def parse_args() -> argparse.Namespace:
     g.add_argument("--slice", metavar="PNG", help="re-fatia um sheet ja baixado")
     ap.add_argument("--set", dest="pose_set", default="core16",
                     choices=sorted(POSE_SETS), help="conjunto de poses (tema)")
+    ap.add_argument("--bg", default="green", choices=sorted(BG_PROMPT),
+                    help="fundo: green (chroma key, recorte limpo) ou white")
     ap.add_argument("--cols", type=int, default=4, help="colunas da grade")
     ap.add_argument("--seed", type=int, default=BASE_SEED)
     ap.add_argument("--name", help="nome da pasta de saida (default = nome do set)")
@@ -431,9 +476,10 @@ def main() -> int:
     anchor = args.anchor or ANCHOR_URL
 
     if args.dry:
-        prompt = build_sheet_prompt(poses, args.cols)
+        prompt = build_sheet_prompt(poses, args.cols, args.bg)
         rows, cols = grid_dims(len(poses), args.cols)
-        print(f"set={args.pose_set} grade {rows}x{cols}, {len(poses)} poses, seed={args.seed}")
+        print(f"set={args.pose_set} grade {rows}x{cols}, {len(poses)} poses, "
+              f"bg={args.bg}, seed={args.seed}")
         print(f"URL: {build_sheet_url(prompt, args.seed, anchor)[:160]}...")
         print(f"\nPROMPT:\n{prompt}")
         return 0
@@ -442,22 +488,23 @@ def main() -> int:
 
     if args.slice:
         sheet = Image.open(args.slice)
-        return slice_sheet(sheet, out_dir, poses, args.cols)
+        return slice_sheet(sheet, out_dir, poses, args.cols, args.bg)
 
     if args.gen:
         token = args.token or os.environ.get("POLLINATIONS_TOKEN", "")
         if not token:
             print("x defina POLLINATIONS_TOKEN ou passe --token")
             return 1
-        prompt = build_sheet_prompt(poses, args.cols)
+        prompt = build_sheet_prompt(poses, args.cols, args.bg)
         url = build_sheet_url(prompt, args.seed, anchor)
-        print(f"-> gerando sheet set={args.pose_set} ({len(poses)} poses, seed={args.seed})")
+        print(f"-> gerando sheet set={args.pose_set} ({len(poses)} poses, "
+              f"bg={args.bg}, seed={args.seed})")
         data = fetch(url, token)
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "_raw_sheet.png").write_bytes(data)
         sheet = Image.open(io.BytesIO(data))
         print(f"   sheet {sheet.size}, {len(data)}b")
-        return slice_sheet(sheet, out_dir, poses, args.cols)
+        return slice_sheet(sheet, out_dir, poses, args.cols, args.bg)
 
     return 1
 
