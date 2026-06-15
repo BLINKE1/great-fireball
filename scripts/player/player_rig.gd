@@ -1,9 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ENGAVETADO — pipeline rig 2D (Skeleton2D + Bone2D + cutout) decisão 2026-06-15
+#
+# Por que está aqui: snapshot do `player.gd` quando o caminho rig (T-pose →
+# 10 partes recortadas → 19 PNGs baked pelo Mixamo) estava sendo testado.
+# A diretiva no CLAUDE.md (🛑 Rig PARADO) manda NÃO refatorar `player.gd`
+# vivo pra rig — então este arquivo fica aqui como ponto-de-retomada, sem
+# ser referenciado por nenhuma scene.
+#
+# Quando reabrir: pareie este script com `scenes/characters/soph_rig.tscn` +
+# `assets/rig/soph_tpose/parts/*` + os PNGs baked em `assets/sprites/player/
+# soph_hd_*.png` da branch `backup/rig-engavetado`. Pipeline reproduzível em
+# `tools/rig/` (parse_mixamo → map_to_2d → bake_frames).
+# ─────────────────────────────────────────────────────────────────────────────
 extends CharacterBody2D
 
 signal fall_danger(is_dangerous: bool)
-const WALK_SPEED = 110.0          # default (caminhar)
-const RUN_SPEED  = 220.0          # com SHIFT segurado (correr)
-const SPEED      = RUN_SPEED      # alias legado (dash/squash-stretch/lean)
+const WALK_SPEED = 110.0   # default (caminhar)
+const RUN_SPEED  = 220.0   # com SHIFT segurado (correr)
+const SPEED      = RUN_SPEED  # alias antigo (codigo legado usa SPEED p/ dash etc.)
 const JUMP_VELOCITY = -420.0
 const GRAVITY = 980.0
 
@@ -32,24 +46,28 @@ const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px
 const HD_BASE_BBOX := 150.0                       # altura alvo (idle ≈ 150px no canvas 192)
 const HD_FRAME_H   := 192.0
 const HD_ANIM_BBOX := {                           # altura do conteúdo (alpha>0) por anim
-	"idle":  150.0,
-	"walk":  167.0,
-	"run":   178.0,
-	"jump":  190.0,
-	"fall":  190.0,
-	"hurt":  190.0,
-	"cast":  190.0,
-	"slash": 190.0,
+	# Todos os 19 frames foram regerados pelo mesmo pipeline (gen_hd_from_idle)
+	# com bbox normalizada 180 no canvas 100x192.
+	"idle":  180.0,
+	"walk":  180.0,
+	"run":   180.0,
+	"jump":  180.0,
+	"fall":  180.0,
+	"hurt":  180.0,
+	"cast":  180.0,
+	"slash": 180.0,
 }
 const HD_ANIM_NATIVE_LEFT := {                    # anims desenhadas olhando p/ esquerda na fonte
+	# Mesmo pedindo "facing right" no prompt, o kontext gerou face-left tambem
+	# pros frames novos de idle/walk — mantemos true.
 	"idle":  true,
 	"walk":  true,
+	"run":   true,   # todos face-LEFT no source, igual jump
 	"jump":  true,
 	"fall":  true,
 	"hurt":  true,
 	"cast":  true,
 	"slash": true,
-	# run: maioria dos frames olha pra direita (run_2 destoa, mas é minoria).
 }
 
 const MAGIC_MISSILE_COST  = 15.0
@@ -133,6 +151,11 @@ const ZeAlly          = preload("res://scenes/spells/ze.tscn")
 @onready var mana: Node                = $Mana
 @onready var hp: Node         = $HP
 @onready var camera: Camera2D = $Camera2D
+
+# TAPA-BURACO: overlay de debug pra inspecionar visualmente o estado da anim
+# enquanto o "bug das direcoes" da walk/run nao resolve. Liga com debug_anim=true.
+const DEBUG_ANIM := true
+var _debug_label: Label = null
 
 var facing: float = 1.0
 var iframe_timer: float = 0.0
@@ -225,6 +248,15 @@ func _ready() -> void:
 		_base_scale = Vector2.ONE
 
 	hair.hide()  # full-body sprites include hair
+
+	if DEBUG_ANIM:
+		_debug_label = Label.new()
+		_debug_label.position = Vector2(-80, -180)
+		_debug_label.add_theme_font_size_override("font_size", 12)
+		_debug_label.add_theme_color_override("font_color", Color(1, 1, 0.4))
+		_debug_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		_debug_label.add_theme_constant_override("outline_size", 4)
+		add_child(_debug_label)
 
 	base_modulate = sprite.modulate
 	mana.mana_changed.connect(_on_mana_changed)
@@ -979,6 +1011,14 @@ func _update_visuals() -> void:
 	sprite.flip_h = flip
 	hair.flip_h   = flip
 
+	if DEBUG_ANIM and _debug_label:
+		var ab2 := _hd_anim_base()
+		var nl: bool = HD_ANIM_NATIVE_LEFT.get(ab2, false)
+		_debug_label.text = "anim=%s\nframe=%d\nfacing=%+.0f\nvx=%+.0f\nlean=%+.3f\nnative_left=%s\nflip_h=%s" % [
+			sprite.animation, sprite.frame, facing, velocity.x, _lean,
+			"T" if nl else "F", "T" if sprite.flip_h else "F"
+		]
+
 	if is_dashing:
 		sprite.modulate = Color(0.5, 0.85, 1.0, 1.0)
 		return
@@ -1062,11 +1102,10 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# Conjunto HD (soph_hd_*): idle/walk/run + jump/fall/hurt.
 	var sf := SpriteFrames.new()
 	_add_anim(sf, "idle", ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
-	# walk/run HD staff-free (set walkrun9 ancorado na master v2): maos vazias,
-	# principio "arma so na acao". walk=4 frames, run=2.
-	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1",
-							 "soph_hd_walk_2","soph_hd_walk_3"], 10.0, true)
-	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1"], 14.0, true)
+	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1","soph_hd_walk_2",
+							 "soph_hd_walk_3","soph_hd_walk_4","soph_hd_walk_5"], 8.0, true)
+	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1",
+							 "soph_hd_run_2","soph_hd_run_3"], 14.0, true)
 	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
 	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
 	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
