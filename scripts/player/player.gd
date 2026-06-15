@@ -1058,10 +1058,11 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# Conjunto HD (soph_hd_*): idle/walk/run + jump/fall/hurt.
 	var sf := SpriteFrames.new()
 	_add_anim(sf, "idle", ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
-	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1","soph_hd_walk_2",
-							 "soph_hd_walk_3","soph_hd_walk_4","soph_hd_walk_5"], 10.0, true)
-	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1",
-							 "soph_hd_run_2","soph_hd_run_3"], 14.0, true)
+	# walk/run HD staff-free (set walkrun9 ancorado na master v2): maos vazias,
+	# principio "arma so na acao". walk=4 frames, run=2.
+	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1",
+							 "soph_hd_walk_2","soph_hd_walk_3"], 10.0, true)
+	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1"], 14.0, true)
 	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
 	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
 	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
