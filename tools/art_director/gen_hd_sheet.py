@@ -100,6 +100,29 @@ WEAPON = "blue glowing crystal staff"
 WEAPON_SETS = {"combat", "attack_phys", "cast_special", "core16"}
 
 POSE_SETS: dict[str, list[tuple[str, str]]] = {
+    # ANCHOR definitiva: 1 figura limpa pra virar a nova master (chaining).
+    "anchor": [
+        ("anchor", "definitive reference, standing neutral"),
+    ],
+    # 4x4 de locomocao, SEM arma (walk 6 + run 4 + idle/jump/fall/dash/hurt/crouch).
+    "locomotion16": [
+        ("idle",   "idle standing, empty hands, relaxed, weight on both feet"),
+        ("walk_0", "walking right, right foot forward contact"),
+        ("walk_1", "walking right, passing pose, right leg under body"),
+        ("walk_2", "walking right, recoil, left foot lifting behind"),
+        ("walk_3", "walking right, left foot forward contact"),
+        ("walk_4", "walking right, passing pose, left leg under body"),
+        ("run_0",  "running right, full sprint, right foot extended"),
+        ("run_1",  "running right, mid-air passing, both feet off ground"),
+        ("run_2",  "running right, full sprint, left foot extended"),
+        ("run_3",  "running right, mid-air passing opposite"),
+        ("jump",   "jumping up, legs tucked, robe billowing, empty hands"),
+        ("fall",   "falling, legs extended, robe blown upward, empty hands"),
+        ("dash",   "dashing forward, leaning hard, speed motion, empty hands"),
+        ("crouch", "crouching low, knees bent, empty hands"),
+        ("hurt",   "hit reaction, recoiling backward, pained, empty hands"),
+        ("land",   "landing from a jump, knees bent absorbing, empty hands"),
+    ],
     # so locomocao essencial num 3x3 — celulas grandes, max nitidez. SEM arma.
     "walkrun9": [
         ("idle",   "idle standing, empty hands, relaxed"),
@@ -256,6 +279,25 @@ def build_paperdoll_prompt(bg: str = "green") -> str:
     )
 
 
+def build_anchor_prompt(bg: str = "green") -> str:
+    """Prompt FOCADO da nova master anchor: 1 figura limpa, robe FECHADA,
+    chapeu INTEGRO (o corte/fenda apareceu nas geracoes do paper doll)."""
+    bg_desc = BG_PROMPT.get(bg, BG_PROMPT["green"])
+    return (
+        f"single full-body character reference, the definitive {CHAR_SHORT}. "
+        "Three-quarter front view, standing neutral relaxed, full body head to "
+        "feet, centered, EMPTY HANDS, no weapon, no staff. "
+        "Robe = long red robe worn CLOSED/wrapped shut down the front (not open, "
+        "not flaring). "
+        "Hat = pointed red wizard hat as a CLEAN SMOOTH INTACT cone with an even "
+        "rounded brim — NO notch, NO cut, NO slit, NO split, NO bite in the hat, "
+        "undamaged hat. "
+        "Long flowing blue hair, round black-framed glasses, brown boots. "
+        f"{bg_desc}, no panels, no scenery, no shadow, no gradient, no text, no "
+        "labels, no signature. Clean high-quality anime key art, sharp."
+    )
+
+
 def build_sheet_url(prompt: str, seed: int, anchor: str = ANCHOR_URL) -> str:
     enc = urllib.parse.quote(prompt, safe="")
     params = urllib.parse.urlencode({
@@ -366,54 +408,61 @@ def _profile(small, sw: int, sh: int, axis: str) -> list[int]:
             for y in range(sh)]
 
 
-def _grid_cuts(profile: list[int], n: int, length: int) -> list[int]:
-    """n-1 linhas de corte: ponto de MENOR densidade numa janela em torno de
-    cada fronteira esperada i*length/n. Uma ponte fina (cajado) nao preenche o
-    vao, entao o vale ainda e' achado."""
-    cuts = [0]
-    cell = length / n
-    win = max(2, int(cell * 0.35))
-    for i in range(1, n):
-        c = int(i * cell)
-        lo, hi = max(1, c - win), min(length - 1, c + win)
-        cuts.append(min(range(lo, hi), key=lambda p: profile[p]))
-    cuts.append(length)
-    return cuts
+def _runs(profile: list[int], thresh: int, min_gap: int, min_run: int):
+    """Faixas contiguas com profile>thresh, ignorando lacunas < min_gap
+    (tolera pontes finas) e descartando faixas < min_run."""
+    runs, start, gap = [], None, 0
+    for i, v in enumerate(profile):
+        if v > thresh:
+            if start is None:
+                start = i
+            gap = 0
+        elif start is not None:
+            gap += 1
+            if gap >= min_gap:
+                end = i - gap + 1
+                if end - start >= min_run:
+                    runs.append((start, end))
+                start, gap = None, 0
+    if start is not None:
+        end = len(profile) - gap
+        if end - start >= min_run:
+            runs.append((start, end))
+    return runs
 
 
-def split_grid_gutters(small, sw: int, sh: int, rows: int, cols: int):
-    """Corta grade rows x cols pelos vales de densidade. Retorna None se alguma
-    celula vier quase vazia (layout irregular -> usar blobs)."""
-    xc = _grid_cuts(_profile(small, sw, sh, "x"), cols, sw)
-    yc = _grid_cuts(_profile(small, sw, sh, "y"), rows, sh)
-    min_occ = (sw * sh) / (rows * cols) * 0.03
+def split_auto(small, sw: int, sh: int):
+    """Detecta a grade REAL pelos vaos: bandas (linhas) no perfil-y, e dentro de
+    cada banda as colunas no perfil-x. Adapta a 2x3, 3x3, contagem irregular.
+    Ja sai em ordem de leitura. Retorna [] se nao achar nada usavel."""
+    yp = _profile(small, sw, sh, "y")
+    bands = _runs(yp, thresh=max(1, int(sw * 0.02)),
+                  min_gap=max(1, sh // 120), min_run=max(8, sh // 15))
     cells = []
-    for r in range(rows):
-        for c in range(cols):
-            x0, x1, y0, y1 = xc[c], xc[c + 1], yc[r], yc[r + 1]
-            occ = sum(1 for y in range(y0, y1) for x in range(x0, x1)
-                      if small[x, y] > OPAQUE_A)
-            if occ < min_occ:
-                return None
+    for (y0, y1) in bands:
+        xp = [sum(1 for y in range(y0, y1) if small[x, y] > OPAQUE_A)
+              for x in range(sw)]
+        cols = _runs(xp, thresh=max(1, int((y1 - y0) * 0.04)),
+                     min_gap=max(1, sw // 120), min_run=max(6, sw // 20))
+        for (x0, x1) in cols:
             cells.append((x0, y0, x1, y1))
     return cells
 
 
 def segment_cells(alpha_im: Image.Image, expected: int, cols: int):
     """Retorna bboxes (x0,y0,x1,y1) das poses em ordem de leitura.
-    1) corte por vaos numa grade rows x cols (regular); senao
+    1) grade REAL por vaos (bandas y -> colunas x); senao
     2) blobs (layout irregular); senao 3) split uniforme."""
     w, h = alpha_im.size
     s = max(1, w // SEG_TARGET_W)
     sw, sh = w // s, h // s
     small = alpha_im.resize((sw, sh), Image.NEAREST).split()[3].load()
-    rows, gcols = grid_dims(expected, cols)
-    # 1) grade regular por vaos (caso da Soph com prompt de isolamento)
-    grid = split_grid_gutters(small, sw, sh, rows, gcols)
-    if grid is not None:
+    # 1) grade real por vaos (deteta linhas/colunas, nao assume a contagem)
+    auto = split_auto(small, sw, sh)
+    if len(auto) >= 3:
         out = [(max(0, x0 * s), max(0, y0 * s), min(w, x1 * s), min(h, y1 * s))
-               for (x0, y0, x1, y1) in grid]
-        print(f"   [seg] grade {rows}x{gcols} por vaos -> {len(out)} celulas.")
+               for (x0, y0, x1, y1) in auto]
+        print(f"   [seg] grade por vaos -> {len(out)} celulas (esperado ~{expected}).")
         return out
     # 2) blobs (connected components)
     mask = [small[x, y] > OPAQUE_A for y in range(sh) for x in range(sw)]
@@ -582,10 +631,14 @@ def main() -> int:
     anchor = args.anchor or ANCHOR_URL
     weapon = args.pose_set in WEAPON_SETS
     paper = args.pose_set == "paperdoll"
+    is_anchor = args.pose_set == "anchor"
 
     def _prompt() -> str:
-        return (build_paperdoll_prompt(args.bg) if paper
-                else build_sheet_prompt(poses, args.cols, args.bg, weapon))
+        if is_anchor:
+            return build_anchor_prompt(args.bg)
+        if paper:
+            return build_paperdoll_prompt(args.bg)
+        return build_sheet_prompt(poses, args.cols, args.bg, weapon)
 
     if args.dry:
         prompt = _prompt()

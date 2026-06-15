@@ -26,7 +26,10 @@ from PIL import Image, ImageFilter
 HERE   = Path(__file__).parent
 ASSETS = HERE.parent.parent / "assets" / "sprites" / "player"
 
-ANCHOR_URL = "https://raw.githubusercontent.com/BLINKE1/great-fireball/master/docs/concept_art/soph_set1_idle_ref.png"
+# Master anchor v2 (2026-06-15): 3/4, robe FECHADA, chapeu integro, maos vazias,
+# fundo transparente. Eleita via gen_hd_sheet --set anchor. Substitui o ref antigo
+# (que segurava o cajado e tinha a robe aberta). Resolve apos merge no master.
+ANCHOR_URL = "https://raw.githubusercontent.com/BLINKE1/great-fireball/master/docs/concept_art/soph_anchor_v2.png"
 ENDPOINT   = "https://gen.pollinations.ai/image/"
 MODEL      = "kontext"
 W, H            = 540, 1024   # ratio ~100x192 (Pollinations ignora pra kontext)
