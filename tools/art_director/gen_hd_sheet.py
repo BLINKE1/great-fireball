@@ -100,6 +100,29 @@ WEAPON = "blue glowing crystal staff"
 WEAPON_SETS = {"combat", "attack_phys", "cast_special", "core16"}
 
 POSE_SETS: dict[str, list[tuple[str, str]]] = {
+    # ANCHOR definitiva: 1 figura limpa pra virar a nova master (chaining).
+    "anchor": [
+        ("anchor", "definitive reference, standing neutral"),
+    ],
+    # 4x4 de locomocao, SEM arma (walk 6 + run 4 + idle/jump/fall/dash/hurt/crouch).
+    "locomotion16": [
+        ("idle",   "idle standing, empty hands, relaxed, weight on both feet"),
+        ("walk_0", "walking right, right foot forward contact"),
+        ("walk_1", "walking right, passing pose, right leg under body"),
+        ("walk_2", "walking right, recoil, left foot lifting behind"),
+        ("walk_3", "walking right, left foot forward contact"),
+        ("walk_4", "walking right, passing pose, left leg under body"),
+        ("run_0",  "running right, full sprint, right foot extended"),
+        ("run_1",  "running right, mid-air passing, both feet off ground"),
+        ("run_2",  "running right, full sprint, left foot extended"),
+        ("run_3",  "running right, mid-air passing opposite"),
+        ("jump",   "jumping up, legs tucked, robe billowing, empty hands"),
+        ("fall",   "falling, legs extended, robe blown upward, empty hands"),
+        ("dash",   "dashing forward, leaning hard, speed motion, empty hands"),
+        ("crouch", "crouching low, knees bent, empty hands"),
+        ("hurt",   "hit reaction, recoiling backward, pained, empty hands"),
+        ("land",   "landing from a jump, knees bent absorbing, empty hands"),
+    ],
     # so locomocao essencial num 3x3 — celulas grandes, max nitidez. SEM arma.
     "walkrun9": [
         ("idle",   "idle standing, empty hands, relaxed"),
@@ -253,6 +276,25 @@ def build_paperdoll_prompt(bg: str = "green") -> str:
         "The two figures ISOLATED, separated by a LARGE EMPTY margin, MUST NOT "
         f"touch or overlap. {bg_desc}, no panels, no borders, no scenery, no "
         "shadow, no gradient, no text, no labels, no signature. Game art."
+    )
+
+
+def build_anchor_prompt(bg: str = "green") -> str:
+    """Prompt FOCADO da nova master anchor: 1 figura limpa, robe FECHADA,
+    chapeu INTEGRO (o corte/fenda apareceu nas geracoes do paper doll)."""
+    bg_desc = BG_PROMPT.get(bg, BG_PROMPT["green"])
+    return (
+        f"single full-body character reference, the definitive {CHAR_SHORT}. "
+        "Three-quarter front view, standing neutral relaxed, full body head to "
+        "feet, centered, EMPTY HANDS, no weapon, no staff. "
+        "Robe = long red robe worn CLOSED/wrapped shut down the front (not open, "
+        "not flaring). "
+        "Hat = pointed red wizard hat as a CLEAN SMOOTH INTACT cone with an even "
+        "rounded brim — NO notch, NO cut, NO slit, NO split, NO bite in the hat, "
+        "undamaged hat. "
+        "Long flowing blue hair, round black-framed glasses, brown boots. "
+        f"{bg_desc}, no panels, no scenery, no shadow, no gradient, no text, no "
+        "labels, no signature. Clean high-quality anime key art, sharp."
     )
 
 
@@ -589,10 +631,14 @@ def main() -> int:
     anchor = args.anchor or ANCHOR_URL
     weapon = args.pose_set in WEAPON_SETS
     paper = args.pose_set == "paperdoll"
+    is_anchor = args.pose_set == "anchor"
 
     def _prompt() -> str:
-        return (build_paperdoll_prompt(args.bg) if paper
-                else build_sheet_prompt(poses, args.cols, args.bg, weapon))
+        if is_anchor:
+            return build_anchor_prompt(args.bg)
+        if paper:
+            return build_paperdoll_prompt(args.bg)
+        return build_sheet_prompt(poses, args.cols, args.bg, weapon)
 
     if args.dry:
         prompt = _prompt()
