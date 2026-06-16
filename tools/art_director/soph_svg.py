@@ -238,9 +238,12 @@ def build_svg_34() -> str:
     return "\n".join(s)
 
 
-def build_svg_side() -> str:
+def build_svg_side(foot_front: float = 0, foot_back: float = 0,
+                   hand_dx: float = 0) -> str:
     """Perfil LATERAL (virada pra direita): rosto de lado com nariz, UM olho,
-    UM braço (o de trás some), cabelo todo atrás. Estrutura p/ repaint lateral."""
+    UM braço (o de trás some), cabelo todo atrás. Estrutura p/ repaint lateral.
+    foot_front/foot_back/hand_dx deslocam pé-da-frente, pé-de-trás e mão p/
+    cuar fases de caminhada (walk)."""
     s = []
     s.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 440" width="220" height="440">')
     s.append('<defs>')
@@ -284,13 +287,15 @@ def build_svg_side() -> str:
     s.append('</g>')
     # gola (suit)
     s.append(f'<path fill="{SUIT}" d="M104,152 C108,164 118,162 120,152 C115,158 108,158 104,152 Z"/>')
-    # UMA mao (a da frente)
-    s.append(f'<circle cx="124" cy="300" r="9" fill="{SKIN}" {go}/>')
+    # UMA mao (a da frente) — balanca com hand_dx
+    s.append(f'<circle cx="{124 + hand_dx}" cy="300" r="9" fill="{SKIN}" {go}/>')
 
-    # BOTAS de perfil: uma a' frente (dir), uma atras (esq, parcial)
+    # BOTAS de perfil: uma a' frente (dir), uma atras (esq) — deslocam p/ walk
     s.append(f'<g {go}>')
-    s.append(f'<path fill="{BOOT_D}" d="M78,390 L100,390 L102,418 L74,418 C74,402 76,394 78,390 Z"/>')   # tras
-    s.append(f'<path fill="{BOOT}" d="M108,390 L132,390 C138,398 142,410 142,418 L108,418 Z"/>')          # frente
+    s.append(f'<g transform="translate({foot_back},0)"><path fill="{BOOT_D}" '
+             'd="M78,390 L100,390 L102,418 L74,418 C74,402 76,394 78,390 Z"/></g>')   # tras
+    s.append(f'<g transform="translate({foot_front},0)"><path fill="{BOOT}" '
+             'd="M108,390 L132,390 C138,398 142,410 142,418 L108,418 Z"/></g>')        # frente
     s.append('</g>')
 
     # CABECA de PERFIL (vira p/ direita): testa, nariz, queixo
