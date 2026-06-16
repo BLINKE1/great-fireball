@@ -238,12 +238,14 @@ def build_svg_34() -> str:
     return "\n".join(s)
 
 
-def build_svg_side(foot_front: float = 0, foot_back: float = 0,
+def build_svg_side(foot_front=(0, 0), foot_back=(0, 0),
                    hand_dx: float = 0) -> str:
     """Perfil LATERAL (virada pra direita): rosto de lado com nariz, UM olho,
     UM braço (o de trás some), cabelo todo atrás. Estrutura p/ repaint lateral.
-    foot_front/foot_back/hand_dx deslocam pé-da-frente, pé-de-trás e mão p/
-    cuar fases de caminhada (walk)."""
+    foot_front/foot_back = (dx,dy) de cada bota (dy negativo = pé NO AR, p/ o
+    passing pose); hand_dx balanca a mão. Cua as fases do ciclo de caminhada."""
+    ff = foot_front if isinstance(foot_front, tuple) else (foot_front, 0)
+    fb = foot_back if isinstance(foot_back, tuple) else (foot_back, 0)
     s = []
     s.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 440" width="220" height="440">')
     s.append('<defs>')
@@ -292,9 +294,9 @@ def build_svg_side(foot_front: float = 0, foot_back: float = 0,
 
     # BOTAS de perfil: uma a' frente (dir), uma atras (esq) — deslocam p/ walk
     s.append(f'<g {go}>')
-    s.append(f'<g transform="translate({foot_back},0)"><path fill="{BOOT_D}" '
+    s.append(f'<g transform="translate({fb[0]},{fb[1]})"><path fill="{BOOT_D}" '
              'd="M78,390 L100,390 L102,418 L74,418 C74,402 76,394 78,390 Z"/></g>')   # tras
-    s.append(f'<g transform="translate({foot_front},0)"><path fill="{BOOT}" '
+    s.append(f'<g transform="translate({ff[0]},{ff[1]})"><path fill="{BOOT}" '
              'd="M108,390 L132,390 C138,398 142,410 142,418 L108,418 Z"/></g>')        # frente
     s.append('</g>')
 
