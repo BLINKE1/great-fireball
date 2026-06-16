@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://clvaf73xcro3n"
-path="res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"
+uid="uid://cv3equda8ol1g"
+path="res://.godot/imported/idle_closed.png-a4001c4cef5edfabc2622b20521b1ea4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tools/art_director/iterations/repaint/_structure.png"
-dest_files=["res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"]
+source_file="res://tools/art_director/iterations/repaint/idle_closed.png"
+dest_files=["res://.godot/imported/idle_closed.png-a4001c4cef5edfabc2622b20521b1ea4.ctex"]
 
 [params]
 

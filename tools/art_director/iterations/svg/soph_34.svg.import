@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://clvaf73xcro3n"
-path="res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"
+uid="uid://cj7ep32yeufmi"
+path="res://.godot/imported/soph_34.svg-6007a47091a285599185d06f0e67ac12.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tools/art_director/iterations/repaint/_structure.png"
-dest_files=["res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"]
+source_file="res://tools/art_director/iterations/svg/soph_34.svg"
+dest_files=["res://.godot/imported/soph_34.svg-6007a47091a285599185d06f0e67ac12.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

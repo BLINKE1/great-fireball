@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://clvaf73xcro3n"
-path="res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"
+uid="uid://cackrbc22rtkl"
+path="res://.godot/imported/_cel.png-f0e07ded8b997051c027531821bcd5d3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tools/art_director/iterations/repaint/_structure.png"
-dest_files=["res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"]
+source_file="res://tools/art_director/iterations/repaint/_cel.png"
+dest_files=["res://.godot/imported/_cel.png-f0e07ded8b997051c027531821bcd5d3.ctex"]
 
 [params]
 

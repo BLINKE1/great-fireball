@@ -140,6 +140,104 @@ def build_svg() -> str:
     return "\n".join(s)
 
 
+def build_svg_34() -> str:
+    """Variante 3/4 (vira pra direita): rosto assimetrico, ombro perto a' frente,
+    cabelo com mais massa atras (esq). Estrutura p/ o repaint sair em 3/4."""
+    s = []
+    s.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 440" width="220" height="440">')
+    s.append('<defs>')
+    s.append(f'<linearGradient id="hair" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="400">'
+             f'<stop offset="0" stop-color="{H_ROOT}"/><stop offset="0.45" stop-color="{H_MID}"/>'
+             f'<stop offset="1" stop-color="{H_TIP}"/></linearGradient>')
+    s.append(f'<linearGradient id="robe" gradientUnits="userSpaceOnUse" x1="70" y1="0" x2="175" y2="0">'
+             f'<stop offset="0" stop-color="{ROBE_H}"/><stop offset="0.4" stop-color="{ROBE}"/>'
+             f'<stop offset="1" stop-color="{ROBE_D}"/></linearGradient>')
+    s.append(f'<linearGradient id="hat" gradientUnits="userSpaceOnUse" x1="70" y1="20" x2="160" y2="120">'
+             f'<stop offset="0" stop-color="{HAT_H}"/><stop offset="0.5" stop-color="{HAT}"/>'
+             f'<stop offset="1" stop-color="{HAT_D}"/></linearGradient>')
+    s.append('<filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>')
+    s.append('</defs>')
+    go = f'stroke="{OUT}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"'
+
+    s.append('<ellipse cx="112" cy="424" rx="60" ry="9" fill="#000" opacity="0.22" filter="url(#soft)"/>')
+
+    # CABELO de tras — MASSA SOLIDA (sem buracos) + mechas largas por cima
+    s.append(f'<g fill="url(#hair)" {go}>')
+    s.append('<path d="M96,136 C58,150 42,212 48,292 C52,352 70,388 96,392 '
+             'L130,392 C158,386 174,346 176,288 C180,210 160,150 128,136 '
+             'C118,150 106,150 96,136 Z"/>')
+    for p in [lock(80, 142, 32, 250, 24, 30), lock(88, 140, 44, 356, 22, 22),
+              lock(98, 138, 72, 398, 20, 8), lock(120, 138, 152, 388, 20, -8),
+              lock(130, 142, 170, 300, 22, -20)]:
+        s.append(f'<path d="{p}"/>')
+    s.append('</g>')
+
+    # ROBE em 3/4: ombro PERTO (dir) a' frente; corpo levemente torcido
+    s.append(f'<g {go}>')
+    s.append('<path fill="url(#robe)" d="M92,150 C86,168 82,180 80,198 '
+             'C72,252 60,330 62,392 L162,392 C164,328 154,248 146,196 '
+             'C144,176 140,166 136,150 C128,142 100,142 92,150 Z"/>')
+    s.append(f'<path fill="url(#robe)" d="M138,160 C152,196 160,250 164,300 '
+             'C154,306 140,300 136,288 C140,238 138,194 130,168 Z"/>')   # manga perto (dir)
+    s.append(f'<path fill="url(#robe)" d="M90,162 C78,196 70,250 66,298 '
+             'C76,304 88,298 92,286 C88,238 90,196 96,170 Z"/>')         # manga longe (esq)
+    s.append('</g>')
+    s.append(f'<g stroke="{ROBE_D}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8">')
+    for d in ["M118,176 C116,260 116,330 120,384", "M100,210 C96,290 96,350 102,386",
+              "M138,212 C144,280 146,340 140,382"]:
+        s.append(f'<path d="{d}"/>')
+    s.append('</g>')
+    s.append(f'<path fill="{SUIT}" d="M108,150 C112,162 124,162 126,150 C122,156 112,156 108,150 Z"/>')
+    s.append(f'<path fill="{SUIT}" {go} d="M104,360 L124,360 L122,392 L106,392 Z"/>')
+    s.append(f'<circle cx="68" cy="298" r="9" fill="{SKIN}" {go}/>')
+    s.append(f'<circle cx="156" cy="298" r="9" fill="{SKIN}" {go}/>')
+
+    # BOTAS
+    s.append(f'<g {go}>')
+    s.append(f'<path fill="{BOOT}" d="M88,388 L106,388 L106,418 L84,418 C84,400 86,392 88,388 Z"/>')
+    s.append(f'<path fill="{BOOT}" d="M120,388 L140,388 C144,396 146,408 146,418 L120,418 Z"/>')
+    s.append(f'<rect x="82" y="414" width="28" height="8" rx="2" fill="{BOOT_D}"/>')
+    s.append(f'<rect x="118" y="414" width="30" height="8" rx="2" fill="{BOOT_D}"/>')
+    s.append('</g>')
+
+    # CABECA virada 3/4 p/ a direita: queixo p/ dir, nariz projeta, bochecha longe (esq)
+    s.append(f'<path fill="{SKIN}" {go} d="M92,128 C90,108 138,106 140,128 '
+             'C141,150 134,168 118,170 C102,170 92,156 92,128 Z"/>')
+    s.append(f'<path fill="{SKIN}" d="M139,138 C144,142 144,150 139,154 Z"/>')   # nariz/projecao
+    s.append(f'<path fill="{SKIN_D}" opacity="0.5" d="M96,132 C94,148 100,164 110,168 '
+             'C102,156 98,144 100,132 Z"/>')   # sombra do lado longe
+    s.append(f'<circle cx="126" cy="150" r="5" fill="{BLUSH}" opacity="0.7"/>')
+
+    # mechas frontais (navy) — franja caindo p/ a direita
+    s.append(f'<g fill="{H_ROOT}" {go}>')
+    s.append('<path d="M90,126 C88,106 100,98 118,98 C134,98 142,108 140,126 '
+             'C133,114 122,110 112,112 C102,114 95,118 90,126 Z"/>')
+    s.append('<path d="M90,124 C84,150 86,170 92,182 C96,166 92,146 98,128 Z"/>')
+    s.append('</g>')
+
+    # oculos 3/4: lente PERTO (dir) maior, lente LONGE (esq) menor
+    s.append(f'<g fill="{LENS}" stroke="{FRAME}" stroke-width="2.4">')
+    s.append('<circle cx="104" cy="140" r="7"/><circle cx="126" cy="139" r="9"/>')
+    s.append('</g>')
+    s.append(f'<path stroke="{FRAME}" stroke-width="2.4" d="M111,140 L117,139"/>')
+    s.append(f'<circle cx="105" cy="141" r="2.4" fill="{FRAME}"/><circle cx="127" cy="140" r="3" fill="{FRAME}"/>')
+    s.append(f'<path d="M110,159 C114,163 120,163 124,158" stroke="{MOUTH}" stroke-width="2" fill="none" stroke-linecap="round"/>')
+
+    # CHAPEU inclinado (3/4): cone p/ dir, aba em elipse rotacionada
+    s.append(f'<g transform="rotate(-7 112 118)">')
+    s.append(f'<path fill="url(#hat)" {go} d="M80,120 C86,70 96,40 104,26 '
+             'C110,16 122,20 126,34 C134,64 146,96 156,120 C132,112 102,112 80,120 Z"/>')
+    s.append(f'<ellipse cx="116" cy="120" rx="82" ry="19" fill="url(#hat)" {go}/>')
+    s.append(f'<path fill="url(#hat)" {go} d="M80,120 C86,70 96,40 104,26 '
+             'C110,16 122,20 126,34 C134,64 146,96 156,120 C132,112 102,112 80,120 Z"/>')
+    s.append(f'<path d="M106,30 C102,52 96,90 92,114" stroke="{HAT_H}" stroke-width="3" '
+             f'fill="none" stroke-linecap="round" opacity="0.8"/>')
+    s.append('</g>')
+
+    s.append('</svg>')
+    return "\n".join(s)
+
+
 def main():
     out = Path(__file__).parent / "iterations" / "svg"
     out.mkdir(parents=True, exist_ok=True)

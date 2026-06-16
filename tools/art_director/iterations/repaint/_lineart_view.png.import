@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://clvaf73xcro3n"
-path="res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"
+uid="uid://jd4un8bco75v"
+path="res://.godot/imported/_lineart_view.png-b74a985ee08126d292f8c45dd34fce8e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tools/art_director/iterations/repaint/_structure.png"
-dest_files=["res://.godot/imported/_structure.png-049a13c5c0b2608fa368658d25932c2c.ctex"]
+source_file="res://tools/art_director/iterations/repaint/_lineart_view.png"
+dest_files=["res://.godot/imported/_lineart_view.png-b74a985ee08126d292f8c45dd34fce8e.ctex"]
 
 [params]
 
