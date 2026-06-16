@@ -7,7 +7,8 @@ dobras na robe. Deterministico => zero drift. Mira a master anchor v2.
     python soph_svg.py     # gera SVG -> PNG + upscale eyeball
 """
 from pathlib import Path
-import cairosvg
+# cairosvg eh importado de forma lazy em main() — falha em Windows sem
+# Cairo C lib. Quem so usa build_svg/build_svg_34/build_svg_side nao precisa.
 
 # paleta (anchor v2)
 OUT   = "#1b0f22"
@@ -331,6 +332,7 @@ def build_svg_side(foot_front=(0, 0), foot_back=(0, 0),
 
 
 def main():
+    import cairosvg
     out = Path(__file__).parent / "iterations" / "svg"
     out.mkdir(parents=True, exist_ok=True)
     svg = build_svg()

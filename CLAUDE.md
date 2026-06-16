@@ -43,6 +43,16 @@
   travar identidade, depois corta). Não conflitar com isso.
 - Racional completo (HK + ferramentas de ancoragem): `docs/animacao_hk_notas.md`.
 
+### 🖤 Contorno preto na Soph HD (técnica HK — decisão 2026-06-16)
+- **Próximo target:** Soph HD com **contorno preto bem definido** ao redor da
+  silhueta (técnica clássica do Hollow Knight). Dá peso visual, leitura limpa
+  sobre qualquer cenário, e **esconde drift sutil de bordas** entre frames do
+  mesmo ciclo.
+- Aplicar via prompt no `tools/art_director/gen_hd_sheet.py`: adicionar
+  "thick black outline around character silhouette, bold cel-shading black
+  lines, Hollow Knight style outline".
+- **Ordem:** primeiro sem arma (locomoção HK-style), **depois com weapons**.
+
 ### ⚔️ Combate & armas (princípio HK — decisão 2026-06-15)
 - **Arma só na AÇÃO.** Locomoção (idle/walk/run/dash/jump/fall/hurt) é **sem
   arma, mãos vazias** — silhueta limpa, menos drift, fatiamento trivial (foi o
