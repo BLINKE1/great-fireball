@@ -1,0 +1,294 @@
+{
+  "image_size": [
+    1024,
+    1024
+  ],
+  "parts": {
+    "head": {
+      "file": "parts/head.png",
+      "offset": [
+        350,
+        5
+      ],
+      "size": [
+        334,
+        220
+      ],
+      "pivot": [
+        514,
+        215
+      ],
+      "pivot_local": [
+        164,
+        210
+      ],
+      "pivot_name": "_neck",
+      "box": [
+        0,
+        0,
+        1024,
+        225
+      ]
+    },
+    "torso": {
+      "file": "parts/torso.png",
+      "offset": [
+        402,
+        210
+      ],
+      "size": [
+        225,
+        314
+      ],
+      "pivot": [
+        507,
+        509
+      ],
+      "pivot_local": [
+        105,
+        299
+      ],
+      "pivot_name": "_pelvis",
+      "box": [
+        402,
+        210,
+        627,
+        524
+      ]
+    },
+    "hair_back": {
+      "file": "parts/hair_back.png",
+      "offset": [
+        62,
+        260
+      ],
+      "size": [
+        895,
+        500
+      ],
+      "pivot": [
+        514,
+        215
+      ],
+      "pivot_local": [
+        452,
+        -45
+      ],
+      "pivot_name": "_neck",
+      "box": [
+        0,
+        210,
+        1024,
+        1024
+      ]
+    },
+    "L_arm_upper": {
+      "file": "parts/L_arm_upper.png",
+      "offset": [
+        559,
+        175
+      ],
+      "size": [
+        191,
+        160
+      ],
+      "pivot": [
+        602,
+        218
+      ],
+      "pivot_local": [
+        43,
+        43
+      ],
+      "pivot_name": "L_shoulder",
+      "box": [
+        559,
+        175,
+        750,
+        335
+      ]
+    },
+    "L_arm_lower": {
+      "file": "parts/L_arm_lower.png",
+      "offset": [
+        664,
+        248
+      ],
+      "size": [
+        258,
+        87
+      ],
+      "pivot": [
+        707,
+        292
+      ],
+      "pivot_local": [
+        43,
+        44
+      ],
+      "pivot_name": "L_elbow",
+      "box": [
+        664,
+        248,
+        922,
+        335
+      ]
+    },
+    "R_arm_upper": {
+      "file": "parts/R_arm_upper.png",
+      "offset": [
+        281,
+        169
+      ],
+      "size": [
+        189,
+        159
+      ],
+      "pivot": [
+        427,
+        212
+      ],
+      "pivot_local": [
+        146,
+        43
+      ],
+      "pivot_name": "R_shoulder",
+      "box": [
+        281,
+        169,
+        470,
+        328
+      ]
+    },
+    "R_arm_lower": {
+      "file": "parts/R_arm_lower.png",
+      "offset": [
+        107,
+        242
+      ],
+      "size": [
+        260,
+        97
+      ],
+      "pivot": [
+        324,
+        285
+      ],
+      "pivot_local": [
+        217,
+        43
+      ],
+      "pivot_name": "R_elbow",
+      "box": [
+        107,
+        242,
+        367,
+        339
+      ]
+    },
+    "L_leg_upper": {
+      "file": "parts/L_leg_upper.png",
+      "offset": [
+        504,
+        505
+      ],
+      "size": [
+        126,
+        239
+      ],
+      "pivot": [
+        562,
+        510
+      ],
+      "pivot_local": [
+        58,
+        5
+      ],
+      "pivot_name": "L_hip",
+      "box": [
+        504,
+        505,
+        630,
+        744
+      ]
+    },
+    "L_leg_lower": {
+      "file": "parts/L_leg_lower.png",
+      "offset": [
+        535,
+        724
+      ],
+      "size": [
+        103,
+        298
+      ],
+      "pivot": [
+        572,
+        734
+      ],
+      "pivot_local": [
+        37,
+        10
+      ],
+      "pivot_name": "L_knee",
+      "box": [
+        514,
+        724,
+        638,
+        1024
+      ]
+    },
+    "R_leg_upper": {
+      "file": "parts/R_leg_upper.png",
+      "offset": [
+        393,
+        504
+      ],
+      "size": [
+        118,
+        240
+      ],
+      "pivot": [
+        453,
+        509
+      ],
+      "pivot_local": [
+        60,
+        5
+      ],
+      "pivot_name": "R_hip",
+      "box": [
+        393,
+        504,
+        511,
+        744
+      ]
+    },
+    "R_leg_lower": {
+      "file": "parts/R_leg_lower.png",
+      "offset": [
+        402,
+        724
+      ],
+      "size": [
+        88,
+        299
+      ],
+      "pivot": [
+        451,
+        734
+      ],
+      "pivot_local": [
+        49,
+        10
+      ],
+      "pivot_name": "R_knee",
+      "box": [
+        393,
+        724,
+        510,
+        1024
+      ]
+    }
+  }
+}

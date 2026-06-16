@@ -18,6 +18,10 @@ assets/sprites/player/_raw/
 # Diagnostic comparison images
 docs/concept_art/diag/
 
+# Cache local pesado (vive em D:\Projetos\great-fireball-local-cache\)
+# Mantido fora do repo pra nao inflar historico; reextrair via tools/rig/.
+tools/rig/_video_frames/
+
 # Claude Code runtime
 .claude/scheduled_tasks.lock
 .claude/settings.local.json

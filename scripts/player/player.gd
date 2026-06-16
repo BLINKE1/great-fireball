@@ -1,7 +1,9 @@
 extends CharacterBody2D
 
 signal fall_danger(is_dangerous: bool)
-const SPEED = 200.0
+const WALK_SPEED = 110.0          # default (caminhar)
+const RUN_SPEED  = 220.0          # com SHIFT segurado (correr)
+const SPEED      = RUN_SPEED      # alias legado (dash/squash-stretch/lean)
 const JUMP_VELOCITY = -420.0
 const GRAVITY = 980.0
 
@@ -501,11 +503,13 @@ func _handle_jump() -> void:
 
 func _handle_movement() -> void:
 	var direction := Input.get_axis("ui_left", "ui_right")
+	var running := Input.is_key_pressed(KEY_SHIFT)
+	var spd := RUN_SPEED if running else WALK_SPEED
 	if direction != 0:
-		velocity.x = direction * SPEED
+		velocity.x = direction * spd
 		facing = direction
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.x = move_toward(velocity.x, 0, RUN_SPEED)
 
 func _handle_spells() -> void:
 	if Input.is_action_just_pressed("spell_magic_missile"):

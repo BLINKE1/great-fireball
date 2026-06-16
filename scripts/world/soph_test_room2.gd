@@ -30,6 +30,7 @@ const ENEMY_SCENES := {
 }
 
 func _ready() -> void:
+	_add_parallax_forest()
 	# Loadout completo pra testar tudo (igual à room 1).
 	SkillManager.unlock("double_jump")
 	SkillManager.unlock("magic_dash")
@@ -49,6 +50,42 @@ func _ready() -> void:
 	_offset_y = player.HD_OFFSET.y
 	_build_overlay()
 	_apply()
+
+# ── Parallax de floresta (sem pollen — texturas procedurais do SpriteSetup) ──
+func _add_parallax_forest() -> void:
+	var sky_cl := CanvasLayer.new()
+	sky_cl.layer = -10
+	add_child(sky_cl)
+	var sky := ColorRect.new()
+	sky.anchor_right = 1.0
+	sky.anchor_bottom = 1.0
+	sky.color = Color(0.20, 0.18, 0.32, 1.0)
+	sky_cl.add_child(sky)
+
+	var pb := ParallaxBackground.new()
+	pb.name = "ParallaxBG"
+	add_child(pb)
+	move_child(pb, 0)
+
+	var far_tex := SpriteSetup.get_texture("forest_far")
+	var mid_tex := SpriteSetup.get_texture("forest_mid")
+	if far_tex:
+		_add_par_layer(pb, far_tex, Vector2(0.08, 0.08), Vector2(512, 0), Vector2(0, 200))
+	if mid_tex:
+		_add_par_layer(pb, mid_tex, Vector2(0.24, 0.16), Vector2(256, 0), Vector2(0, 280))
+
+func _add_par_layer(pb: ParallaxBackground, tex: Texture2D, scale: Vector2,
+		mirror: Vector2, offset: Vector2) -> void:
+	var layer := ParallaxLayer.new()
+	layer.motion_scale = scale
+	layer.motion_mirroring = mirror
+	pb.add_child(layer)
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.position = offset
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	layer.add_child(spr)
 
 # ── Spawn (perto da Soph) ─────────────────────────────────────────────────────
 func _spawn_enemy(scene: PackedScene) -> void:
