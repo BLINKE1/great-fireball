@@ -32,12 +32,15 @@ OUT = HERE / "iterations" / "repaint"
 GREEN = "#27c24c"   # fundo da estrutura (chroma key)
 
 
-def prompt_for(eyes: str) -> str:
-    eye = ("eyes OPEN looking ahead, gentle calm expression" if eyes == "open"
+def prompt_for(eyes: str, pose: str = "34") -> str:
+    eye = ("eyes OPEN, gentle calm expression" if eyes == "open"
            else "eyes gently closed, serene")
+    view = ("STRICT SIDE PROFILE view facing right, head in profile, ONLY ONE "
+            "arm visible (the far arm hidden behind the body), " if pose == "side"
+            else "")
     return (
         "Repaint this exact character as polished detailed hand-painted anime "
-        "key art. KEEP the same pose, composition, proportions and identity. "
+        f"key art. KEEP the same pose, composition, proportions and identity. {view}"
         "Character: anime mage girl, pointed red wizard hat (FULL intact tip), "
         "round black-framed glasses, THICK VOLUMINOUS long blue hair as one "
         "solid flowing mass with NO gaps between strands (navy roots to bright "
@@ -60,7 +63,9 @@ def _arg(args, name, default=None):
 
 
 def render_structure(pose: str, path: str) -> str:
-    svg = soph_svg.build_svg_34() if pose == "34" else soph_svg.build_svg()
+    builder = {"34": soph_svg.build_svg_34, "side": soph_svg.build_svg_side,
+               "front": soph_svg.build_svg}.get(pose, soph_svg.build_svg)
+    svg = builder()
     # figura MENOR centrada com folga verde (head/footroom) p/ o modelo nao
     # cortar os pes ao reenquadrar.
     fig = OUT / "_fig.png"
@@ -101,7 +106,7 @@ def main() -> int:
 
     raw = str(OUT / f"raw_{pose}_{eyes}.png")
     print(f"repintando ({model}, eyes={eyes}) ...")
-    if img2img_edit(structure, prompt_for(eyes), raw, token, model=model) != 0:
+    if img2img_edit(structure, prompt_for(eyes, pose), raw, token, model=model) != 0:
         return 1
     game = str(OUT / f"idle_{eyes}.png")
     postprocess(raw, game)
