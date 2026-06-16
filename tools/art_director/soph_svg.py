@@ -238,6 +238,96 @@ def build_svg_34() -> str:
     return "\n".join(s)
 
 
+def build_svg_side(foot_front: float = 0, foot_back: float = 0,
+                   hand_dx: float = 0) -> str:
+    """Perfil LATERAL (virada pra direita): rosto de lado com nariz, UM olho,
+    UM braço (o de trás some), cabelo todo atrás. Estrutura p/ repaint lateral.
+    foot_front/foot_back/hand_dx deslocam pé-da-frente, pé-de-trás e mão p/
+    cuar fases de caminhada (walk)."""
+    s = []
+    s.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 440" width="220" height="440">')
+    s.append('<defs>')
+    s.append(f'<linearGradient id="hair" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="400">'
+             f'<stop offset="0" stop-color="{H_ROOT}"/><stop offset="0.45" stop-color="{H_MID}"/>'
+             f'<stop offset="1" stop-color="{H_TIP}"/></linearGradient>')
+    s.append(f'<linearGradient id="robe" gradientUnits="userSpaceOnUse" x1="70" y1="0" x2="150" y2="0">'
+             f'<stop offset="0" stop-color="{ROBE_D}"/><stop offset="0.6" stop-color="{ROBE}"/>'
+             f'<stop offset="1" stop-color="{ROBE_H}"/></linearGradient>')
+    s.append(f'<linearGradient id="hat" gradientUnits="userSpaceOnUse" x1="70" y1="20" x2="160" y2="120">'
+             f'<stop offset="0" stop-color="{HAT_D}"/><stop offset="0.5" stop-color="{HAT}"/>'
+             f'<stop offset="1" stop-color="{HAT_H}"/></linearGradient>')
+    s.append('<filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>')
+    s.append('</defs>')
+    go = f'stroke="{OUT}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"'
+
+    s.append('<ellipse cx="106" cy="424" rx="54" ry="9" fill="#000" opacity="0.22" filter="url(#soft)"/>')
+
+    # CABELO todo ATRAS (esquerda) — massa solida + mechas descendo pelas costas
+    s.append(f'<g fill="url(#hair)" {go}>')
+    s.append('<path d="M96,134 C66,146 52,210 56,290 C60,352 76,388 98,390 '
+             'L116,388 C112,330 110,250 112,170 C108,150 102,142 96,134 Z"/>')
+    for p in [lock(78, 150, 40, 300, 22, 26), lock(90, 150, 58, 372, 20, 14),
+              lock(104, 150, 86, 388, 16, 4)]:
+        s.append(f'<path d="{p}"/>')
+    s.append('</g>')
+
+    # ROBE de PERFIL (estreita): aresta da frente (dir) reta, costas (esq) flare
+    s.append(f'<g {go}>')
+    s.append('<path fill="url(#robe)" d="M100,158 C98,176 96,186 96,200 '
+             'C88,260 72,340 72,392 L138,392 C138,330 134,250 130,196 '
+             'C129,178 126,168 124,156 C116,150 106,150 100,158 Z"/>')
+    # UMA manga sino (braco da frente); o de tras fica escondido atras do corpo
+    s.append(f'<path fill="url(#robe)" d="M122,164 C132,200 136,250 138,300 '
+             'C128,306 118,300 116,288 C118,238 116,196 114,172 Z"/>')
+    s.append('</g>')
+    # dobras
+    s.append(f'<g stroke="{ROBE_D}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8">')
+    for d in ["M108,180 C104,260 100,340 96,388", "M120,200 C124,280 126,350 124,388"]:
+        s.append(f'<path d="{d}"/>')
+    s.append('</g>')
+    # gola (suit)
+    s.append(f'<path fill="{SUIT}" d="M104,152 C108,164 118,162 120,152 C115,158 108,158 104,152 Z"/>')
+    # UMA mao (a da frente) — balanca com hand_dx
+    s.append(f'<circle cx="{124 + hand_dx}" cy="300" r="9" fill="{SKIN}" {go}/>')
+
+    # BOTAS de perfil: uma a' frente (dir), uma atras (esq) — deslocam p/ walk
+    s.append(f'<g {go}>')
+    s.append(f'<g transform="translate({foot_back},0)"><path fill="{BOOT_D}" '
+             'd="M78,390 L100,390 L102,418 L74,418 C74,402 76,394 78,390 Z"/></g>')   # tras
+    s.append(f'<g transform="translate({foot_front},0)"><path fill="{BOOT}" '
+             'd="M108,390 L132,390 C138,398 142,410 142,418 L108,418 Z"/></g>')        # frente
+    s.append('</g>')
+
+    # CABECA de PERFIL (vira p/ direita): testa, nariz, queixo
+    s.append(f'<path fill="{SKIN}" {go} d="M96,124 C94,108 108,104 120,110 '
+             'C128,114 130,126 131,134 C133,138 134,142 130,145 '
+             'C133,149 130,154 126,156 C124,162 116,166 108,164 '
+             'C99,162 95,150 95,138 Z"/>')
+    s.append(f'<path fill="{SKIN_D}" opacity="0.45" d="M100,128 C99,144 104,158 112,162 '
+             'C105,152 102,140 104,128 Z"/>')
+    s.append(f'<circle cx="118" cy="146" r="4" fill="{BLUSH}" opacity="0.6"/>')
+    # mecha frontal (navy) caindo na testa, de lado
+    s.append(f'<path fill="{H_ROOT}" {go} d="M96,124 C94,108 108,104 120,110 '
+             'C112,108 102,112 98,122 C100,118 104,116 108,116 Z"/>')
+    # UM olho + oculos (lente da frente; haste vai p/ tras)
+    s.append(f'<circle cx="120" cy="136" r="7" fill="{LENS}" stroke="{FRAME}" stroke-width="2.4"/>')
+    s.append(f'<path stroke="{FRAME}" stroke-width="2.4" fill="none" d="M113,135 L100,133"/>')  # haste
+    s.append(f'<circle cx="122" cy="137" r="3" fill="{FRAME}"/>')
+    s.append(f'<path d="M126,152 C128,154 130,154 131,152" stroke="{MOUTH}" stroke-width="2" fill="none" stroke-linecap="round"/>')
+
+    # CHAPEU de lado: aba estreita (elipse vista de perfil) + cone tombado p/ tras
+    s.append(f'<g transform="rotate(-12 106 116)">')
+    s.append(f'<ellipse cx="106" cy="116" rx="62" ry="13" fill="url(#hat)" {go}/>')
+    s.append(f'<path fill="url(#hat)" {go} d="M84,114 C88,66 96,38 104,26 '
+             'C110,16 122,20 124,36 C128,72 130,98 132,114 C116,108 98,108 84,114 Z"/>')
+    s.append(f'<path d="M104,30 C100,54 94,92 90,112" stroke="{HAT_H}" stroke-width="3" '
+             f'fill="none" stroke-linecap="round" opacity="0.8"/>')
+    s.append('</g>')
+
+    s.append('</svg>')
+    return "\n".join(s)
+
+
 def main():
     out = Path(__file__).parent / "iterations" / "svg"
     out.mkdir(parents=True, exist_ok=True)
