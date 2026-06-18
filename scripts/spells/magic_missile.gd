@@ -5,6 +5,7 @@ const DAMAGE = 20.0
 const LIFETIME = 3.0
 
 var direction: float = 1.0
+var aim_dir: Vector2 = Vector2.ZERO   # se setado (mira livre), anda em qualquer angulo
 var _trail_timer: float = 0.0
 
 func _ready() -> void:
@@ -13,12 +14,16 @@ func _ready() -> void:
 		$Sprite2D.texture = tex
 		$Sprite2D.modulate = Color.WHITE
 		$Sprite2D.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	$Sprite2D.flip_h = direction < 0.0
+	# compat: sem mira livre, deriva do facing (eixo X)
+	if aim_dir == Vector2.ZERO:
+		aim_dir = Vector2(direction, 0.0)
+	aim_dir = aim_dir.normalized()
+	rotation = aim_dir.angle()        # aponta na direcao do disparo
 	get_tree().create_timer(LIFETIME).timeout.connect(queue_free)
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
-	position.x += direction * SPEED * delta
+	position += aim_dir * SPEED * delta
 	_trail_timer -= delta
 	if _trail_timer <= 0.0:
 		_trail_timer = 0.045

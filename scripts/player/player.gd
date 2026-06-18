@@ -67,6 +67,15 @@ const SWORD_FLASH         = 0.1
 const SWORD_LUNGE         = 190.0  # passo pra frente no golpe (peso/compromisso)
 const MELEE_MANA_GAIN     = 12.0   # mana recuperada por golpe de cajado que acerta
 
+# ── Mira do Magic Missile (estilo Dead Eye / Red Dead) ─────────────────────
+# Segura a tecla -> entra em câmera lenta + linha que PIVOTA na ponta do cajado;
+# mouse (ou setas ↑/↓) gira o ângulo; soltar dispara naquele ângulo. Qualquer
+# ângulo 360° vale, a linha nunca sai da ponta do cajado.
+const AIM_TIME_SCALE  = 0.30       # quão lento fica o tempo enquanto mira
+const AIM_LINE_LEN    = 130.0      # comprimento da linha de mira (px)
+const AIM_ROT_SPEED   = 2.6        # rad/s ao girar por teclado
+const STAFF_TIP       = Vector2(24, -16)  # ponta do cajado relativa ao player
+
 # New missile variants
 const MISSILE_SPREAD_COST     = 22.0
 const MISSILE_SPREAD_CD       = 0.32
@@ -144,6 +153,13 @@ var dash_cooldown_timer: float = 0.0
 var sword_timer: float = 0.0
 var _attack_pose: String = ""        # "cast" (cajado) / "slash" (lâmina) durante o ataque
 var _attack_pose_timer: float = 0.0
+
+# Mira do Magic Missile
+var is_aiming: bool = false
+var _aim_angle: float = 0.0
+var _aim_line: Line2D = null
+var _aim_dot: Polygon2D = null
+var _last_mouse: Vector2 = Vector2.ZERO
 var attack_flash_timer: float = 0.0
 var is_dashing: bool = false
 var is_dead: bool = false
@@ -237,6 +253,32 @@ func _ready() -> void:
 	_shield_visual.position = Vector2(0, -18)
 	add_child(_shield_visual)
 
+	_setup_aim_visual()
+
+func _setup_aim_visual() -> void:
+	# Linha de mira que pivota na ponta do cajado (escondida até mirar).
+	_aim_line = Line2D.new()
+	_aim_line.width = 2.0
+	_aim_line.default_color = Color(0.35, 0.9, 1.0, 0.85)
+	_aim_line.points = PackedVector2Array([Vector2.ZERO, Vector2(AIM_LINE_LEN, 0)])
+	_aim_line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	_aim_line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	_aim_line.z_index = 5
+	_aim_line.visible = false
+	add_child(_aim_line)
+	# ponto/retícula na ponta da linha
+	_aim_dot = Polygon2D.new()
+	var r := 4.0
+	var pts := PackedVector2Array()
+	for i in range(10):
+		var a := TAU * i / 10.0
+		pts.append(Vector2(cos(a), sin(a)) * r)
+	_aim_dot.polygon = pts
+	_aim_dot.color = Color(0.6, 0.95, 1.0, 0.95)
+	_aim_dot.z_index = 6
+	_aim_dot.visible = false
+	add_child(_aim_dot)
+
 func _physics_process(delta: float) -> void:
 	_tick_shake(delta)
 
@@ -252,6 +294,14 @@ func _physics_process(delta: float) -> void:
 
 	_tick_timers(delta)
 	_check_landing()
+
+	if is_aiming:
+		_update_aim(delta)
+		_apply_gravity(delta)
+		velocity.x = move_toward(velocity.x, 0, SPEED * 3.0)
+		_update_visuals()
+		move_and_slide()
+		return
 
 	if is_dashing:
 		velocity.x = facing * DASH_SPEED
@@ -513,7 +563,7 @@ func _handle_movement() -> void:
 
 func _handle_spells() -> void:
 	if Input.is_action_just_pressed("spell_magic_missile"):
-		_cast_magic_missile()
+		_start_aim()
 	if Input.is_action_just_pressed("spell_missile_spread"):
 		_cast_missile_spread()
 	if Input.is_action_just_pressed("spell_missile_piercing"):
@@ -546,6 +596,64 @@ func _handle_spells() -> void:
 		_cast_convoke_ze()
 	if Input.is_action_just_pressed("attack_sword"):
 		_attack_sword()
+
+func _start_aim() -> void:
+	if is_aiming: return
+	if not SkillManager.has("magic_missile"): return
+	if magic_missile_cd > 0.0: return
+	if mana.current_mana < MAGIC_MISSILE_COST: return   # gasta só no disparo
+	is_aiming = true
+	Engine.time_scale = AIM_TIME_SCALE
+	_aim_angle = 0.0 if facing >= 0.0 else PI
+	_last_mouse = get_global_mouse_position()
+	_set_attack_pose("cast", 999.0)
+	_refresh_aim_visual()
+	_aim_line.visible = true
+	_aim_dot.visible = true
+
+func _update_aim(delta: float) -> void:
+	_attack_pose = "cast"          # segura a pose de cast enquanto mira
+	_attack_pose_timer = 1.0
+	if Input.is_action_just_pressed("attack_sword"):   # cancela sem disparar
+		_end_aim(); return
+	# ângulo: segue o mouse (se mexeu) OU gira por ↑/↓
+	var pivot_w := global_position + Vector2(facing * STAFF_TIP.x, STAFF_TIP.y)
+	var m := get_global_mouse_position()
+	if m.distance_to(_last_mouse) > 1.5:
+		_aim_angle = (m - pivot_w).angle()
+		_last_mouse = m
+	else:
+		var rot := Input.get_axis("ui_up", "ui_down")
+		if rot != 0.0:   # compensa o time_scale p/ girar em tempo real
+			_aim_angle += rot * AIM_ROT_SPEED * (delta / max(Engine.time_scale, 0.001))
+	facing = 1.0 if cos(_aim_angle) >= 0.0 else -1.0
+	_refresh_aim_visual()
+	if Input.is_action_just_released("spell_magic_missile"):
+		_fire_aimed_missile()
+		_end_aim()
+
+func _refresh_aim_visual() -> void:
+	if _aim_line == null: return
+	var pivot := Vector2(facing * STAFF_TIP.x, STAFF_TIP.y)
+	_aim_line.position = pivot
+	_aim_line.rotation = _aim_angle
+	_aim_dot.position = pivot + Vector2(cos(_aim_angle), sin(_aim_angle)) * AIM_LINE_LEN
+
+func _fire_aimed_missile() -> void:
+	if not mana.spend(MAGIC_MISSILE_COST): return
+	magic_missile_cd = MAGIC_MISSILE_CD
+	AudioManager.play("missile")
+	var missile = MagicMissile.instantiate()
+	missile.aim_dir = Vector2(cos(_aim_angle), sin(_aim_angle))
+	missile.position = global_position + Vector2(facing * STAFF_TIP.x, STAFF_TIP.y)
+	missile.modulate = Nails.tint()
+	get_parent().add_child(missile)
+
+func _end_aim() -> void:
+	is_aiming = false
+	Engine.time_scale = 1.0
+	if _aim_line: _aim_line.visible = false
+	if _aim_dot: _aim_dot.visible = false
 
 func _cast_magic_missile() -> void:
 	if not SkillManager.has("magic_missile"): return
@@ -1119,6 +1227,8 @@ func _on_mana_changed(ratio: float) -> void:
 
 func _on_died() -> void:
 	is_dead = true
+	if is_aiming:
+		_end_aim()        # garante restaurar o tempo se morrer mirando
 	AudioManager.play("die")
 	shake(12.0, 0.5)
 	sprite.modulate = Color(1.0, 0.3, 0.3, 1.0)
