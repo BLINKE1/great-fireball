@@ -201,6 +201,9 @@ func _spawn_shockwave(dir: float) -> void:
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if is_dead: return
+	var crit := HitZones.is_head_hit(self, from)   # cabeça = crítico (2x)
+	if crit:
+		amount *= HitZones.CRIT_MULT
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	boss_hp_changed.emit(clampf(hp / MAX_HP, 0.0, 1.0))
@@ -208,7 +211,10 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var dmg = DamageNumber.instantiate()
 	get_parent().add_child(dmg)
 	dmg.global_position = global_position + Vector2(0, -44)
-	dmg.setup(amount)
+	if crit:
+		dmg.setup(amount, HitZones.CRIT_COLOR, true)
+	else:
+		dmg.setup(amount)
 
 	var kdir = sign(global_position.x - from.x) if from != Vector2.ZERO else 1.0
 	if kdir == 0: kdir = 1.0

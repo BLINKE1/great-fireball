@@ -3,16 +3,20 @@ extends Node2D
 # Sentinela: se o chamador não passar cor, escolhemos pela magnitude do dano.
 const _AUTO := Color(0, 0, 0, -1.0)
 
-func setup(amount: float, color: Color = _AUTO) -> void:
+func setup(amount: float, color: Color = _AUTO, crit: bool = false) -> void:
 	var lbl: Label = $Label
-	lbl.text = str(int(amount))
+	lbl.text = str(int(amount)) + ("!" if crit else "")
 
-	# Escala por magnitude: leve / sólido / pesado (crit).
-	var is_big  := amount >= 45.0
+	# Escala por magnitude: leve / sólido / pesado (crit). Acerto na cabeça
+	# sempre lê como crítico (pop + cor), mesmo com dano baixo.
+	var is_big  := crit or amount >= 45.0
 	var is_huge := amount >= 70.0
 
 	# Cor por magnitude (quando não veio cor explícita — ex.: dano de fogo).
-	if color.a < 0.0:
+	# Crítico tem cor própria e ganha de tudo (sinaliza o acerto na cabeça).
+	if crit:
+		color = Color(1.0, 0.30, 0.12)
+	elif color.a < 0.0:
 		if is_huge:    color = Color(1.0, 0.32, 0.16)   # vermelho-laranja (pesado)
 		elif is_big:   color = Color(1.0, 0.62, 0.10)   # laranja (crit)
 		elif amount < 12.0: color = Color(0.92, 0.95, 1.0)  # branco-azulado (leve)
