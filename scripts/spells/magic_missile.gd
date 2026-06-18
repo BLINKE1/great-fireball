@@ -1,7 +1,7 @@
 extends Area2D
 
 const SPEED = 300.0
-const DAMAGE = 20.0
+const DAMAGE = 40.0   # crítico (cabeça) = 80 → one-shot até no goblin_leader (80 HP)
 const LIFETIME = 3.0
 
 var direction: float = 1.0
