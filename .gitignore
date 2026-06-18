@@ -25,3 +25,6 @@ tools/rig/_video_frames/
 # Claude Code runtime
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+
+# Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
+tools/art_director/iterations/**/*.import
