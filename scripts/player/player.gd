@@ -52,7 +52,7 @@ const HD_ANIM_NATIVE_LEFT := {                    # anims desenhadas olhando p/ 
 	# run: maioria dos frames olha pra direita (run_2 destoa, mas é minoria).
 }
 
-const MAGIC_MISSILE_COST  = 15.0
+const MAGIC_MISSILE_COST  = 33.0   # pool cheio (100) = 3 disparos: recurso escasso, golpe forte
 const MAGIC_MISSILE_CD    = 0.18
 const TIME_STOP_COST      = 30.0
 const TIME_STOP_DURATION  = 3.0
