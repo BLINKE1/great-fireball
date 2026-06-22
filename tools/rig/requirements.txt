@@ -1,0 +1,7 @@
+# Deps "pesadas" do rig (rodar no PC — NÃO no container da nuvem).
+# Pipeline: extract_keypoints (MediaPipe) -> cut_parts -> map_to_2d -> build_rig_scene -> bake_frames
+# Mocap (parse_mixamo.py) roda DENTRO do Blender (bpy embutido), nao via pip.
+mediapipe>=0.10
+opencv-python>=4.8
+numpy>=1.24
+pillow>=10.0
