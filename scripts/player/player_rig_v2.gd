@@ -13,11 +13,11 @@ const RIG_SCALE := 0.16          # a arte HD é ~737x1536; encolhe p/ tamanho de
 const NECK_FRAC := 0.40          # linha do pescoço (fração da altura)
 
 # Amplitudes do idle (em px da arte, antes do RIG_SCALE)
-const BOB_PX   := 16.0
-const SWAY_PX  := 10.0
-const HEAD_ROT := 2.2            # graus
-const BREATHE  := 0.018          # escala vertical do corpo
-const IDLE_HZ  := 0.33           # ciclos por segundo
+const BOB_PX   := 26.0
+const SWAY_PX  := 14.0
+const HEAD_ROT := 3.0            # graus
+const BREATHE  := 0.030          # escala vertical do corpo
+const IDLE_HZ  := 0.40           # ciclos por segundo
 
 var _body_pivot: Node2D
 var _head_pivot: Node2D

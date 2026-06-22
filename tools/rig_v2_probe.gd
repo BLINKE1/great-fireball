@@ -23,7 +23,7 @@ func _process(_d: float) -> bool:
 		_cam.make_current()
 		return false
 	# 16 shots espaçados ~0.18s (cobre ~1 ciclo de idle de 3s)
-	if _f % 11 == 0:
+	if _f % 9 == 0:
 		var img := get_root().get_texture().get_image()
 		img.save_png(ProjectSettings.globalize_path(_out + "f%02d.png" % _shots))
 		_shots += 1
