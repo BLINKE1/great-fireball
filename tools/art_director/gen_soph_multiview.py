@@ -35,7 +35,10 @@ KEEP = (
 VIEWS = {
     "side": (
         "SIDE PROFILE view of the character, facing to the RIGHT (90-degree side "
-        "view), seen exactly from the side. " + KEEP
+        "view), seen exactly from the side; the feet and BROWN BOOTS also point to "
+        "the RIGHT in profile (NOT facing the viewer). The robe is a long OPEN "
+        "coat, NOT belted shut: the ONLY belt is on the black BODYSUIT UNDERNEATH "
+        "at the waist — do NOT draw any belt over or around the robe. " + KEEP
     ),
     "back": (
         "BACK view of the character, seen directly from BEHIND (back of the head, "
