@@ -86,11 +86,19 @@ def edit(prompt: str, out: Path, token: str, model: str, seed: int) -> bool:
     print(f"  ok {out.name} ({out.stat().st_size} bytes)"); return True
 
 
+EYES = (
+    " The round glasses are CLEAR and transparent — her brown eyes are clearly "
+    "VISIBLE through the lenses, no white glare, no blank/reflective lens."
+)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="7,42")
     ap.add_argument("--views", default="side,back")
     ap.add_argument("--model", default="gptimage")
+    ap.add_argument("--eyes", action="store_true",
+                    help="forca olhos visiveis atras do oculos (sem reflexo branco)")
     ap.add_argument("--token", default=None)
     args = ap.parse_args()
     token = args.token or os.environ.get("POLLINATIONS_TOKEN")
@@ -103,10 +111,12 @@ def main() -> int:
     views = [v.strip() for v in args.views.split(",") if v.strip() in VIEWS]
     ok = 0
     for v in views:
+        prompt = VIEWS[v] + (EYES if args.eyes else "")
+        suffix = "_eyes" if args.eyes else ""
         for seed in seeds:
-            out = OUT / f"soph_tpose_robe_{v}_s{seed}.png"
-            print(f"-> {v}  seed={seed}  model={args.model}")
-            if edit(VIEWS[v], out, token, args.model, seed):
+            out = OUT / f"soph_tpose_robe_{v}{suffix}_s{seed}.png"
+            print(f"-> {v}{suffix}  seed={seed}  model={args.model}")
+            if edit(prompt, out, token, args.model, seed):
                 ok += 1
     print(f"\n{ok} vista(s) geradas em {OUT}/")
     return 0 if ok else 1

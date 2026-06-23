@@ -34,10 +34,16 @@ TEM o lado oculto de verdade → gira a câmera e sai 3/4 consistente em todo fr
 | `tools/art_director/gen_soph_robe_tpose.py` | gerador da T-pose vestida (Pollinations img2img). |
 
 ## PRÓXIMOS PASSOS no PC (em ordem)
-1. **Mesh 3D da T-pose VESTIDA** — subir `docs/concept_art/soph_tpose_robe.png`
-   no Tripo3D/Meshy (Image→3D, com textura) → salvar em
-   `tools/rig3d/in/soph_dressed_mesh.glb`. (A `soph_mesh.glb` atual é só o
-   bodysuit — serve de fallback/corpo, mas o alvo agora é a vestida.)
+1. **Mesh 3D MULTIVIEW** — usar o set normalizado em
+   `docs/concept_art/multiview/` (`soph_mv_front.png` / `_side.png` / `_back.png`,
+   mesma escala/baseline) num gerador **multiview**: **Tencent Hunyuan 3D**
+   (`3d.hunyuan.tencent.com` ou o HF Space `tencent/Hunyuan3D-2` — pula login
+   chinês). Multiview > single-image (Tripo): mata o chute do lado oculto e
+   segura a identidade. Salvar em `tools/rig3d/in/soph_dressed_mesh.glb`.
+   > Fluxo de referência (vídeo Stefan 3D AI): imagens → **Hunyuan multiview** →
+   > montar peças no Blender → **Modddif** (retopo/textura por IA, `modddif.com`)
+   > → **Mixamo** (rig). Modddif é o elo menos provado: conferir a retopo/textura
+   > antes de confiar; se decepcionar, retopo manual no Blender.
 2. **Auto-rig + animação no Mixamo** — subir o GLB, marcar juntas, baixar
    **Idle** (depois Walk/Run) em FBX → `tools/rig3d/in/soph_idle.fbx`.
 3. **Render 3/4** — duas vias:
