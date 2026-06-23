@@ -4,6 +4,55 @@
 > não tem Blender; aqui está exatamente onde paramos e o que falta. Runbook
 > técnico passo-a-passo segue em `README.md` (mesma pasta).
 
+## 🚀 TL;DR — comece por aqui (passo a passo)
+
+```bash
+# 0) Pegar o estado mais novo
+git checkout master && git pull origin master
+# conferir que o set multiview chegou (3 PNGs, mesma escala):
+ls docs/concept_art/multiview/soph_mv_front.png \
+   docs/concept_art/multiview/soph_mv_side.png \
+   docs/concept_art/multiview/soph_mv_back.png
+```
+
+1. **Mesh 3D (Hunyuan multiview).** Abra o HF Space `tencent/Hunyuan3D-2`
+   (sem login chinês) → modo **multiview**. Suba:
+   - slot **front** → `soph_mv_front.png`
+   - slot **back**  → `soph_mv_back.png`
+   - slot **left** (ou right) → `soph_mv_side.png`
+   Gere **com textura** → baixe o **GLB** em `tools/rig3d/in/soph_dressed_mesh.glb`.
+
+2. **(Opcional) Retopo/textura — Modddif.** Suba o GLB em `modddif.com`, otimize,
+   reexporte. ⚠️ Confira no olho se a malha/UV saiu limpa; se piorar, pule e faça
+   retopo manual no Blender depois. Não trave a cara da Soph nele sem olhar.
+
+3. **Rig (Mixamo).** `mixamo.com` → **Upload Character** (o GLB) → marque queixo/
+   pulsos/cotovelos/joelhos/virilha → **Idle** → **Download**: FBX, **With Skin**,
+   30 fps → `tools/rig3d/in/soph_idle.fbx`. (Depois repita p/ Walk, Run.)
+
+4. **Render 3/4 → PNGs.** Caminho recomendado = Godot (paridade c/ a nuvem):
+   adaptar `turntable_godot.gd` p/ posar o `Skeleton3D` do FBX (trocar "girar
+   pivô" por "tocar a animação"). Alternativa Blender:
+   ```bash
+   blender --background --python tools/rig3d/render_soph_3q.py -- \
+     --fbx tools/rig3d/in/soph_idle.fbx --out tools/rig3d/out/idle \
+     --res 512x768 --az 35 --el 12 --outline 0.02 --toon
+   ```
+   ⚠️ Antes ver os **gaps do `render_soph_3q.py`** (seção abaixo).
+
+5. **Sprite sheet → Godot.**
+   ```bash
+   python tools/rig3d/pack_sheet.py --in tools/rig3d/out/idle --cols 8
+   ```
+   Importar como `SpriteFrames`/`AnimatedSprite2D` (caminho do `_build_soph_frames_hd`).
+
+6. **Olhar e decidir:** "é a Soph, em 3/4, consistente?" → se sim, repete o passo
+   4 p/ as outras ações. **Armas** entram como mesh separado preso ao osso da mão
+   (toggle por ação). **Contorno HK** liga só no fim, por cena.
+
+---
+
+
 ## A tese (1 parágrafo)
 Modelar a Soph em **3D rigado** e **renderizar de uma câmera 3/4** pra sprite
 sheets 2D (método Dead Cells / Guilty Gear Xrd). **Por que resolve o muro:** 3D
@@ -25,7 +74,8 @@ TEM o lado oculto de verdade → gira a câmera e sai 3/4 consistente em todo fr
 ## Assets-chave (já no repo)
 | arquivo | o que é |
 |---|---|
-| `docs/concept_art/soph_tpose_robe.png` | **NOVA base oficial**: T-pose esguia VESTIDA (maga: robe roxo-escuro, chapéu de maga, óculos, pontas mana, botas). **É daqui que sai o mesh definitivo.** |
+| `docs/concept_art/multiview/soph_mv_{front,side,back}.png` | **SET MULTIVIEW oficial** (normalizado: mesma escala/baseline). **É o input do Hunyuan.** |
+| `docs/concept_art/soph_tpose_robe.png` (+ `_side.png` / `_back.png`) | T-pose vestida por vista (front/side/back). A `multiview/` é a versão normalizada destas. |
 | `docs/concept_art/soph_base_tpose.png` | T-pose só do bodysuit (corpo esguio "nu"). |
 | `docs/concept_art/soph_robe_ref.png` | referência da robe (upload do Will). |
 | `tools/rig3d/in/soph_mesh.glb` | mesh ATUAL = só o bodysuit (sem robe), estático. **Vai ser substituído** pelo mesh da T-pose vestida. |
