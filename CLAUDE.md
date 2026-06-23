@@ -30,6 +30,18 @@
 - Dinamismo de movimento da Soph (lean/stretch/squash) vive em
   `player.gd::_update_visuals`.
 
+### 🧊 Soph3D — aposta ATIVA (de-risk em andamento)
+- Pipeline **3D rigado → render câmera 3/4 → sprites 2D** (método Dead Cells/Xrd):
+  o 3D tem o lado oculto de verdade → mata o drift do frame-a-frame.
+- **Base oficial vestida:** `docs/concept_art/soph_tpose_robe.png` (T-pose esguia,
+  maga, robe). É daí que sai o mesh definitivo.
+- **Nuvem já provou:** 3/4 consistente (`tools/rig3d/turntable_godot.gd`, Godot
+  headless), alpha transparente mata mescla no sheet, contorno HK = toggle de
+  render (não toca o mesh).
+- **Estado + próximos passos (Tripo→Mixamo→render no PC):**
+  `tools/rig3d/INSTRUCOES_PC.md`. Runbook técnico: `tools/rig3d/README.md`.
+- **Armas = mesh separado preso ao osso da mão** (toggle por ação), nunca fundido.
+
 ### 🛑 Rig PARADO — NÃO refatorar `player.gd` pra rig (decisão 2026-06-15)
 - **NÃO** refatorar o `player.gd` pra ancorar animação em rig (Skeleton2D/
   Bone2D/cutout). O rig de T-pose frontal **não gera 3/4 nem lateral de ação**
