@@ -4,6 +4,32 @@
 > não tem Blender; aqui está exatamente onde paramos e o que falta. Runbook
 > técnico passo-a-passo segue em `README.md` (mesma pasta).
 
+## 🏆 ATUALIZAÇÃO 2026-06-24 — PIPELINE VALIDADO PONTA-A-PONTA (Hunyuan 3D Studio)
+> O fluxo abaixo (Tripo/manual) virou histórico: o **Tencent Hunyuan 3D Studio**
+> (`3d.hunyuan.tencent.com/studio`) faz **tudo na nuvem, de graça**. Sequência que
+> funcionou e está provada:
+> 1. **`几何生成`** (geometria) modo **`上传多视图`** ← subir os 3 PNGs de
+>    `docs/concept_art/multiview/soph_mv_{front,side,back}.png`. Identidade travada
+>    (chapéu, **óculos**, robe, botas).
+> 2. **`纹理绘制` → `图生纹理`** (textura por imagem): cabelo azul-mana + robe + pele.
+> 3. **`低模拓扑`** (retopo, V1.5, médio, **`四边面`=QUADS**): 1.5M→**16.6k faces**.
+>    ⚠️ não roda em asset pós-textura ("后置节点资产无法拓扑") → selecionar o nó da
+>    GEOMETRIA antes de retopologizar.
+> 4. **`绑骨蒙皮`** (auto-rig 1 clique): esqueleto **28 ossos estilo Mixamo**.
+> 5. **`动画生成`**: só templates genéricos de combate (teste de deformação).
+>
+> **Deformação (testado no Blender via MCP):** **WALK/locomoção = limpa, zero fling.**
+> ⚠️ Rig é só biped (sem ossos de cabelo/robe) → braço-acima-da-cabeça (combate +
+> `cast_special` de costas) dá **fling** do pano/cabelo. Resolver depois: peso
+> por-pose / ossos de saia / cloth sim. **Locomoção não precisa.**
+>
+> **Assets:** `tools/rig3d/in/soph_rigged.fbx` (rig, no git). Mesh vestido
+> texturizado de 69MB → cache local `D:\Projetos\great-fireball-local-cache\soph3d\`
+> (fora do git; re-baixável do histórico do Hunyuan).
+>
+> **Próximo:** anims de locomoção (Mixamo idle/walk/run no `soph_rigged.fbx`) →
+> re-texturizar → render 3/4 → sprite sheet.
+
 ## 🚀 TL;DR — comece por aqui (passo a passo)
 
 ```bash
