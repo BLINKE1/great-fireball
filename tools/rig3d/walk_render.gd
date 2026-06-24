@@ -9,14 +9,16 @@ const FRAMES := 12
 const AZ := 35.0     # azimute 3/4
 const EL := 8.0      # elevacao
 
-# amplitudes do walk (graus) + eixo local do swing (iteravel no olho)
-const SWING := Vector3(1, 0, 0)   # eixo local p/ balanco frente/tras
-const LOWER := Vector3(0, 1, 0)   # tentativa 2
-const ARM_LOWER := 0.0             # bind e T-pose; anim real (Mixamo) baixa os bracos
-const A_THIGH := 26.0
-const A_KNEE  := 34.0
-const A_ARM   := 16.0
-const BOB     := 0.012
+# walk procedural: rotacoes em torno dos eixos do MUNDO (convertidas p/ local do
+# osso) -> independe do roll/orientacao local do bone. Soph encara +/-Z, up=Y,
+# lateral=X. Passo frente/tras = girar em torno de X; baixar braco = em torno de Z.
+const WX := Vector3(1, 0, 0)
+const WZ := Vector3(0, 0, 1)
+const A_THIGH := 25.0
+const A_KNEE  := 45.0
+const A_ARM   := 18.0
+const ARM_LOWER := 68.0
+const BOB     := 0.02
 
 var _pivot: Node3D
 var _rig: Node3D
@@ -113,41 +115,35 @@ func _process(_d: float) -> bool:
 
 func _pose(p: float) -> void:
 	var w := p * TAU
-	_swing("LeftUpLeg",  A_THIGH * sin(w))
-	_swing("RightUpLeg", A_THIGH * sin(w + PI))
-	# joelho dobra mais na fase tras (max(0,-sin))
-	_swing("LeftLeg",  -A_KNEE * maxf(0.0, -sin(w)))
-	_swing("RightLeg", -A_KNEE * maxf(0.0, -sin(w + PI)))
-	# baixa os bracos da T-pose pros lados (LOWER) + balanco do walk (SWING)
-	_arm("LeftArm",   ARM_LOWER, A_ARM * sin(w + PI))
-	_arm("RightArm", -ARM_LOWER, A_ARM * sin(w))
+	# PERNAS: passo frente/tras em torno do eixo lateral do MUNDO (X), fases opostas
+	_apply("LeftUpLeg",  _ax(WX,  A_THIGH * sin(w)))
+	_apply("RightUpLeg", _ax(WX,  A_THIGH * sin(w + PI)))
+	# JOELHO so dobra pra tras (sinal unico), maximo na passagem da perna p/ frente
+	_apply("LeftLeg",  _ax(WX, -A_KNEE * maxf(0.0,  sin(w))))
+	_apply("RightLeg", _ax(WX, -A_KNEE * maxf(0.0,  sin(w + PI))))
+	# BRACOS: baixa (mundo Z, sinal oposto por lado) + balanca oposto a perna (X)
+	_apply("LeftArm",  _ax(WX, A_ARM * sin(w + PI)) * _ax(WZ,  ARM_LOWER))
+	_apply("RightArm", _ax(WX, A_ARM * sin(w))      * _ax(WZ, -ARM_LOWER))
+	# BOB vertical (2x a frequencia do passo)
 	var hi := _sk.find_bone("Hips")
 	if hi >= 0:
-		var bob := BOB * cos(2.0 * w)
 		var off := Vector3.ZERO
-		off[_up_index()] = bob
+		off.y = BOB * cos(2.0 * w)
 		_sk.set_bone_pose_position(hi, _hips_home + off)
 
-func _up_index() -> int:
-	if _up == Vector3(0,0,1): return 2
-	if _up == Vector3(0,1,0): return 1
-	return 0
+func _ax(axis: Vector3, deg: float) -> Basis:
+	return Basis(axis.normalized(), deg_to_rad(deg))
 
-func _swing(bone: String, deg: float) -> void:
+# aplica uma rotacao R definida em coords do MUNDO no osso (converte p/ local
+# usando o rest global do pai) -> robusto ao roll do bone.
+func _apply(bone: String, r: Basis) -> void:
 	var i := _sk.find_bone(bone)
 	if i < 0: return
-	var rest := _sk.get_bone_rest(i).basis.get_rotation_quaternion()
-	var delta := Quaternion(SWING.normalized(), deg_to_rad(deg))
-	_sk.set_bone_pose_rotation(i, rest * delta)
-
-# braco: baixa (eixo LOWER) + balanca (eixo SWING)
-func _arm(bone: String, lower_deg: float, swing_deg: float) -> void:
-	var i := _sk.find_bone(bone)
-	if i < 0: return
-	var rest := _sk.get_bone_rest(i).basis.get_rotation_quaternion()
-	var delta := Quaternion(LOWER.normalized(), deg_to_rad(lower_deg)) \
-		* Quaternion(SWING.normalized(), deg_to_rad(swing_deg))
-	_sk.set_bone_pose_rotation(i, rest * delta)
+	var p := _sk.get_bone_parent(i)
+	var par := _sk.get_bone_global_rest(p).basis if p >= 0 else Basis()
+	var loc := _sk.get_bone_rest(i).basis
+	var new_local := par.inverse() * r * par * loc
+	_sk.set_bone_pose_rotation(i, new_local.get_rotation_quaternion())
 
 func _find_skel(n: Node) -> Skeleton3D:
 	if n is Skeleton3D: return n
