@@ -58,9 +58,32 @@ hora** investida, e começa barato. Ponto cego.
 
 ## 🏛️ Marco preservado — "Era da arte primitiva de IA"
 Decisão (Will, 2026-06-24): **congelar todo o jogo + código procedural atual**
-como snapshot (tag git) — um registro da era artesanal/manual de dev com IA — e
-**partir dele pro jogo novo**, onde tudo será re-trabalhado.
+como snapshot — um registro da era artesanal/manual de dev com IA — e **partir
+dele pro jogo novo**, onde tudo será re-trabalhado.
+- **Snapshot:** branch **`marco/era-arte-primitiva-ia`** (aponta pro commit do
+  estado de 2026-06-24). É o ponto permanente e recuperável.
+  > Tag git anotada (`v0-arte-primitiva-ia`) foi bloqueada pelo proxy do sandbox
+  > (403 em refs não-designadas). Do PC do Will dá pra criar a tag real apontando
+  > pra essa branch, se quiser.
 - **Mobs:** serão **todos re-trabalhados** (ex.: o Boss Goblin procedural é um
   espetáculo, mas não é a versão final). Antes disso, **encontrar o fluxo de
-  produção de mob que funciona** (o equivalente do que fizemos pra Soph).
+  produção de mob que funciona** (o equivalente do que fizemos pra Soph) — fazer
+  o de-risk com **um** mob primeiro, depois escalar.
 - O snapshot garante que o estado "primitivo" nunca se perde, mesmo reescrevendo tudo.
+
+## 🧭 Decisões tomadas
+
+### D1 — Estratégia de repositório: **MESMO REPO** (não abrir repo novo)
+Decisão (Will + Claude, 2026-06-24): o "jogo novo" **não é um jogo novo** — é o
+Great Fireball re-trabalhado (mesma Soph, mesma história, mesmo lore, mesma
+engine, mesmo tooling). Só a **arte/mobs** muda. Portanto:
+- **Continua neste repo** (`blinke1/great-fireball`). Repo novo só re-criaria
+  trabalho (re-setup do hook, do ambiente remoto, do CLAUDE.md; migração na mão
+  de tooling/lore/docs) sem ganho real.
+- O **snapshot** (`marco/era-arte-primitiva-ia`) já garante "partir do estado
+  antigo" sem precisar de repo separado.
+- **Recomeço é arquitetural, não de repositório:** refaz assets/mobs no master
+  (git guarda o velho); se quiser experimentar a nova direção em paralelo, usa
+  uma **branch** (ex.: `v2-arte-definitiva`), não um repo.
+- **Reavaliar só se** o histórico binário (hoje ~143MB) crescer pra GBs e travar
+  clones — aí valeria limpeza de histórico ou repo novo. Não é o caso agora.
