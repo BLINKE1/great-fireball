@@ -6,7 +6,7 @@ const FBX := "res://tools/rig3d/in/soph_rigged.fbx"
 const OUT := "res://tools/rig3d/out/walk/"
 const RES := Vector2i(360, 512)
 const FRAMES := 12
-const AZ := 35.0     # azimute 3/4
+const AZ := 315.0    # 3/4 de frente (validado no orient_probe)
 const EL := 8.0      # elevacao
 
 # walk procedural: rotacoes em torno dos eixos do MUNDO (convertidas p/ local do
@@ -76,23 +76,16 @@ func _setup() -> void:
 	# rodar SO no 1o _process: transforms ja propagados (world AABB valido)
 	_aabb = _world_aabb(_rig)
 	var s := _aabb.size
-	var up_i := 1
-	if s.z >= s.x and s.z >= s.y: up_i = 2
-	elif s.x >= s.y and s.x >= s.z: up_i = 0
-	var axes := [Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1)]
-	_up = axes[up_i]
-	var rem: Array = []
-	for k in 3:
-		if k != up_i: rem.append(axes[k])
-	var side: Vector3 = rem[0]; var fwd: Vector3 = rem[1]
+	_up = Vector3.UP
 	_rig.position = -_aabb.get_center()
 
 	var h: float = maxf(s.x, maxf(s.y, s.z))
 	_cam.size = h * 1.15
+	# orbita Y-up validada no orient_probe: AZ=315 = 3/4 de FRENTE (rosto em +Z)
 	var raz := deg_to_rad(AZ); var rel := deg_to_rad(EL)
 	var dist: float = maxf(h * 3.0, 3.0)
-	var dir: Vector3 = side * (sin(raz) * cos(rel)) - fwd * (cos(raz) * cos(rel)) + _up * sin(rel)
-	_cam.look_at_from_position(dir * dist, Vector3.ZERO, _up)
+	var dir := Vector3(sin(raz) * cos(rel), sin(rel), cos(raz) * cos(rel))
+	_cam.look_at_from_position(dir * dist, Vector3.ZERO, Vector3.UP)
 	_cam.make_current()
 	var hi := _sk.find_bone("Hips")
 	if hi >= 0: _hips_home = _sk.get_bone_pose_position(hi)
@@ -121,9 +114,13 @@ func _pose(p: float) -> void:
 	# JOELHO so dobra pra tras (sinal unico), maximo na passagem da perna p/ frente
 	_apply("LeftLeg",  _ax(WX, -A_KNEE * maxf(0.0,  sin(w))))
 	_apply("RightLeg", _ax(WX, -A_KNEE * maxf(0.0,  sin(w + PI))))
-	# BRACOS: baixa (mundo Z, sinal oposto por lado) + balanca oposto a perna (X)
-	_apply("LeftArm",  _ax(WX, A_ARM * sin(w + PI)) * _ax(WZ,  ARM_LOWER))
-	_apply("RightArm", _ax(WX, A_ARM * sin(w))      * _ax(WZ, -ARM_LOWER))
+	# BRACOS: MIRA cada braco pra baixo (robusto ao bind assimetrico do Hunyuan)
+	# -> roto a direcao real do osso no rest p/ um alvo (baixo + leve frente/lado),
+	# depois somo o balanco do walk (mundo X) oposto a perna.
+	var laim := _aim("LeftArm",  "LeftForeArm",  Vector3(-0.40, -1.0, 0.12))
+	var raim := _aim("RightArm", "RightForeArm", Vector3( 0.40, -1.0, 0.12))
+	_apply("LeftArm",  _ax(WX, A_ARM * sin(w + PI)) * laim)
+	_apply("RightArm", _ax(WX, A_ARM * sin(w))      * raim)
 	# BOB vertical (2x a frequencia do passo)
 	var hi := _sk.find_bone("Hips")
 	if hi >= 0:
@@ -133,6 +130,17 @@ func _pose(p: float) -> void:
 
 func _ax(axis: Vector3, deg: float) -> Basis:
 	return Basis(axis.normalized(), deg_to_rad(deg))
+
+# rotacao (mundo) que faz o osso 'bone'->'child' apontar pra 'target'
+func _aim(bone: String, child: String, target: Vector3) -> Basis:
+	var bi := _sk.find_bone(bone)
+	var ci := _sk.find_bone(child)
+	if bi < 0 or ci < 0: return Basis()
+	var a := _sk.get_bone_global_rest(bi).origin
+	var b := _sk.get_bone_global_rest(ci).origin
+	var cur := b - a
+	if cur.length() < 1e-5: return Basis()
+	return Basis(Quaternion(cur.normalized(), target.normalized()))
 
 # aplica uma rotacao R definida em coords do MUNDO no osso (converte p/ local
 # usando o rest global do pai) -> robusto ao roll do bone.
