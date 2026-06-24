@@ -111,9 +111,10 @@ func _pose(p: float) -> void:
 	# PERNAS: passo frente/tras em torno do eixo lateral do MUNDO (X), fases opostas
 	_apply("LeftUpLeg",  _ax(WX,  A_THIGH * sin(w)))
 	_apply("RightUpLeg", _ax(WX,  A_THIGH * sin(w + PI)))
-	# JOELHO so dobra pra tras (sinal unico), maximo na passagem da perna p/ frente
-	_apply("LeftLeg",  _ax(WX, -A_KNEE * maxf(0.0,  sin(w))))
-	_apply("RightLeg", _ax(WX, -A_KNEE * maxf(0.0,  sin(w + PI))))
+	# JOELHO dobra NATURAL (calcanhar sobe atras = +WX); so num sentido, maximo na
+	# passagem da perna p/ frente. (sinal negativo dava joelho de alienigena kkk)
+	_apply("LeftLeg",  _ax(WX, A_KNEE * maxf(0.0,  sin(w))))
+	_apply("RightLeg", _ax(WX, A_KNEE * maxf(0.0,  sin(w + PI))))
 	# BRACOS: MIRA cada braco pra baixo (robusto ao bind assimetrico do Hunyuan)
 	# -> roto a direcao real do osso no rest p/ um alvo (baixo + leve frente/lado),
 	# depois somo o balanco do walk (mundo X) oposto a perna.
