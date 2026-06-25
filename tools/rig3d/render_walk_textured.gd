@@ -110,19 +110,14 @@ func _process(_d: float) -> bool:
 	return false
 
 func _retarget() -> void:
-	# SO rotacao: orthonormalized() remove a escala 0.01 do armature Mixamo
-	for b in _order:
-		if not _map.has(b): continue
+	# DESVIO local (igual ao idle): T_rest * (M_rest^-1 * M_pose) -> fiel, em pe
+	for b in _map:
 		var mb: int = _map[b]
-		var m_gp: Basis = _ms.get_bone_global_pose(mb).basis.orthonormalized()
-		var m_gr: Basis = _ms.get_bone_global_rest(mb).basis.orthonormalized()
-		var world_delta: Basis = m_gp * m_gr.inverse()
-		var t_gr: Basis = _ts.get_bone_global_rest(b).basis.orthonormalized()
-		var desired: Basis = world_delta * t_gr
-		var par := _ts.get_bone_parent(b)
-		var pg: Basis = (_ts.get_bone_global_pose(par).basis.orthonormalized()) if par >= 0 else Basis()
-		_ts.set_bone_pose_rotation(b, (pg.inverse() * desired).get_rotation_quaternion())
-	# hips fica no rest (in-place) -- nao mexo na translacao p/ evitar mismatch de escala
+		var m_rest: Quaternion = _ms.get_bone_rest(mb).basis.get_rotation_quaternion()
+		var m_pose: Quaternion = _ms.get_bone_pose_rotation(mb)
+		var dev: Quaternion = m_rest.inverse() * m_pose
+		var t_rest: Quaternion = _ts.get_bone_rest(b).basis.get_rotation_quaternion()
+		_ts.set_bone_pose_rotation(b, t_rest * dev)
 
 func _find_skel(n: Node) -> Skeleton3D:
 	if n is Skeleton3D: return n
