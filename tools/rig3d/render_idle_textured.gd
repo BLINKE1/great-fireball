@@ -11,6 +11,9 @@ const FRAMES := 12
 const AZ := 315.0
 const EL := 7.0
 const ARM_ADD := 22.0   # graus de aducao p/ trazer os cotovelos pra perto do tronco
+# ^ default = 22 (menos colado). Alternativa mais colada testada: 35.0 -- ficou
+#   imperceptivel sem o pano dinamico; decidir de vez quando o dream rig (cloth)
+#   estiver no lugar. Trocar p/ 35.0 aqui pra ver a versao mais justa.
 
 var _ts: Skeleton3D
 var _ms: Skeleton3D
