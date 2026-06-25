@@ -22,13 +22,15 @@ docs/concept_art/diag/
 # Mantido fora do repo pra nao inflar historico; reextrair via tools/rig/.
 tools/rig/_video_frames/
 
-# Soph3D: mesh vestido texturizado eh pesado (~69MB) -> cache local
-# em D:\Projetos\great-fireball-local-cache\soph3d\ (re-baixavel do Hunyuan).
-tools/rig3d/in/soph_dressed_mesh.glb
-
 # Claude Code runtime
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 
 # Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
 tools/art_director/iterations/**/*.import
+
+# Soph3D re-rig Mixamo: intermediarios/working files (cache local).
+# DELIVERABLE versionado = soph_textured_rigged.glb (textura 4K + rig Mixamo c/ dedos).
+tools/rig3d/in/soph_for_mixamo.fbx
+tools/rig3d/in/soph_mixamo_rigged.fbx
+tools/rig3d/in/soph_rig_wip.blend
