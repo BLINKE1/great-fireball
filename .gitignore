@@ -34,3 +34,4 @@ tools/rig3d/in/soph_dressed_mesh.glb
 tools/art_director/iterations/**/*.import
 tools/rig3d/in/soph_textured_rigged.glb
 tools/rig3d/out/
+tools/art_director/iterations/goblin/
