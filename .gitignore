@@ -32,3 +32,4 @@ tools/rig3d/in/soph_dressed_mesh.glb
 
 # Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
 tools/art_director/iterations/**/*.import
+tools/rig3d/in/soph_textured_rigged.glb
