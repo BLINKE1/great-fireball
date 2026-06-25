@@ -33,14 +33,17 @@ KEEP = (
 VIEWS = {
     "front": (
         "FRONT view of the goblin, standing UPRIGHT and facing the viewer in a "
-        "symmetric relaxed A-POSE: both arms held slightly away from the body, "
-        "legs straight, looking straight ahead. Less hunched than the reference, "
-        "calm neutral standing reference pose. " + KEEP
+        "symmetric clean A-POSE: both arms held clearly AWAY from the torso at "
+        "about 40 degrees, a wide OPEN GAP visible under each armpit, hands well "
+        "away from the thighs, fingers spread, legs straight and slightly apart, "
+        "looking straight ahead. Less hunched than the reference, calm neutral "
+        "T-pose-like reference stance for 3D rigging. " + KEEP
     ),
     "side": (
         "SIDE PROFILE view of the goblin, facing to the RIGHT (90-degree side "
-        "view), standing upright in the same relaxed A-pose, feet pointing RIGHT "
-        "in profile. " + KEEP
+        "view), standing upright in the same clean A-pose with the arm held away "
+        "from the body (open gap at the armpit), feet pointing RIGHT in profile. "
+        + KEEP
     ),
     # NOTA: o safety do Azure (gptimage) recusa "from BEHIND / back of the legs".
     # Esta redacao mais neutra ("turned around, shows its back") passa.
@@ -49,7 +52,8 @@ VIEWS = {
         "head is turned away looking forward, we see the back of the skull, the "
         "back of the two large pointed ears, the dark hair crest, the bony spikes "
         "running down the spine, the back of the tunic and the tail of cloth, "
-        "standing upright in a calm symmetric A-pose. " + KEEP
+        "standing upright in a clean symmetric A-pose with both arms held away "
+        "from the torso at about 40 degrees, open gap under each armpit. " + KEEP
     ),
 }
 
