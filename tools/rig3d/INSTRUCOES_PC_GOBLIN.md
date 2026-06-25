@@ -95,6 +95,11 @@ frente canônica, mantendo a família coerente.
   mesh separado. Gerado por img2img ancorado na frente do grunt.
   > Nota: os vambraces saíram sutis (lêem como faixa); se quiser metal nítido no
   > antebraço, regerar a frente puxando "riveted metal vambrace".
+  > ⚠️ **Aposta consciente (NÃO "consertar"):** nas costas do elite o cinto+saia
+  > aparecem espelhados da frente (fivela atrás também). É de propósito deixar
+  > assim pra ver como o Hunyuan reconcilia — vira "cinto dando a volta" + costas
+  > de fora (headcanon: goblin estilista). Câmera 3/4 + pixel-bake escondem. Se
+  > der zebra na lombar, é só **1 geração** pra rerodar `elite_back`.
 - **Mutante roxo (boss)** — futuro; no procedural é `goblin_mutant` (braço
   gigante, mutação roxa, bandoleira de bombas).
 
