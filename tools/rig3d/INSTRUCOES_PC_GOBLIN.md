@@ -100,8 +100,17 @@ frente canônica, mantendo a família coerente.
   > assim pra ver como o Hunyuan reconcilia — vira "cinto dando a volta" + costas
   > de fora (headcanon: goblin estilista). Câmera 3/4 + pixel-bake escondem. Se
   > der zebra na lombar, é só **1 geração** pra rerodar `elite_back`.
-- **Mutante roxo (boss)** — futuro; no procedural é `goblin_mutant` (braço
-  gigante, mutação roxa, bandoleira de bombas).
+- **Mutante (BOSS)** — `docs/concept_art/goblin/boss/boss_{front,side,back}.png`
+  (+ `boss_concept.png`). Combinação das 3 refs MTG do Will: **Goblin Goon**
+  (porte brutamonte gigante, cabeça pequena) + **Siege-Gang Commander** (bandoleira
+  de bombas) + **Trashmaster** (sucata/cogs/manopla mecânica). Assinatura mutante:
+  **braço gigante ASSIMÉTRICO** com manopla-bomba de sucata + o outro braço
+  atrofiado, marca de mutação no peito, fileira de espinhos ósseos, olhos vermelhos.
+  > ⚔️ **Gameplay:** o braço gigante é o que o **Gus arranca no Convoke** → existe
+  > `goblin_mutant_noarm` no procedural. No 3D, modelar o **braço-bomba como peça
+  > destacável** (mesh/nó separado preso ao ombro) pra poder sumir com ele no
+  > evento. Câmera 3/4 + ~2x o tamanho da Soph (arena trancada por avalanche).
+  > Não simétrico → não force A-pose; o multiview já preserva a assimetria.
 
 ## Regras do projeto (não esquecer)
 - A Soph é **MAGA / sorceress** — nunca "bruxa". (Não afeta o goblin, mas vale
