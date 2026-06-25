@@ -113,6 +113,11 @@ frente canônica, mantendo a família coerente.
   > destacável** (mesh/nó separado preso ao ombro) pra poder sumir com ele no
   > evento. Câmera 3/4 + ~2x o tamanho da Soph (arena trancada por avalanche).
   > Não simétrico → não force A-pose; o multiview já preserva a assimetria.
+  > 🧪 **Teste dos limites do Hunyuan (pedido do Will):** rodar o boss nas DUAS
+  > vias e comparar — (a) **single-image** com a 3/4 original `boss_original_3q.png`
+  > (= `boss_concept.png`); (b) **multiview** com `boss_{front,side,back}.png`. Ver
+  > qual segura melhor a manopla-canhão e a assimetria. (Hipótese: multiview ganha,
+  > mas a 3/4 dramática pode dar um lado oculto mais "chutado" interessante.)
 
 ## Regras do projeto (não esquecer)
 - A Soph é **MAGA / sorceress** — nunca "bruxa". (Não afeta o goblin, mas vale
