@@ -48,9 +48,23 @@ No Blender, separar (P → by material/selection) o mesh em:
 - Selecionar o mesh da robe → **Physics → Cloth**.
 - **Pin group** (weight paint) na **gola/ombros/cintura** (parte que gruda no
   corpo) — o resto cai/balança.
-- **Collision**: marcar o corpo como **Collision** pra robe não atravessar.
 - Preset "Silk"/"Cotton" + ajustar. Para a **manga**: o pin no ombro + cloth no
   resto faz ela **cair** em vez de puffar.
+
+> #### ⚡ Atalho do Will: cloth SEM colisão de corpo (truque dos jogos antigos)
+> O que conserta o **splay** da manga é **gravidade + pin** (ela *cai*), **não**
+> a colisão. E a **colisão de corpo é a parte mais chata e lenta** de ajustar.
+> Como a gente assa um frame **3/4 com câmera fixa**, todo pano que **entra no
+> corpo fica escondido atrás do corpo** — a câmera nunca vê o interior (igual
+> PS1/PS2). Então:
+> - **Pular o Collision do corpo.** Rodar cloth só com **gravidade + pin**.
+> - A manga **cai** (resolve o splay); onde ela afundar no corpo, o 3/4 **oculta
+>   de graça**.
+> - Resultado: setup mais rápido, bake mais rápido, frame final igual.
+> - ⚠️ Só vale porque a câmera é **fixa**. Se um dia girar a câmera, a
+>   penetração apareceria — aí sim liga o Collision. Pro bake 2D, dispensa.
+> - Cuidado tópico: só liga Collision se o pano **atravessar a silhueta** (sair
+>   pelo outro lado e aparecer na borda visível). Aí é caso a caso.
 
 ### 4) Para CADA animação (idle, walk, run, cast…)
 1. Aplicar a animação Mixamo no corpo (retarget — pode mandar a nuvem fazer, ou
