@@ -28,3 +28,9 @@ tools/rig/_video_frames/
 
 # Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
 tools/art_director/iterations/**/*.import
+
+# Soph3D re-rig Mixamo: intermediarios/working files (cache local).
+# DELIVERABLE versionado = soph_textured_rigged.glb (textura 4K + rig Mixamo c/ dedos).
+tools/rig3d/in/soph_for_mixamo.fbx
+tools/rig3d/in/soph_mixamo_rigged.fbx
+tools/rig3d/in/soph_rig_wip.blend
