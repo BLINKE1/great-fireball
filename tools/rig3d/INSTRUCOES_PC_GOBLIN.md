@@ -104,8 +104,10 @@ frente canônica, mantendo a família coerente.
   (+ `boss_concept.png`). Combinação das 3 refs MTG do Will: **Goblin Goon**
   (porte brutamonte gigante, cabeça pequena) + **Siege-Gang Commander** (bandoleira
   de bombas) + **Trashmaster** (sucata/cogs/manopla mecânica). Assinatura mutante:
-  **braço gigante ASSIMÉTRICO** com manopla-bomba de sucata + o outro braço
-  atrofiado, marca de mutação no peito, fileira de espinhos ósseos, olhos vermelhos.
+  **braço gigante ASSIMÉTRICO** com manopla-canhão multi-cano de sucata (portas
+  vermelhas brilhando) + cacho de bombas espetadas + o outro braço atrofiado;
+  cabeça amarela-oliva, olho roxo de mutação, língua de cobra, fileira de
+  espinhos ósseos na espinha, bandoleira de couro.
   > ⚔️ **Gameplay:** o braço gigante é o que o **Gus arranca no Convoke** → existe
   > `goblin_mutant_noarm` no procedural. No 3D, modelar o **braço-bomba como peça
   > destacável** (mesh/nó separado preso ao ombro) pra poder sumir com ele no
