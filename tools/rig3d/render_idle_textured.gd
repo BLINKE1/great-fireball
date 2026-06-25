@@ -10,6 +10,7 @@ const RES  := Vector2i(560, 820)
 const FRAMES := 12
 const AZ := 315.0
 const EL := 7.0
+const ARM_ADD := 22.0   # graus de aducao p/ trazer os cotovelos pra perto do tronco
 
 var _ts: Skeleton3D
 var _ms: Skeleton3D
@@ -117,6 +118,19 @@ func _retarget() -> void:
 		_ts.set_bone_pose_rotation(b, t_rest * dev)
 	if _hips >= 0:
 		_ts.set_bone_pose_position(_hips, _hips_home)  # in-place
+	# correcao: aduz os bracos (cotovelos pra perto do tronco) -- ombro largo do auto-rig
+	_world_rot("mixamorig_LeftArm", Vector3(0,0,1), -ARM_ADD)
+	_world_rot("mixamorig_RightArm", Vector3(0,0,1), ARM_ADD)
+
+# aplica uma rotacao no MUNDO sobre a pose ATUAL do osso (depois do retarget)
+func _world_rot(bone: String, axis: Vector3, deg: float) -> void:
+	var b := _ts.find_bone(bone)
+	if b < 0: return
+	var r := Basis(axis.normalized(), deg_to_rad(deg))
+	var cur := _ts.get_bone_global_pose(b).basis.orthonormalized()
+	var par := _ts.get_bone_parent(b)
+	var pg: Basis = (_ts.get_bone_global_pose(par).basis.orthonormalized()) if par >= 0 else Basis()
+	_ts.set_bone_pose_rotation(b, (pg.inverse() * (r * cur)).get_rotation_quaternion())
 
 func _find_skel(n: Node) -> Skeleton3D:
 	if n is Skeleton3D: return n
