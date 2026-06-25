@@ -77,11 +77,26 @@ ls docs/concept_art/goblin/goblin_front.png \
 - **Sem cabelo-mana** → sem spring bones. A crista é rígida.
 - **Rosto perdoado** pelo pixel-bake Dead Cells → não precisa consertar a cara.
 
-## 🔮 Depois (variantes — reusar o mesmo set)
-O `gen_goblin_multiview.py` aceita `--anchor`: dá pra derivar **grunt / archer /
-elite / o mutante roxo (boss)** mudando cor/escala/adereços a partir da frente
-canônica, mantendo a família coerente. (Já existem no procedural:
-`goblin_archer`, `goblin_leader`, `goblin_mutant`.)
+## 👪 Família do goblin (variantes — reusar a base)
+Princípio: **mesmo corpo base**, muda **arma (mesh separado)** e/ou **adereços**.
+O `gen_goblin_multiview.py` aceita `--anchor` → derivar variantes a partir de uma
+frente canônica, mantendo a família coerente.
+
+- **Grunt (basal)** — `docs/concept_art/goblin/goblin_{front,side,back}.png`.
+  Mãos vazias.
+- **Lancer** (ex-archer) — **MESMA base do grunt**, só a **arma = LANÇA** (mesh
+  separado no osso da mão). ⚔️ A lança como objeto próprio habilita a mecânica
+  de **parry/corte**: a Soph corta a lança no timing perfeito do melee
+  destacando/quebrando o mesh da arma — sem tocar no corpo do goblin. (No
+  procedural ainda é `goblin_archer` + `goblin_arrow`.)
+- **Elite / Leader** — `docs/concept_art/goblin/elite/elite_{front,side,back}.png`.
+  Maior/musculoso + **metal parcial** estilo Rabblemaster (elmo de placas
+  espetado + pauldrons; tronco de pano, sem peitoral). Mãos vazias; cimitarra =
+  mesh separado. Gerado por img2img ancorado na frente do grunt.
+  > Nota: os vambraces saíram sutis (lêem como faixa); se quiser metal nítido no
+  > antebraço, regerar a frente puxando "riveted metal vambrace".
+- **Mutante roxo (boss)** — futuro; no procedural é `goblin_mutant` (braço
+  gigante, mutação roxa, bandoleira de bombas).
 
 ## Regras do projeto (não esquecer)
 - A Soph é **MAGA / sorceress** — nunca "bruxa". (Não afeta o goblin, mas vale
