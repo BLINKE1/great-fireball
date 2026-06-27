@@ -28,7 +28,12 @@ tools/rig/_video_frames/
 
 # Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
 tools/art_director/iterations/**/*.import
-tools/rig3d/out/
+tools/rig3d/out/**
+# Excecoes: precisa "abrir" diretorios pai pra permitir negacao do arquivo
+!tools/rig3d/out/dream_rig/
+!tools/rig3d/out/dream_rig/walk_test/
+# Deliverable visual: GIF do walk cycle (Soph andando com pano e cabelo)
+!tools/rig3d/out/dream_rig/walk_test/soph_walk_cycle.gif
 tools/art_director/iterations/goblin/
 tools/art_director/iterations/golem/
 tools/art_director/iterations/mago/
@@ -38,3 +43,5 @@ tools/art_director/iterations/mago/
 tools/rig3d/in/soph_for_mixamo.fbx
 tools/rig3d/in/soph_mixamo_rigged.fbx
 tools/rig3d/in/soph_rig_wip.blend
+# Backup automatico do Blender (.blend1) — sempre regenerado, polui o repo
+tools/rig3d/in/*.blend1
