@@ -32,8 +32,10 @@ tools/rig3d/out/**
 # Excecoes: precisa "abrir" diretorios pai pra permitir negacao do arquivo
 !tools/rig3d/out/dream_rig/
 !tools/rig3d/out/dream_rig/walk_test/
-# Deliverable visual: GIF do walk cycle (Soph andando com pano e cabelo)
-!tools/rig3d/out/dream_rig/walk_test/soph_walk_cycle.gif
+!tools/rig3d/out/dream_rig/idle_test/
+# Deliverables visuais: GIFs do walk/idle cycles (Soph com pano e cabelo)
+!tools/rig3d/out/dream_rig/walk_test/*.gif
+!tools/rig3d/out/dream_rig/idle_test/*.gif
 tools/art_director/iterations/goblin/
 tools/art_director/iterations/golem/
 tools/art_director/iterations/mago/
