@@ -11,10 +11,16 @@ const SOPH := "res://tools/rig3d/in/soph_textured_rigged.glb"
 const FPS := 30.0
 const ARM_ADD := 22.0   # adução: tira o braço aberto (cotovelos pro tronco)
 
-# anim -> [arquivo FBX, nome da anim exportada]
+# anim -> { fbx, adduct } -- adduct=true so na locomocao (abaixa braco); combate
+# (cast/slash com braco erguido) NAO aduz pra nao distorcer a pose do mocap.
 const ANIMS := {
-	"idle": "res://assets/mixamo/idle.fbx",
-	"walk": "res://assets/mixamo/walking.fbx",
+	"idle":  {"fbx": "res://assets/mixamo/idle.fbx",    "adduct": true},
+	"walk":  {"fbx": "res://assets/mixamo/walking.fbx", "adduct": true},
+	"run":   {"fbx": "res://assets/mixamo/running.fbx", "adduct": true},
+	"jump":  {"fbx": "res://assets/mixamo/jump.fbx",    "adduct": true},
+	"cast":  {"fbx": "res://assets/mixamo/cast.fbx",    "adduct": false},
+	"slash": {"fbx": "res://assets/mixamo/slash.fbx",   "adduct": false},
+	"hurt":  {"fbx": "res://assets/mixamo/hurt.fbx",    "adduct": false},
 }
 
 var _ts: Skeleton3D
@@ -25,13 +31,15 @@ var _map: Dictionary = {}
 var _hips := -1
 var _hips_home := Vector3.ZERO
 var _animname := ""
+var _adduct := true
 
 func _initialize() -> void:
 	var which := "idle"
 	var uargs := OS.get_cmdline_user_args()
 	if uargs.size() > 0 and ANIMS.has(uargs[0]):
 		which = uargs[0]
-	var fbx_path: String = ANIMS[which]
+	var fbx_path: String = ANIMS[which]["fbx"]
+	_adduct = ANIMS[which]["adduct"]
 	var out_path := "res://tools/rig3d/in/soph_%s_retargeted.glb" % which
 	print("[export] anim=%s  fbx=%s  out=%s" % [which, fbx_path, out_path])
 
@@ -128,8 +136,9 @@ func _retarget() -> void:
 		_ts.set_bone_pose_rotation(b, t_rest * dev)
 	if _hips >= 0:
 		_ts.set_bone_pose_position(_hips, _hips_home)
-	_world_rot("mixamorig_LeftArm", Vector3(0, 0, 1), -ARM_ADD)
-	_world_rot("mixamorig_RightArm", Vector3(0, 0, 1), ARM_ADD)
+	if _adduct:
+		_world_rot("mixamorig_LeftArm", Vector3(0, 0, 1), -ARM_ADD)
+		_world_rot("mixamorig_RightArm", Vector3(0, 0, 1), ARM_ADD)
 
 func _world_rot(bone: String, axis: Vector3, deg: float) -> void:
 	var b := _ts.find_bone(bone)
