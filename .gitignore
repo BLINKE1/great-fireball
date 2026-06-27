@@ -36,6 +36,11 @@ tools/rig3d/out/**
 # Deliverables visuais: GIFs do walk/idle cycles (Soph com pano e cabelo)
 !tools/rig3d/out/dream_rig/walk_test/*.gif
 !tools/rig3d/out/dream_rig/idle_test/*.gif
+# Anim PRO retargetada (Mixamo via DESVIO + aducao de braco) — bracos abaixados
+!tools/rig3d/out/dream_rig/walk_pro/
+!tools/rig3d/out/dream_rig/idle_pro/
+!tools/rig3d/out/dream_rig/walk_pro/*.gif
+!tools/rig3d/out/dream_rig/idle_pro/*.gif
 tools/art_director/iterations/goblin/
 tools/art_director/iterations/golem/
 tools/art_director/iterations/mago/
