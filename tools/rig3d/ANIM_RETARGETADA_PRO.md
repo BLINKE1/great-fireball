@@ -55,7 +55,12 @@ dá pra reaproveitar o `cloth_pin` que o `auto_pin_map.py` já gera, sem recalcu
    - **Bake** do cloth no **frame range da Action** (idle 0–180 / walk 0–56) → o pano
      e o cabelo oscilam **acompanhando a anim boa**.
 
-6. **Render → gif** com `_make_gif.py` pra visualizar. Saída em `out/dream_rig/`.
+6. **Render → gif** com **`make_gif.py`** (o novo, anti-flicker — NÃO use o
+   `_make_gif.py`, que gera gif piscando/corrompido). Ex.:
+   ```bash
+   python tools/rig3d/make_gif.py tools/rig3d/out/dream_rig/idle_pro \
+     tools/rig3d/out/dream_rig/idle_pro/soph_idle_pro.gif --glob "*f*.png" --fps 24
+   ```
 
 7. **Resultado = santo graal.** Aí é só repetir pro `walk` e seguir pras outras
    ações (run/cast) gerando mais `.glb` com `export_retargeted_anim.gd` (já aceita
@@ -74,3 +79,19 @@ xvfb-run -a "$GODOT" --rendering-driver opengl3 -s tools/rig3d/export_retargeted
   (sem duplicar a malha), dá pra exportar um glb só-armature depois — avisa que eu ajusto.
 - O retarget foi validado tocando a anim **de dentro do próprio glb** (`_verify_retargeted.gd`),
   não só no render — então a anim **está mesmo embutida**, não é só pose de tela.
+
+## 🎞️ Poses disponiveis (todas no master, mesmo fluxo)
+| glb | anim | frames |
+|---|---|---|
+| soph_idle_retargeted.glb | idle | 180f/6.0s |
+| soph_walk_retargeted.glb | walk | 56f/1.87s |
+| soph_run_retargeted.glb | run | 236f/7.87s |
+| soph_jump_retargeted.glb | jump | 73f/2.43s |
+| soph_cast_retargeted.glb | cast | 69f/2.30s |
+| soph_slash_retargeted.glb | slash | 50f/1.67s |
+| soph_hurt_retargeted.glb | hurt | 181f/6.03s |
+
+**Aducao de braco:** ligada so na locomocao (idle/walk/run/jump -> bracos
+abaixados). Combate (cast/slash/hurt) NAO aduz, pra preservar a pose do mocap
+(braco erguido no cast, golpe no slash). Controlado pelo campo `adduct` no dict
+`ANIMS` do export_retargeted_anim.gd.
