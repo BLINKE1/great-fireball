@@ -55,7 +55,12 @@ dá pra reaproveitar o `cloth_pin` que o `auto_pin_map.py` já gera, sem recalcu
    - **Bake** do cloth no **frame range da Action** (idle 0–180 / walk 0–56) → o pano
      e o cabelo oscilam **acompanhando a anim boa**.
 
-6. **Render → gif** com `_make_gif.py` pra visualizar. Saída em `out/dream_rig/`.
+6. **Render → gif** com **`make_gif.py`** (o novo, anti-flicker — NÃO use o
+   `_make_gif.py`, que gera gif piscando/corrompido). Ex.:
+   ```bash
+   python tools/rig3d/make_gif.py tools/rig3d/out/dream_rig/idle_pro \
+     tools/rig3d/out/dream_rig/idle_pro/soph_idle_pro.gif --glob "*f*.png" --fps 24
+   ```
 
 7. **Resultado = santo graal.** Aí é só repetir pro `walk` e seguir pras outras
    ações (run/cast) gerando mais `.glb` com `export_retargeted_anim.gd` (já aceita
