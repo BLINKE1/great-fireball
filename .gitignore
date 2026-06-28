@@ -28,7 +28,30 @@ tools/rig/_video_frames/
 
 # Godot import sidecars dos artefatos da art-pipeline (nao sao assets do jogo)
 tools/art_director/iterations/**/*.import
-tools/rig3d/out/
+tools/rig3d/out/**
+# Excecoes: precisa "abrir" diretorios pai pra permitir negacao do arquivo
+!tools/rig3d/out/dream_rig/
+!tools/rig3d/out/dream_rig/walk_test/
+!tools/rig3d/out/dream_rig/idle_test/
+# Deliverables visuais: GIFs do walk/idle cycles (Soph com pano e cabelo)
+!tools/rig3d/out/dream_rig/walk_test/*.gif
+!tools/rig3d/out/dream_rig/idle_test/*.gif
+# Anim PRO retargetada (Mixamo via DESVIO + aducao de braco) — bracos abaixados
+!tools/rig3d/out/dream_rig/walk_pro/
+!tools/rig3d/out/dream_rig/idle_pro/
+!tools/rig3d/out/dream_rig/walk_pro/*.gif
+!tools/rig3d/out/dream_rig/idle_pro/*.gif
+# Demais poses PRO (run/jump/cast/slash/hurt) — cloth bake em cima da anim
+!tools/rig3d/out/dream_rig/run_pro/
+!tools/rig3d/out/dream_rig/jump_pro/
+!tools/rig3d/out/dream_rig/cast_pro/
+!tools/rig3d/out/dream_rig/slash_pro/
+!tools/rig3d/out/dream_rig/hurt_pro/
+!tools/rig3d/out/dream_rig/run_pro/*.gif
+!tools/rig3d/out/dream_rig/jump_pro/*.gif
+!tools/rig3d/out/dream_rig/cast_pro/*.gif
+!tools/rig3d/out/dream_rig/slash_pro/*.gif
+!tools/rig3d/out/dream_rig/hurt_pro/*.gif
 tools/art_director/iterations/goblin/
 tools/art_director/iterations/golem/
 tools/art_director/iterations/mago/
@@ -38,3 +61,5 @@ tools/art_director/iterations/mago/
 tools/rig3d/in/soph_for_mixamo.fbx
 tools/rig3d/in/soph_mixamo_rigged.fbx
 tools/rig3d/in/soph_rig_wip.blend
+# Backup automatico do Blender (.blend1) — sempre regenerado, polui o repo
+tools/rig3d/in/*.blend1
