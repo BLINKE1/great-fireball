@@ -45,3 +45,4 @@ tools/rig3d/in/*_texture_pbr_*.png
 tools/rig3d/in/*_normal.png
 tools/rig3d/in/*_roughness.png
 tools/rig3d/in/*_Material_*.png
+tools/rig3d/in/*.png
