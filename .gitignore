@@ -41,6 +41,17 @@ tools/rig3d/out/**
 !tools/rig3d/out/dream_rig/idle_pro/
 !tools/rig3d/out/dream_rig/walk_pro/*.gif
 !tools/rig3d/out/dream_rig/idle_pro/*.gif
+# Demais poses PRO (run/jump/cast/slash/hurt) — cloth bake em cima da anim
+!tools/rig3d/out/dream_rig/run_pro/
+!tools/rig3d/out/dream_rig/jump_pro/
+!tools/rig3d/out/dream_rig/cast_pro/
+!tools/rig3d/out/dream_rig/slash_pro/
+!tools/rig3d/out/dream_rig/hurt_pro/
+!tools/rig3d/out/dream_rig/run_pro/*.gif
+!tools/rig3d/out/dream_rig/jump_pro/*.gif
+!tools/rig3d/out/dream_rig/cast_pro/*.gif
+!tools/rig3d/out/dream_rig/slash_pro/*.gif
+!tools/rig3d/out/dream_rig/hurt_pro/*.gif
 tools/art_director/iterations/goblin/
 tools/art_director/iterations/golem/
 tools/art_director/iterations/mago/

@@ -1,20 +1,27 @@
-"""Roda cloth sim em cima da anim PRO retargetada (idle ou walk) e renderiza
-todos os frames pro gif final.
+"""Roda cloth sim em cima da anim PRO retargetada e renderiza todos os frames
+pro gif final.
 
-A nuvem assou as anims Mixamo retargetadas em .glb (bracos abaixados, sem
-placeholder). Aqui: importa o glb, aplica o pin map (mesma heuristica do
-auto_pin_map.py), bota Cloth modifier, baka pra anim toda, renderiza.
+A nuvem assou as anims Mixamo retargetadas em .glb (bracos abaixados na
+locomocao; combate preserva a pose do mocap). Aqui: importa o glb, aplica o
+pin map (mesma heuristica do auto_pin_map.py), bota Cloth modifier, baka pra
+anim toda, renderiza.
+
+Anims aceitas: idle, walk, run, jump, cast, slash, hurt (tudo que ja tem
+.glb em tools/rig3d/in/soph_{anim}_retargeted.glb).
 
 Uso:
   blender --background --python tools/rig3d/make_anim_cloth.py -- idle
   blender --background --python tools/rig3d/make_anim_cloth.py -- walk
+  blender --background --python tools/rig3d/make_anim_cloth.py -- run
+  ... (idem pra jump/cast/slash/hurt)
 
 Saida:
-  tools/rig3d/out/dream_rig/{idle,walk}_pro/frame_NN.png
-  tools/rig3d/out/dream_rig/soph_{idle,walk}_pro.blend
+  tools/rig3d/out/dream_rig/{anim}_pro/frame_NN.png
+  tools/rig3d/out/dream_rig/soph_{anim}_pro.blend
 
-Depois:
-  python tools/rig3d/_make_gif.py {idle,walk}_pro soph_{idle,walk}_pro
+Depois (gif anti-flicker):
+  python tools/rig3d/make_gif.py tools/rig3d/out/dream_rig/{anim}_pro \\
+    tools/rig3d/out/dream_rig/{anim}_pro/soph_{anim}_pro.gif --glob "frame_*.png" --fps 24
 """
 
 import bpy, os, sys, math
@@ -159,8 +166,9 @@ def setup_camera(name, location, look_at, ortho_scale=1.4):
 
 def main():
     anim = parse_anim()
-    if anim not in ("idle", "walk"):
-        raise SystemExit(f"anim invalida: {anim} — use 'idle' ou 'walk'")
+    valid = ("idle", "walk", "run", "jump", "cast", "slash", "hurt")
+    if anim not in valid:
+        raise SystemExit(f"anim invalida: {anim} — use uma de {valid}")
 
     in_glb = os.path.join(IN_DIR, f"soph_{anim}_retargeted.glb")
     if not os.path.exists(in_glb):
