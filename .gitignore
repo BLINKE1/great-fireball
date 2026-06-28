@@ -61,5 +61,13 @@ tools/art_director/iterations/mago/
 tools/rig3d/in/soph_for_mixamo.fbx
 tools/rig3d/in/soph_mixamo_rigged.fbx
 tools/rig3d/in/soph_rig_wip.blend
+# Godot extrai sidecars/texturas dos GLB ao importar -- derivados (o .glb e o deliverable)
+tools/rig3d/in/*.import
+tools/rig3d/in/*_texture_pbr_*.png
+tools/rig3d/in/*_normal.png
+tools/rig3d/in/*_roughness.png
+tools/rig3d/in/*_Material_*.png
+tools/rig3d/in/*.png
+
 # Backup automatico do Blender (.blend1) — sempre regenerado, polui o repo
 tools/rig3d/in/*.blend1
