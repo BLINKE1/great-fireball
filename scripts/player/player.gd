@@ -245,6 +245,7 @@ func _ready() -> void:
 	base_modulate = sprite.modulate
 	mana.mana_changed.connect(_on_mana_changed)
 	hp.died.connect(_on_died)
+	sprite.animation_finished.connect(_on_sprite_anim_finished)
 	mana.regen_rate = 4.0
 	mana.out_of_combat_delay = 2.0
 
@@ -1129,11 +1130,26 @@ func _update_anim() -> void:
 	elif spd > 180.0:
 		anim = "run"
 	elif spd > 20.0:
-		anim = "walk"
+		# Arrancada: so toca walk_start quando ela sai do PARADO (idle). Vindo de
+		# run/pulo/etc ela ja esta em movimento -> entra direto no loop limpo.
+		var cur := sprite.animation
+		if cur == "walk" or cur == "walk_start":
+			anim = cur                 # nao interrompe (deixa start terminar / loop seguir)
+		elif cur.begins_with("idle"):
+			anim = "walk_start"        # do parado -> arrancada
+		else:
+			anim = "walk"              # ja em movimento -> loop direto
 	else:
 		anim = "idle_%d" % _mana_level
 	if sprite.animation != anim:
 		sprite.play(anim)
+
+func _on_sprite_anim_finished() -> void:
+	# Quando a arrancada (walk_start) termina e ela ainda anda no chao, emenda no
+	# loop limpo do walk (8-38). Ataques sao por timer, entao nao conflitam aqui.
+	if sprite.animation == "walk_start" and is_on_floor() \
+			and absf(velocity.x) > 20.0 and absf(velocity.x) <= 180.0:
+		sprite.play("walk")
 
 func _build_soph_frames() -> SpriteFrames:
 	if USE_HD_SOPH:
@@ -1176,7 +1192,10 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# Muitos frames por anim p/ fluidez (sampleados das anims Mixamo).
 	var sf := SpriteFrames.new()
 	_add_anim(sf, "idle", _seq("soph_hd_idle_%d",  8), 7.0,  true)
-	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 12), 14.0, true)
+	# walk_start = arrancada do parado (inercia, frames 0-7), toca 1x ao sair do
+	# idle e emenda no loop; walk = ciclo limpo (frames 8-38) sem costura.
+	_add_anim(sf, "walk_start", _seq("soph_hd_walkstart_%d", 8), 22.0, false)
+	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 31), 22.0, true)
 	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  12), 18.0, true)
 	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
 	_add_anim(sf, "fall", _seq("soph_hd_fall_%d",  3),  8.0, true)
