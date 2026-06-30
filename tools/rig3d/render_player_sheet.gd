@@ -72,9 +72,11 @@ func _process(_d: float) -> bool:
 		_cam.make_current()
 	_f += 1
 	if _i >= _n: quit(0); return true
-	# amostra _n frames na janela [_t0,_t1]; pula o ultimo==primeiro em loop
+	# amostra _n frames na janela [_t0,_t1]; wrap (fmod) pra janelas > 1.0 darem
+	# a volta no loop em vez de clampar no ultimo frame
 	var frac: float = _t0 + (float(_i)/float(_n)) * (_t1 - _t0)
-	_ap.seek(frac * _len, true)
+	var t: float = fmod(frac * _len, _len)
+	_ap.seek(t, true)
 	if _f % 3 == 0:
 		get_root().get_texture().get_image().save_png(ProjectSettings.globalize_path(_out + "f%02d.png" % _i))
 		_i += 1
