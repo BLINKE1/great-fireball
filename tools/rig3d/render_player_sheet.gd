@@ -14,6 +14,8 @@ var _animname := ""
 var _f := 0
 var _i := 0
 var _n := 8
+var _t0 := 0.0
+var _t1 := 1.0
 var _ready := false
 var _out := ""
 
@@ -22,6 +24,8 @@ func _initialize() -> void:
 	var uargs := OS.get_cmdline_user_args()
 	if uargs.size() > 0: which = uargs[0]
 	if uargs.size() > 1: _n = int(uargs[1])
+	if uargs.size() > 2: _t0 = float(uargs[2])   # fracao inicial da anim (0..1)
+	if uargs.size() > 3: _t1 = float(uargs[3])   # fracao final da anim (0..1)
 	var glb := "res://tools/rig3d/in/soph_%s_retargeted.glb" % which
 	_out = "res://tools/rig3d/out/player_sheet/%s/" % which
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
@@ -68,8 +72,9 @@ func _process(_d: float) -> bool:
 		_cam.make_current()
 	_f += 1
 	if _i >= _n: quit(0); return true
-	# amostra _n frames; pula o ultimo==primeiro em loop (usa fracao i/n)
-	_ap.seek((float(_i)/float(_n))*_len, true)
+	# amostra _n frames na janela [_t0,_t1]; pula o ultimo==primeiro em loop
+	var frac: float = _t0 + (float(_i)/float(_n)) * (_t1 - _t0)
+	_ap.seek(frac * _len, true)
 	if _f % 3 == 0:
 		get_root().get_texture().get_image().save_png(ProjectSettings.globalize_path(_out + "f%02d.png" % _i))
 		_i += 1

@@ -1166,27 +1166,29 @@ func _build_soph_frames_pixel() -> SpriteFrames:
 		_add_anim(sf, "idle_%d" % lvl, ["soph_mana_%d" % lvl], 4.0, true)
 	return sf
 
+func _seq(prefix: String, n: int) -> Array:
+	var a: Array = []
+	for i in range(n): a.append(prefix % i)
+	return a
+
 func _build_soph_frames_hd() -> SpriteFrames:
-	# Conjunto HD (soph_hd_*): idle/walk/run + jump/fall/hurt.
+	# Conjunto HD (soph_hd_*) = dream rig 3D retargetado, pixel-bake Dead Cells.
+	# Muitos frames por anim p/ fluidez (sampleados das anims Mixamo).
 	var sf := SpriteFrames.new()
-	_add_anim(sf, "idle", ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
-	# walk/run HD staff-free (set walkrun9 ancorado na master v2): maos vazias,
-	# principio "arma so na acao". walk=4 frames, run=2.
-	_add_anim(sf, "walk", ["soph_hd_walk_0","soph_hd_walk_1",
-							 "soph_hd_walk_2","soph_hd_walk_3"], 10.0, true)
-	_add_anim(sf, "run",  ["soph_hd_run_0","soph_hd_run_1"], 14.0, true)
-	_add_anim(sf, "jump", ["soph_hd_jump_0"], 8.0, false)
-	_add_anim(sf, "fall", ["soph_hd_fall_0"], 8.0, false)
-	_add_anim(sf, "hurt", ["soph_hd_hurt_0"], 8.0, false)
-	# Poses de ataque HD do set1 (cast = magia com a gema; slash = golpe com o cajado).
-	# Mesmos frames pra todo nível de mana por ora — variantes de cabelo virão da
-	# recoloração procedural por máscara (ver CLAUDE.md: mana no cabelo).
+	_add_anim(sf, "idle", _seq("soph_hd_idle_%d",  8), 7.0,  true)
+	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 12), 14.0, true)
+	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  12), 18.0, true)
+	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
+	_add_anim(sf, "fall", _seq("soph_hd_fall_%d",  3),  8.0, true)
+	_add_anim(sf, "hurt", _seq("soph_hd_hurt_%d",  6), 12.0, false)
+	# Ataques (cast = magia; slash = golpe). Mesmos frames p/ todo nível de mana
+	# por ora — variantes de cabelo virão da recoloração por máscara.
 	for lvl in range(1, 6):
-		_add_anim(sf, "cast_%d"  % lvl, ["soph_hd_cast_0", "soph_hd_cast_1"], 12.0, false)
-		_add_anim(sf, "slash_%d" % lvl, ["soph_hd_slash_0", "soph_hd_slash_1"], 14.0, false)
+		_add_anim(sf, "cast_%d"  % lvl, _seq("soph_hd_cast_%d",  10), 18.0, false)
+		_add_anim(sf, "slash_%d" % lvl, _seq("soph_hd_slash_%d", 10), 20.0, false)
 	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
 	for lvl in range(1, 6):
-		_add_anim(sf, "idle_%d" % lvl, ["soph_hd_idle_0", "soph_hd_idle_1"], 3.0, true)
+		_add_anim(sf, "idle_%d" % lvl, _seq("soph_hd_idle_%d", 8), 7.0, true)
 	return sf
 
 func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:
