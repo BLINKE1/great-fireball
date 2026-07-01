@@ -47,8 +47,13 @@ Depois: crop 16:9 → resize 1280×720 → `assets/sprites/backgrounds/forest_ba
 - ✅ **v1 (feito):** backdrop John Avon full-screen atrás da floresta
   (`forest_backdrop.png` + `_load_backdrop` no `level_visuals.gd`). Fallback pro
   gradiente se o PNG sumir.
+- ✅ **v1.5 (feito): FOREGROUND estilo HK/Rayman.** Folhagem escura (silhueta →
+  alpha) numa `ParallaxBackground` `layer=5` (frente do gameplay, atras da UI≥8),
+  `motion_scale=1.35` (rola mais rapido = "perto da tela"), `motion_mirroring`
+  pra tileia. Asset: `forest_foreground.png`. Ajuste fino: consts `FG_SCALE`/`FG_Y`
+  no `level_visuals.gd`.
 - ⏳ **v2:** árvore de frente John Avon com **alpha** (substitui a árvore pixel
-  procedural) + camadas de parallax com profundidade real.
+  procedural) + mais camadas de parallax (far/mid) com profundidade real.
 - ⏳ **v3:** variações (clareira, mais fechado, o arco de pedras do boss) e
   tileável pra scroll.
 
