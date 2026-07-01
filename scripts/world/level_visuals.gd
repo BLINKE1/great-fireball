@@ -47,19 +47,24 @@ func _add_solid_background(level: Node) -> void:
 	cl.layer = -100
 	level.add_child(cl)
 	if _forest:
-		# Céu de entardecer (gradiente vertical: índigo → brilho do horizonte → mata).
-		var grad := Gradient.new()
-		grad.offsets = PackedFloat32Array([0.0, 0.50, 0.70, 0.84, 1.0])
-		grad.colors = PackedColorArray([
-			Color(0.10, 0.12, 0.25), Color(0.21, 0.16, 0.27),
-			Color(0.36, 0.23, 0.25), Color(0.13, 0.19, 0.15), Color(0.06, 0.10, 0.08)])
-		var gtex := GradientTexture2D.new()
-		gtex.gradient = grad
-		gtex.fill_from = Vector2(0, 0); gtex.fill_to = Vector2(0, 1)
-		gtex.width = 64; gtex.height = 256
+		# Backdrop pintado (John Avon) se houver PNG; senao gradiente de entardecer.
+		var backdrop := _load_backdrop("res://assets/sprites/backgrounds/forest_backdrop.png")
 		var tr := TextureRect.new()
-		tr.texture = gtex
-		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		if backdrop != null:
+			tr.texture = backdrop
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		else:
+			var grad := Gradient.new()
+			grad.offsets = PackedFloat32Array([0.0, 0.50, 0.70, 0.84, 1.0])
+			grad.colors = PackedColorArray([
+				Color(0.10, 0.12, 0.25), Color(0.21, 0.16, 0.27),
+				Color(0.36, 0.23, 0.25), Color(0.13, 0.19, 0.15), Color(0.06, 0.10, 0.08)])
+			var gtex := GradientTexture2D.new()
+			gtex.gradient = grad
+			gtex.fill_from = Vector2(0, 0); gtex.fill_to = Vector2(0, 1)
+			gtex.width = 64; gtex.height = 256
+			tr.texture = gtex
+			tr.stretch_mode = TextureRect.STRETCH_SCALE
 		tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cl.add_child(tr)
@@ -68,6 +73,18 @@ func _add_solid_background(level: Node) -> void:
 		rect.color = Color(0.012, 0.006, 0.032)
 		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cl.add_child(rect)
+
+# Carrega o backdrop pintado (importado ou PNG cru). null se nao existir.
+func _load_backdrop(path: String) -> Texture2D:
+	if ResourceLoader.exists(path):
+		var res := ResourceLoader.load(path)
+		if res is Texture2D:
+			return res
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(path) == OK:
+			return ImageTexture.create_from_image(img)
+	return null
 
 # ── Parallax cave layers ──────────────────────────────────────────────────────
 
