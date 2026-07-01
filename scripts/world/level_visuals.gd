@@ -7,6 +7,10 @@ extends Node
 
 var _forest := false
 
+# Foreground (folhagem da frente): ajuste fino de escala/posicao na tela 640x360.
+const FG_SCALE := 0.55
+const FG_Y := -6.0
+
 func _ready() -> void:
 	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
 	# Sem isso, add_child() durante o _ready do pai falha com "Parent node is
@@ -22,6 +26,7 @@ func _build() -> void:
 	_add_parallax(level)
 	if _forest:
 		_scatter_trees(level)
+		_add_foreground(level)
 	_add_canvas_modulate(level)
 	_apply_stone_textures(level)
 	_apply_special_objects(level)
@@ -73,6 +78,29 @@ func _add_solid_background(level: Node) -> void:
 		rect.color = Color(0.012, 0.006, 0.032)
 		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cl.add_child(rect)
+
+# ── Foreground (folhagem na FRENTE, "perto da tela" estilo HK) ───────────────
+func _add_foreground(level: Node) -> void:
+	var tex := _load_backdrop("res://assets/sprites/backgrounds/forest_foreground.png")
+	if tex == null:
+		return
+	var pb := ParallaxBackground.new()
+	pb.name = "ForegroundPB"
+	pb.layer = 5                        # frente do gameplay (0), atras da UI (>=8)
+	level.add_child(pb)
+	var lay := ParallaxLayer.new()
+	lay.motion_scale = Vector2(1.35, 1.0)   # rola MAIS rapido -> lê como perto da tela
+	var iw: float = tex.get_width() * FG_SCALE
+	lay.motion_mirroring = Vector2(iw, 0)   # tileia na horizontal
+	pb.add_child(lay)
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.scale = Vector2(FG_SCALE, FG_SCALE)
+	spr.position = Vector2(0, FG_Y)
+	spr.modulate = Color(1, 1, 1, 0.92)
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	lay.add_child(spr)
 
 # Carrega o backdrop pintado (importado ou PNG cru). null se nao existir.
 func _load_backdrop(path: String) -> Texture2D:
