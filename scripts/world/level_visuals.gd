@@ -7,9 +7,10 @@ extends Node
 
 var _forest := false
 
-# Foreground (folhagem da frente): ajuste fino de escala/posicao na tela 640x360.
+# Foreground (folhagem da frente): arbustos subindo da BASE da tela 640x360.
 const FG_SCALE := 0.55
-const FG_Y := -6.0
+const FG_VP_H := 360.0   # altura do viewport (ancora a folhagem no chao da tela)
+const FG_Y := 8.0        # nudge: +desce (deixa a base pra fora), -sobe
 
 func _ready() -> void:
 	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
@@ -89,7 +90,7 @@ func _add_foreground(level: Node) -> void:
 	pb.layer = 5                        # frente do gameplay (0), atras da UI (>=8)
 	level.add_child(pb)
 	var lay := ParallaxLayer.new()
-	lay.motion_scale = Vector2(1.35, 1.0)   # rola MAIS rapido -> lê como perto da tela
+	lay.motion_scale = Vector2(1.35, 0.0)   # x: rola mais rapido (perto da tela); y=0: ancora vertical na tela
 	var iw: float = tex.get_width() * FG_SCALE
 	lay.motion_mirroring = Vector2(iw, 0)   # tileia na horizontal
 	pb.add_child(lay)
@@ -97,7 +98,9 @@ func _add_foreground(level: Node) -> void:
 	spr.texture = tex
 	spr.centered = false
 	spr.scale = Vector2(FG_SCALE, FG_SCALE)
-	spr.position = Vector2(0, FG_Y)
+	# ancora a BASE dos arbustos no chao da tela (sensacao de perto do player)
+	var strip_h: float = tex.get_height() * FG_SCALE
+	spr.position = Vector2(0, FG_VP_H - strip_h + FG_Y)
 	spr.modulate = Color(1, 1, 1, 0.92)
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	lay.add_child(spr)
