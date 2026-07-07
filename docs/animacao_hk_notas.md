@@ -94,3 +94,37 @@ geração na MESMA imagem = identidade travada (provado no 1º sheet —
   Godot (`flip_h`).
 - **Anchor chaining:** o 1º sheet aprovado pode virar a nova master anchor
   (`gen_hd_sheet.py --anchor <url>`) — igual ao turnaround colado na mesa.
+
+## 🔁 Loop SEM costura em espaço de POSE (walk — decisão 2026-07-07)
+
+O `walking.fbx` do Mixamo é **curto (~1.5 passadas) e NÃO fecha o ciclo** — a
+costura do walk estava na FONTE, nenhuma janela de corte resolvia. Prova (osso a
+osso, `tools/rig3d/_find_loop_pose.gd`, distância de quaternion):
+- **walk:** melhor loop natural = **14.16×** o passo médio → fonte ruim.
+- **run:** melhor loop = **0.08×** (clipe longo, muitas passadas) → já perfeito.
+
+**Solução cloud-side (sem re-baixar do Mixamo):** cross-fade do loop em **espaço
+de pose** (rotação dos ossos, não pixels — pixel-fade dá *ghosting*; slerp de
+osso é sempre uma pose válida). `tools/rig3d/render_walk_loop.gd`:
+- amostra `n+blend` poses CONTÍNUAS (segue o movimento além da janela),
+- os primeiros `blend` frames recebem a **continuação um ciclo à frente**
+  (`slerp(base[i], base[i+n], 1-smoothstep(0,blend,i))`) → `loop[0]` == a
+  continuação natural → o wrap vira **1 passo consecutivo**.
+- Resultado medido: costura **1.01×** o passo médio (era 14×), blend de só 6
+  frames (não amolece a passada). Ciclo completo confirmado = **2 passos** (dois
+  mínimos de "pés juntos"), não meia-passada.
+
+**Bake determinístico → sprite** (`tools/rig3d/bake_player_anim.py`): registro
+FIXO (escala `S=0.863`, offset `(-117,1)` medidos do idle contra o sprite
+commitado) → mesma escala/ancoragem de pés em TODAS as anims (não "pula" ao
+trocar). Paleta COMPARTILHADA dos `soph_hd_*` atuais (47 cores) → zero flicker +
+identidade travada. Validado: re-bake do run bate o registro do commitado.
+
+**Receita:** `render_walk_loop.gd -- walk 31 0.065 0.42 6` →
+`bake_player_anim.py walk 31`. Mesma ideia serve p/ qualquer clipe curto que
+precise loopar.
+
+**Fica pro PC (fix de raiz do transition-system que o Will pediu):** clipes bons
+do Mixamo com **"In Place"** (walk/run que loopam sozinhos) + clipes de
+**start/stop** (inércia→walk→inércia, walk↔run). Com fonte boa, o cross-fade
+vira só polimento, não muleta.
