@@ -21,6 +21,11 @@ const APEX_GRAVITY_MULT  = 0.55   # gravidade reduzida perto do topo
 # pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
 # e sao gerados por tools/art_director/soph_dream.py --apply-game.
 const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo Hollow Knight
+# walk/run vieram do PC em HD-suave (render cru, ~3000 cores) enquanto o resto da
+# Soph e' pixel-bake (paleta de 47 cores). false = mantem o HD-suave vivo p/
+# testar; true = usa a versao pixel-baked (soph_hd_walk_pix_* / _run_pix_*, mesma
+# paleta do idle) que casa com o resto do jogo. So' recolore -> preserva o loop.
+const USE_PIXEL_WALKRUN := false
 const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
 const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
@@ -1182,8 +1187,12 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# janela natural (achada do mesmo jeito) que ja repete bem sozinha, so' com um
 	# crossfade leve de seguranca.
 	_add_anim(sf, "walk_start", _seq("soph_hd_walkstart_%d", 8), 22.0, false)
-	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 36), 22.0, true)
-	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  20), 18.0, true)
+	# toggle HD-suave vs pixel-baked (ver USE_PIXEL_WALKRUN). Mesmos frames/loop,
+	# so' muda a paleta -> comparar in-game sem mexer no resto.
+	var walk_pfx := "soph_hd_walk_pix_%d" if USE_PIXEL_WALKRUN else "soph_hd_walk_%d"
+	var run_pfx  := "soph_hd_run_pix_%d"  if USE_PIXEL_WALKRUN else "soph_hd_run_%d"
+	_add_anim(sf, "walk", _seq(walk_pfx, 36), 22.0, true)
+	_add_anim(sf, "run",  _seq(run_pfx,  20), 18.0, true)
 	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
 	_add_anim(sf, "fall", _seq("soph_hd_fall_%d",  3),  8.0, true)
 	_add_anim(sf, "hurt", _seq("soph_hd_hurt_%d",  6), 12.0, false)
