@@ -1213,9 +1213,13 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	for lvl in range(1, 6):
 		_add_anim(sf, "cast_%d"  % lvl, _seq("soph_hd_cast_%d",  10), 18.0, false)
 		_add_anim(sf, "slash_%d" % lvl, _seq("soph_hd_slash_%d", 10), 20.0, false)
-	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
+	# Estados de mana no idle: cabelo pintado por nivel (tools/art_director/
+	# paint_mana_hair_hd.py). Gasto RAIZ->PONTAS (escurece de cima pra baixo);
+	# nivel 3 (50%) = a arte ja commitada (soph_hd_idle_%d), os demais sao
+	# variantes recoloreadas (soph_hd_idle_m<nivel>_%d).
 	for lvl in range(1, 6):
-		_add_anim(sf, "idle_%d" % lvl, _seq("soph_hd_idle_%d", 8), 7.0, true)
+		var idle_pfx := "soph_hd_idle_%d" if lvl == 3 else "soph_hd_idle_m%d_%%d" % lvl
+		_add_anim(sf, "idle_%d" % lvl, _seq(idle_pfx, 8), 7.0, true)
 	return sf
 
 func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:
