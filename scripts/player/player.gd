@@ -24,33 +24,15 @@ const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo 
 const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
 const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
-# Compensação per-anim do HD: os PNGs do Pollinations vieram com bbox/orientação
-# inconsistentes entre anims. Sem isto, ao andar/correr a Soph fica MAIOR (bbox
-# maior no canvas → ocupa mais tela na mesma escala) e walk/cast/slash/jump/
-# fall/hurt aparecem INVERTIDAS (foram geradas olhando pra esquerda na fonte).
-# Plano B = regerar com bbox/orientação normalizadas e zerar estas tabelas.
-const HD_BASE_BBOX := 150.0                       # altura alvo (idle ≈ 150px no canvas 192)
+# Bake do dream-rig (commit 041c446) ja vem normalizado: camera fixa, mesma
+# escala/enquadramento e orientacao consistente em todas as anims. As tabelas
+# de compensacao abaixo ficam VAZIAS de proposito -- os .get(ab, default) caem
+# nos defaults seguros (anim_scale=1.0, sem flip extra). Mantidas como hook
+# caso algum dia o bake desvie de novo.
+const HD_BASE_BBOX := 150.0
 const HD_FRAME_H   := 192.0
-const HD_ANIM_BBOX := {                           # altura do conteúdo (alpha>0) por anim
-	"idle":  150.0,
-	"walk":  167.0,
-	"run":   178.0,
-	"jump":  190.0,
-	"fall":  190.0,
-	"hurt":  190.0,
-	"cast":  190.0,
-	"slash": 190.0,
-}
-const HD_ANIM_NATIVE_LEFT := {                    # anims desenhadas olhando p/ esquerda na fonte
-	"idle":  true,
-	"walk":  true,
-	"jump":  true,
-	"fall":  true,
-	"hurt":  true,
-	"cast":  true,
-	"slash": true,
-	# run: maioria dos frames olha pra direita (run_2 destoa, mas é minoria).
-}
+const HD_ANIM_BBOX := {}
+const HD_ANIM_NATIVE_LEFT := {}
 
 const MAGIC_MISSILE_COST  = 33.0   # pool cheio (100) = 3 disparos: recurso escasso, golpe forte
 const MAGIC_MISSILE_CD    = 0.18
@@ -1192,11 +1174,16 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# Muitos frames por anim p/ fluidez (sampleados das anims Mixamo).
 	var sf := SpriteFrames.new()
 	_add_anim(sf, "idle", _seq("soph_hd_idle_%d",  8), 7.0,  true)
-	# walk_start = arrancada do parado (inercia, frames 0-7), toca 1x ao sair do
-	# idle e emenda no loop; walk = ciclo limpo (frames 8-38) sem costura.
+	# walk_start = arrancada do parado (inercia), toca 1x ao sair do idle e emenda
+	# no loop. walk = walking.fbx do Mixamo NAO tem ponto de loop natural (confirmado
+	# por busca automatica de periodo/fase via distancia de imagem em toda a anim,
+	# nenhum par de frames fecha bem) -> fechamos com crossfade 2D nos ultimos ~16%
+	# dos frames de volta pro frame 0 (tools/rig3d/finalize_frames.py). run usa uma
+	# janela natural (achada do mesmo jeito) que ja repete bem sozinha, so' com um
+	# crossfade leve de seguranca.
 	_add_anim(sf, "walk_start", _seq("soph_hd_walkstart_%d", 8), 22.0, false)
-	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 31), 22.0, true)
-	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  12), 18.0, true)
+	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 36), 22.0, true)
+	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  20), 18.0, true)
 	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
 	_add_anim(sf, "fall", _seq("soph_hd_fall_%d",  3),  8.0, true)
 	_add_anim(sf, "hurt", _seq("soph_hd_hurt_%d",  6), 12.0, false)

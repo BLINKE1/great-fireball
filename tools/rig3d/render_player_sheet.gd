@@ -30,6 +30,7 @@ func _initialize() -> void:
 	_out = "res://tools/rig3d/out/player_sheet/%s/" % which
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	DisplayServer.window_set_size(RES)
+	get_root().content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	get_root().size = RES
 	get_root().transparent_bg = true
 	var env := Environment.new()
