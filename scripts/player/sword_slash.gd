@@ -18,13 +18,26 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 	get_tree().create_timer(LIFETIME).timeout.connect(queue_free)
 	VFX.burst(global_position, get_parent(), Color(0.95, 0.88, 0.55), 9, 105.0, -28.0)
-	await get_tree().process_frame
-	if not is_inside_tree():
-		return
-	for body in get_overlapping_bodies():
-		_hit(body)
-	for area in get_overlapping_areas():
-		_try_parry(area)
+	# Hit ja-sobrepostos SINCRONAMENTE (mesmo frame), pra simetrizar com o
+	# body_entered (que pega entradas novas instantaneas). Antes usavamos
+	# `await process_frame` + get_overlapping_bodies, o que dava 1 frame de
+	# delay so pra alvos ja em range -> sensacao de "dois padroes de hit".
+	var space := get_world_2d().direct_space_state
+	var shape_node := $CollisionShape2D as CollisionShape2D
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = shape_node.shape
+	params.transform = shape_node.global_transform
+	params.collision_mask = collision_mask
+	params.collide_with_bodies = true
+	params.collide_with_areas = false
+	for hit in space.intersect_shape(params, 16):
+		var b = hit.get("collider")
+		if b: _hit(b)
+	params.collide_with_bodies = false
+	params.collide_with_areas = true
+	for hit in space.intersect_shape(params, 16):
+		var a = hit.get("collider")
+		if a: _try_parry(a)
 
 func _on_body_entered(body: Node) -> void:
 	_hit(body)

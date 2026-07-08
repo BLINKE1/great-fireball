@@ -25,8 +25,14 @@ static func is_head_hit(enemy: Node2D, from: Vector2) -> bool:
 	var world := enemy.get_world_2d()
 	if world == null:
 		return false
+	# Projeta o X pra coluna central do inimigo. O HeadHitbox é mais ESTREITO
+	# que o body collision em todos os inimigos (head ~18-24w, body ~24-36w),
+	# então um projétil que entra pela borda lateral dispara body_entered com
+	# X = ±half_body_width — FORA do head shape mesmo no Y da cabeça. Com a
+	# projeção, crit passa a depender só do Y (= "mirou na cabeça").
+	var sample := Vector2(enemy.global_position.x, from.y)
 	var params := PhysicsPointQueryParameters2D.new()
-	params.position = from
+	params.position = sample
 	params.collide_with_areas = true
 	params.collide_with_bodies = false
 	params.collision_mask = 1 << (HITBOX_LAYER - 1)
