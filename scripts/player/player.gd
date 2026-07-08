@@ -25,7 +25,8 @@ const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo 
 # Soph e' pixel-bake (paleta de 47 cores). false = mantem o HD-suave vivo p/
 # testar; true = usa a versao pixel-baked (soph_hd_walk_pix_* / _run_pix_*, mesma
 # paleta do idle) que casa com o resto do jogo. So' recolore -> preserva o loop.
-const USE_PIXEL_WALKRUN := false
+# Runtime-togglable (F2 in-game / botao do HUD) -> nao e' const de proposito.
+var use_pixel_walkrun := false
 const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
 const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
@@ -1143,6 +1144,17 @@ func _build_soph_frames() -> SpriteFrames:
 		return _build_soph_frames_hd()
 	return _build_soph_frames_pixel()
 
+## Troca walk/run entre HD-suave e pixel-baked SEM cortar a animacao em curso
+## (guarda anim/frame atual e restaura). Chamado pelo botao de debug no HUD.
+func toggle_walkrun_style() -> void:
+	use_pixel_walkrun = not use_pixel_walkrun
+	var cur_anim := sprite.animation
+	var cur_frame := sprite.frame
+	sprite.sprite_frames = _build_soph_frames()
+	if sprite.sprite_frames.has_animation(cur_anim):
+		sprite.play(cur_anim)
+		sprite.frame = mini(cur_frame, sprite.sprite_frames.get_frame_count(cur_anim) - 1)
+
 func _build_soph_frames_pixel() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	# idle: 2 frames, 4 fps (slow breathe)
@@ -1189,8 +1201,8 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	_add_anim(sf, "walk_start", _seq("soph_hd_walkstart_%d", 8), 22.0, false)
 	# toggle HD-suave vs pixel-baked (ver USE_PIXEL_WALKRUN). Mesmos frames/loop,
 	# so' muda a paleta -> comparar in-game sem mexer no resto.
-	var walk_pfx := "soph_hd_walk_pix_%d" if USE_PIXEL_WALKRUN else "soph_hd_walk_%d"
-	var run_pfx  := "soph_hd_run_pix_%d"  if USE_PIXEL_WALKRUN else "soph_hd_run_%d"
+	var walk_pfx := "soph_hd_walk_pix_%d" if use_pixel_walkrun else "soph_hd_walk_%d"
+	var run_pfx  := "soph_hd_run_pix_%d"  if use_pixel_walkrun else "soph_hd_run_%d"
 	_add_anim(sf, "walk", _seq(walk_pfx, 36), 22.0, true)
 	_add_anim(sf, "run",  _seq(run_pfx,  20), 18.0, true)
 	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
