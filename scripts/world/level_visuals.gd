@@ -172,6 +172,7 @@ func _scatter_trees(level: Node) -> void:
 		var d := randf()                              # profundidade: árvores ao fundo + escuras/azuis
 		spr.modulate = Color(0.52 + 0.26 * d, 0.60 + 0.24 * d, 0.56 + 0.20 * d, 0.92)
 		spr.flip_h = randf() < 0.5
+		spr.add_to_group("forest_tree")   # cinematica do boss balanca as arvores
 		level.add_child(spr)
 		x += randf_range(300.0, 560.0)
 

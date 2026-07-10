@@ -211,6 +211,14 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/Area1Trigger"]
 shape = SubResource("20")
 
+[node name="LancerTrigger" type="Area2D" parent="Triggers"]
+position = Vector2(1250, 460)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/LancerTrigger"]
+shape = SubResource("20")
+
 [node name="Area2Trigger" type="Area2D" parent="Triggers"]
 position = Vector2(2050, 460)
 monitoring = true

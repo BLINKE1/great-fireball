@@ -2,6 +2,7 @@ extends Node
 
 const GoblinScene          = preload("res://scenes/enemies/goblin.tscn")
 const GoblinArcherScene    = preload("res://scenes/enemies/goblin_archer.tscn")
+const GoblinLeaderScene    = preload("res://scenes/enemies/goblin_leader.tscn")
 const GolemScene           = preload("res://scenes/enemies/golem.tscn")
 const ForestOgreScene      = preload("res://scenes/enemies/forest_ogre.tscn")
 const GoblinMutantScene    = preload("res://scenes/enemies/goblin_mutant.tscn")
@@ -13,6 +14,7 @@ const FireGoblinArcherScene = preload("res://scenes/enemies/fire_goblin_archer.t
 @onready var boss_hp_bar  = $"../BossHPBar"
 @onready var enemies      = $"../Enemies"
 @onready var area1_trigger  = $"../Triggers/Area1Trigger"
+@onready var lancer_trigger = $"../Triggers/LancerTrigger"
 @onready var area2_trigger  = $"../Triggers/Area2Trigger"
 @onready var chest_trigger  = $"../Triggers/ChestTrigger"
 @onready var boss_trigger   = $"../Triggers/BossTrigger"
@@ -36,21 +38,39 @@ func _start() -> void:
 	], ["Soph", "Soph", "Soph", "Soph"])
 	area1_trigger.body_entered.connect(_on_area1, CONNECT_ONE_SHOT)
 
-# ── Área 1: Entrada ───────────────────────────────────────────────────────────
+# ── Ato 1: o primeiro goblin (aprende o MELEE) ────────────────────────────────
 
 func _on_area1(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	area1_trigger.monitoring = false
-	await _say(["Goblins! Eles protegem algo..."], ["Soph"])
-	_spawn(GoblinScene,       Vector2(820,  488))
-	_spawn(GoblinScene,       Vector2(980,  488))
-	_spawn(GoblinArcherScene, Vector2(1150, 488))
-	_spawn(GoblinArcherScene, Vector2(1380, 448))
-	_spawn(GoblinScene,       Vector2(1260, 488))
-	chest_trigger.body_entered.connect(_on_chest, CONNECT_ONE_SHOT)
+	await _say([
+		"Um goblin de guarda! Ele ainda não me viu.",
+		"A espada resolve isso: chegue perto e pressione Q.",
+	], ["Soph", "Dica"])
+	_spawn(GoblinScene, Vector2(820, 488))
 	await _wait_clear()
-	await _say(["Bom. O caminho está livre."], ["Soph"])
+	await _say(["Uma boa lâmina resolve. Mas sinto cheiro de mais goblins..."], ["Soph"])
+	lancer_trigger.body_entered.connect(_on_lancer, CONNECT_ONE_SHOT)
+
+# ── Ato 2: o lanceiro (aprende o PARRY — corta a lança no ar) ─────────────────
+
+func _on_lancer(body: Node) -> void:
+	if not body.is_in_group("player"): return
+	lancer_trigger.monitoring = false
+	await _say([
+		"Um lanceiro! Ele arremessa a lança de longe.",
+		"O golpe da espada (Q) CORTA a lança no ar — no tempo certo.",
+		"Aparar um projétil é a marca de uma maga completa.",
+	], ["Soph", "Dica", "Soph"])
+	_spawn(GoblinArcherScene, Vector2(1600, 488))
+	await _wait_clear()
+	await _say(["Lanceiros não são nada quando se conhece o tempo do aço."], ["Soph"])
+	_spawn(GoblinArcherScene, Vector2(1700, 488))
+	_spawn(GoblinScene,       Vector2(1550, 488))
+	await _wait_clear()
+	await _say(["O caminho está livre — por enquanto."], ["Soph"])
 	area2_trigger.body_entered.connect(_on_area2, CONNECT_ONE_SHOT)
+	chest_trigger.body_entered.connect(_on_chest, CONNECT_ONE_SHOT)
 
 # ── Baú: Duplo Salto + Míssil Duplo ──────────────────────────────────────────
 
@@ -73,25 +93,31 @@ func _on_chest(body: Node) -> void:
 	SkillManager.unlock("missile_spread")
 	await skill_popup.show_skill("missile_spread")
 
-# ── Área 2: Caverna Profunda ──────────────────────────────────────────────────
+# ── Ato 3: o LÍDER do bando (aprende o HEADSHOT — míssil na jaca) ─────────────
 
 func _on_area2(body: Node) -> void:
 	if not body.is_in_group("player") or _area2_done: return
 	_area2_done = true
 	area2_trigger.monitoring = false
 	await _say([
-		"Golens e arqueiros! Eles ficam mais fortes conforme entro mais fundo.",
-		"E este lugar é mais fundo do que parece... melhor não cair.",
-		"Alturas grandes machucam — e as alturas aqui podem ser letais.",
-		"Lembro da dica: Duplo Salto durante a queda amortece o impacto.",
-	], ["Soph", "Soph", "Dica", "Dica"])
-	_spawn(GolemScene,             Vector2(2400, 488))
-	_spawn(GolemScene,             Vector2(2700, 488))
-	_spawn(GoblinArcherScene,      Vector2(2900, 448))
-	_spawn(FireGoblinArcherScene,  Vector2(3100, 448))
+		"O líder do bando! Couraça de metal... a espada mal arranha.",
+		"A cabeça é o ponto fraco: mire o Míssil Mágico (Z) na CABEÇA dele.",
+		"Um acerto na cabeça causa dano CRÍTICO.",
+	], ["Soph", "Dica", "Dica"])
+	_spawn(GoblinLeaderScene, Vector2(2450, 488))
+	_spawn(GoblinScene,       Vector2(2340, 488))
+	await _wait_clear()
+	await _say([
+		"Eca... sangue verde por toda parte.",
+		"Se o líder estava aqui... o que exatamente ele guardava?",
+	], ["Soph", "Soph"])
+	# reforços na descida (usa tudo que aprendeu: melee + parry + headshot)
+	await _say([
+		"Mais deles! E golens desta vez — cuidado com as quedas à frente.",
+	], ["Soph"])
+	_spawn(GolemScene,             Vector2(2900, 488))
+	_spawn(GoblinArcherScene,      Vector2(3100, 448))
 	_spawn(FireGoblinArcherScene,  Vector2(3300, 448))
-	_spawn(GoblinScene,            Vector2(2550, 488))
-	_spawn(GoblinScene,            Vector2(2800, 488))
 	_spawn(GoblinScene,            Vector2(3050, 488))
 	await _wait_clear()
 	await _say([
@@ -121,27 +147,74 @@ func _on_area2(body: Node) -> void:
 	await skill_popup.show_skill("magic_shield")
 	boss_trigger.body_entered.connect(_on_boss_room, CONNECT_ONE_SHOT)
 
-# ── Boss Room: Ogro da Floresta ───────────────────────────────────────────────
+# ── Boss Room: o Goblin Mutante sai DO MEIO DAS ÁRVORES ──────────────────────
 
 func _on_boss_room(body: Node) -> void:
 	if not body.is_in_group("player"): return
 	boss_trigger.monitoring = false
-	await _say([
-		"O que é isso?!",
-		"Um goblin... mas GIGANTE. Deformado, coberto de bombas...",
-		"O líder mutante. Ele guarda alguma coisa importante.",
-		"Não há como evitar. Vou ter que lutar!",
-	], ["Soph", "Soph", "Soph", "Soph"])
 	if is_instance_valid(player) and player.has_node("Camera2D"):
 		var cam: Camera2D = player.get_node("Camera2D")
 		cam.create_tween().tween_property(cam, "zoom", Vector2(1.18, 1.18), 1.4).set_ease(Tween.EASE_IN_OUT)
 	MusicManager.play("boss")
 	# Tranca a arena: uma avalanche de pedras desaba atrás da Soph (estilo Megaman).
 	_boss_gate = _drop_rockwall(4020.0)
-	await _say(["As pedras desabaram atrás de mim! Não há volta — só passando por ele."], ["Soph"])
-	var boss = _spawn(GoblinMutantScene, Vector2(4350, 432))
+	await _say([
+		"As pedras desabaram atrás de mim! Não há volta.",
+		"O chão está tremendo...",
+		"As árvores... TEM ALGUMA COISA NO MEIO DAS ÁRVORES!",
+	], ["Soph", "Soph", "Soph"])
+	var boss = await _boss_entrance()
+	await _say([
+		"Um goblin... GIGANTE. Deformado, coberto de bombas e sucata...",
+		"O mutante que lidera todos eles. Não há como evitar — vou lutar!",
+	], ["Soph", "Soph"])
 	boss_hp_bar.show_boss("Goblin Mutante", boss)
 	boss.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
+
+# ── Cinemática: passos que balançam as árvores → o mutante emerge ─────────────
+
+func _boss_entrance() -> Node:
+	const SPAWN_X := 4520.0
+	const ARENA_X := 4350.0
+	# 3 passos, cada um mais perto: chão treme, árvores balançam, folhas caem
+	for i in 3:
+		AudioManager.play("stomp", 0.75 + i * 0.12)
+		if is_instance_valid(player) and player.has_method("shake"):
+			player.shake(3.0 + i * 2.5, 0.30)
+		_shake_trees(4400.0, 340.0, 0.05 + i * 0.035)
+		await get_tree().create_timer(0.55).timeout
+	# emerge de tras das arvores: fade-in + passo pra arena
+	var boss = GoblinMutantScene.instantiate()
+	boss.position = Vector2(SPAWN_X, 432)
+	boss.modulate.a = 0.0
+	enemies.add_child(boss)
+	_shake_trees(SPAWN_X, 220.0, 0.15)
+	VFX.burst(Vector2(SPAWN_X, 360), enemies, Color(0.16, 0.42, 0.18), 26, 135.0, 65.0)   # folhas explodem
+	VFX.burst(Vector2(SPAWN_X, 420), enemies, Color(0.10, 0.30, 0.12), 14, 90.0, 40.0)
+	VFX.ground_burst(Vector2(SPAWN_X, 506.0), enemies, Color(0.30, 0.24, 0.16), 18)
+	AudioManager.play("roar")
+	if is_instance_valid(player) and player.has_method("shake"):
+		player.shake(8.0, 0.4)
+	var tw := boss.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(boss, "modulate:a", 1.0, 0.45)
+	tw.tween_property(boss, "position:x", ARENA_X, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tw.finished
+	return boss
+
+func _shake_trees(cx: float, radius: float, intensity: float) -> void:
+	for t in get_tree().get_nodes_in_group("forest_tree"):
+		if not is_instance_valid(t) or absf(t.global_position.x - cx) > radius:
+			continue
+		var a: float = intensity * randf_range(0.7, 1.3)
+		var tw := t.create_tween()
+		tw.tween_property(t, "rotation", a, 0.08)
+		tw.tween_property(t, "rotation", -a * 0.8, 0.12)
+		tw.tween_property(t, "rotation", a * 0.5, 0.10)
+		tw.tween_property(t, "rotation", 0.0, 0.12)
+		# folhas se soltando da copa
+		VFX.burst(t.global_position + Vector2(randf_range(-18, 18), -40.0 * t.scale.y),
+				get_parent(), Color(0.16, 0.40, 0.18), 5, 40.0, 85.0)
 
 # ── Avalanche de pedras que tranca/destranca a arena ──────────────────────────
 func _drop_rockwall(x: float) -> Node:
