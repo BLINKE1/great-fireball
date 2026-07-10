@@ -22,6 +22,13 @@ const FireGoblinArcherScene = preload("res://scenes/enemies/fire_goblin_archer.t
 var _area2_done: bool = false
 var _boss_gate: Node = null   # parede de pedras que tranca a arena do boss
 
+# ── Loop de retry do boss (HK): morrer -> CONTINUE -> renasce DIRETO na arena ──
+var _boss: Node = null
+var _boss_fight_active := false
+var _attempts := 1
+var _awaiting_continue := false
+var _continue_layer: CanvasLayer = null
+
 func _ready() -> void:
 	GameState.reset_state()
 	GameState.fade_in()
@@ -163,13 +170,126 @@ func _on_boss_room(body: Node) -> void:
 		"O chão está tremendo...",
 		"As árvores... TEM ALGUMA COISA NO MEIO DAS ÁRVORES!",
 	], ["Soph", "Soph", "Soph"])
+	# Retry HK: o respawn passa a ser a PORTA DA ARENA — morrer volta no boss.
+	if is_instance_valid(player):
+		player.spawn_position = Vector2(4080.0, 458.0)
+		if not player.hp.died.is_connected(_on_player_died_in_boss):
+			player.hp.died.connect(_on_player_died_in_boss)
 	var boss = await _boss_entrance()
 	await _say([
 		"Um goblin... GIGANTE. Deformado, coberto de bombas e sucata...",
 		"O mutante que lidera todos eles. Não há como evitar — vou lutar!",
 	], ["Soph", "Soph"])
+	_arm_boss(boss)
+
+func _arm_boss(boss: Node) -> void:
+	_boss = boss
+	_boss_fight_active = true
 	boss_hp_bar.show_boss("Goblin Mutante", boss)
 	boss.boss_died.connect(_on_ogre_died, CONNECT_ONE_SHOT)
+
+# ── Morte no boss: limpa a arena e oferece o CONTINUE ─────────────────────────
+
+func _on_player_died_in_boss() -> void:
+	if not _boss_fight_active:
+		return   # morte fora da luta -> fluxo normal de checkpoint
+	_boss_fight_active = false
+	# some com o boss e capangas (a arena reseta pro proximo round)
+	if is_instance_valid(_boss):
+		_boss.set_physics_process(false)
+		var btw := _boss.create_tween()
+		btw.tween_property(_boss, "modulate:a", 0.0, 0.5)
+		btw.tween_callback(_boss.queue_free)
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if is_instance_valid(e) and e != _boss:
+			e.queue_free()
+	for pr in get_tree().get_nodes_in_group("enemy_projectile"):
+		if is_instance_valid(pr):
+			pr.queue_free()
+	# espera o fade de morte do player terminar (ele renasce na porta da arena)
+	await get_tree().create_timer(2.3).timeout
+	_show_continue_screen()
+
+func _show_continue_screen() -> void:
+	_attempts += 1
+	if is_instance_valid(player):
+		player.set_cutscene(true)
+	_continue_layer = CanvasLayer.new()
+	_continue_layer.layer = 55
+	get_tree().root.add_child(_continue_layer)
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.01, 0.04, 0.82)
+	bg.anchor_right = 1.0; bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_continue_layer.add_child(bg)
+	var title := Label.new()
+	title.text = "CONTINUE?"
+	title.anchor_left = 0.0; title.anchor_right = 1.0
+	title.anchor_top = 0.34; title.anchor_bottom = 0.50
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(0.95, 0.25, 0.18))
+	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	title.add_theme_constant_override("shadow_offset_x", 3)
+	title.add_theme_constant_override("shadow_offset_y", 3)
+	_continue_layer.add_child(title)
+	var sub := Label.new()
+	sub.text = "Tentativa %d — o mutante espera na arena" % _attempts
+	sub.anchor_left = 0.0; sub.anchor_right = 1.0
+	sub.anchor_top = 0.50; sub.anchor_bottom = 0.58
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 14)
+	sub.add_theme_color_override("font_color", Color(0.72, 0.62, 0.78))
+	_continue_layer.add_child(sub)
+	var prompt := Label.new()
+	prompt.text = "[Espaço] Lutar de novo"
+	prompt.anchor_left = 0.0; prompt.anchor_right = 1.0
+	prompt.anchor_top = 0.62; prompt.anchor_bottom = 0.70
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 18)
+	prompt.add_theme_color_override("font_color", Color(0.90, 0.85, 0.60))
+	_continue_layer.add_child(prompt)
+	var ptw := prompt.create_tween().set_loops()
+	ptw.tween_property(prompt, "modulate:a", 0.35, 0.65).set_ease(Tween.EASE_IN_OUT)
+	ptw.tween_property(prompt, "modulate:a", 1.0, 0.65).set_ease(Tween.EASE_IN_OUT)
+	_awaiting_continue = true
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _awaiting_continue:
+		return
+	if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.pressed and event.keycode == KEY_SPACE):
+		_awaiting_continue = false
+		_do_continue()
+
+func _do_continue() -> void:
+	if is_instance_valid(_continue_layer):
+		var l := _continue_layer
+		var tw := l.create_tween()
+		for c in l.get_children():
+			tw.parallel().tween_property(c, "modulate:a", 0.0, 0.3)
+		tw.tween_callback(l.queue_free)
+	_continue_layer = null
+	if is_instance_valid(player):
+		player.set_cutscene(false)
+	# re-entrada CURTA (sem cinematica longa — retry rapido e' o segredo do HK)
+	AudioManager.play("stomp")
+	_shake_trees(4400.0, 340.0, 0.10)
+	if is_instance_valid(player) and player.has_method("shake"):
+		player.shake(6.0, 0.3)
+	await get_tree().create_timer(0.5).timeout
+	var boss = GoblinMutantScene.instantiate()
+	boss.position = Vector2(4480.0, 432.0)
+	boss.modulate.a = 0.0
+	enemies.add_child(boss)
+	VFX.burst(Vector2(4480.0, 380.0), enemies, Color(0.16, 0.42, 0.18), 20, 120.0, 60.0)
+	AudioManager.play("roar")
+	var tw2 := boss.create_tween()
+	tw2.set_parallel(true)
+	tw2.tween_property(boss, "modulate:a", 1.0, 0.35)
+	tw2.tween_property(boss, "position:x", 4350.0, 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tw2.finished
+	_arm_boss(boss)
 
 # ── Cinemática: passos que balançam as árvores → o mutante emerge ─────────────
 
@@ -265,6 +385,7 @@ func _clear_rockwall(node: Node) -> void:
 	tw.tween_callback(node.queue_free)
 
 func _on_ogre_died() -> void:
+	_boss_fight_active = false   # vitoria: morrer daqui pra frente nao reabre o boss
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e.has_method("take_damage"):
 			e.take_damage(9999.0, e.global_position)
