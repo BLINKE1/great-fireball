@@ -191,12 +191,14 @@ func _apply_stone_textures(level: Node) -> void:
 	var wt := SpriteSetup.get_texture("moss_wall" if _forest else "wall_tile")
 	_visit(level, ft, pt, wt)
 
-func _visit(node: Node, ft: ImageTexture, pt: ImageTexture, wt: ImageTexture) -> void:
+# Texture2D (nao ImageTexture): tiles vindos de override PNG reimportado chegam
+# como CompressedTexture2D; os procedurais continuam ImageTexture. Aceitar ambos.
+func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 	for child in node.get_children():
 		if child is Sprite2D and child.texture is PlaceholderTexture2D:
 			var sz: Vector2 = child.texture.get_size()
 			var aspect := sz.x / sz.y
-			var tex: ImageTexture
+			var tex: Texture2D
 			if   aspect >= 8.0:  tex = ft   # very wide → floor
 			elif aspect >= 3.5:  tex = pt   # wide → platform
 			elif aspect <= 0.40: tex = wt   # tall → wall
@@ -205,7 +207,11 @@ func _visit(node: Node, ft: ImageTexture, pt: ImageTexture, wt: ImageTexture) ->
 				child.texture = tex
 				child.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 				child.region_enabled = true
-				child.region_rect = Rect2(-sz.x * 0.5, -sz.y * 0.5, sz.x, sz.y)
+				# regiao ancorada em (0,0): a linha 0 da textura (faixa de grama)
+				# cola no TOPO do sprite pra QUALQUER altura. Ancorar em -sz/2
+				# (antigo) poe a grama no meio do chao quando a altura nao e'
+				# multipla de 32.
+				child.region_rect = Rect2(0, 0, sz.x, sz.y)
 				child.modulate = Color.WHITE
 				child.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_visit(child, ft, pt, wt)
