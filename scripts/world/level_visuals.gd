@@ -206,7 +206,11 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 			var sz: Vector2 = child.texture.get_size()
 			var aspect := sz.x / sz.y
 			var tex: Texture2D
-			if   aspect >= 8.0:  tex = ft   # very wide → floor
+			# FINO (<=28px) e largo = plataforma, mesmo com aspect enorme —
+			# antes 180x16 caia em aspect>=8 e virava "chao" (bug antigo: as
+			# plataformas nunca recebiam o proprio tile).
+			if   aspect >= 3.5 and sz.y <= 28.0: tex = pt   # ledge fino → platform
+			elif aspect >= 8.0:  tex = ft   # largo e fundo → floor
 			elif aspect >= 3.5:  tex = pt   # wide → platform
 			elif aspect <= 0.40: tex = wt   # tall → wall
 			# square-ish (aspect ~1) = special object, skip
@@ -226,6 +230,10 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 					var overhang := minf(40.0, tex.get_height() - sz.y)
 					draw_h = sz.y + overhang
 					child.offset = Vector2(0, overhang * 0.5)
+					# tecnica TERRARIA: parede de fundo atras da plataforma ate'
+					# o chao -> "encosta/caverna", a plataforma vira bancada
+					# embutida em vez de tile flutuante.
+					_add_backwall(child, sz)
 				child.region_rect = Rect2(0, 0, sz.x, draw_h)
 				child.modulate = Color.WHITE
 				# floresta = tiles pintados premium (512px, gen_forest_ground.py)
@@ -234,6 +242,46 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if _forest \
 						else CanvasItem.TEXTURE_FILTER_NEAREST
 		_visit(child, ft, pt, wt)
+
+# ── Parede de fundo (tecnica Terraria) atras das plataformas da floresta ──────
+# Mesma rocha musgada dos paredoes, so' que ESCURA e atras do gameplay: leitura
+# imediata de "interior da encosta". Vai de um pouco acima da plataforma ate'
+# dentro do chao (o piso cobre a emenda). z=-4: frente das arvores (-5), atras
+# de tudo que joga.
+const BACKWALL_GROUND_Y := 520.0
+
+func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
+	var tex := SpriteSetup.get_texture("moss_wall")
+	if tex == null:
+		return
+	# coords LOCAIS do corpo da plataforma (o wall vira filho dele)
+	var top_local := -sz.y * 0.5 - 64.0
+	var bottom_local := BACKWALL_GROUND_Y - plat_sprite.global_position.y
+	var h := bottom_local - top_local
+	if h <= 0.0:
+		return
+	var w := sz.x + 44.0
+	var cy := top_local + h * 0.5
+	# jitter deterministico por posicao (mesma cara a cada load)
+	var jit := fposmod(plat_sprite.global_position.x * 0.137, 1.0) - 0.5
+	# 2 camadas com rotacao levemente oposta: quebra o retangulo "painel de UI"
+	# e le como face de rocha. A de tras e' maior e mais escura (silhueta).
+	var specs := [
+		[w + 30.0, h + 18.0, Color(0.22, 0.28, 0.27, 0.95),  jit * 0.07 - 0.02],
+		[w,        h,        Color(0.38, 0.47, 0.44, 0.97), -jit * 0.06 + 0.015],
+	]
+	for sp in specs:
+		var wall := Sprite2D.new()
+		wall.texture = tex
+		wall.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		wall.region_enabled = true
+		wall.region_rect = Rect2(0, 0, sp[0], sp[1])
+		wall.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		wall.z_index = -4
+		wall.modulate = sp[2]
+		wall.rotation = sp[3]
+		wall.position = Vector2(0, cy)
+		plat_sprite.get_parent().add_child.call_deferred(wall)
 
 # ── Named special objects ─────────────────────────────────────────────────────
 
