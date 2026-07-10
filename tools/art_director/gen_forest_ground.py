@@ -214,7 +214,73 @@ def _seamless_x(im: Image.Image) -> Image.Image:
 
 def compose_floor_from_terrain(terrain: Image.Image) -> Image.Image:
     strip = slice_terrain(terrain, 200, 860, 256)
-    return _seamless_x(strip.resize((512, 256), Image.LANCZOS))
+    tile = _seamless_x(strip.resize((512, 256), Image.LANCZOS))
+    # estende pra 512 de altura: abaixo dos 256 pintados a terra segue escura
+    # (chao fisico chega a ~400px de fundura -> tile de 256 dava WRAP e a grama
+    # reaparecia no meio da terra). Blend continua do fim pro breu.
+    out = Image.new("RGB", (512, 512))
+    out.paste(tile, (0, 0))
+    last = tile.crop((0, 255, 512, 256))
+    for y in range(256, 512):
+        f = max(0.25, 1.0 - (y - 256) / 90.0)
+        row = last.point(lambda v: int(v * f))
+        out.paste(row, (0, y))
+    return out
+
+
+# ── Plataforma v2 (justifica o "flutuante"): bancada de terra suspensa ────────
+# Musgo em cima (mesma cara do chao), corpo de rocha AFUNILANDO com borda
+# organica e uma franja de RAIZES penduradas embaixo (alpha) — le como um
+# barranco seguro por raizes, nao um tile pairando. As raizes ficam ABAIXO do
+# collider (overhang visual, ver level_visuals._visit).
+def compose_platform_from_terrain(floor_tile: Image.Image) -> Image.Image:
+    import random as _r
+    W, FULL_H, BODY_H, WOB = 512, 88, 26, 6
+    tile = floor_tile.crop((0, 0, W, FULL_H)).convert("RGBA")
+    px = tile.load()
+    rng = _r.Random(41)
+    ph = [rng.uniform(0, math.tau) for _ in range(3)]
+    # borda inferior organica (periodica em x = seamless)
+    edge = [BODY_H + (math.sin(x / W * math.tau * 4 + ph[0]) * 0.5 +
+                      math.sin(x / W * math.tau * 9 + ph[1]) * 0.3 +
+                      math.sin(x / W * math.tau * 15 + ph[2]) * 0.2) * WOB
+            for x in range(W)]
+    # raizes: colunas esparsas com fios que descem alem da borda
+    root_until = [0.0] * W
+    x = 0
+    while x < W:
+        if rng.random() < 0.42:
+            length = rng.uniform(8.0, 26.0)
+            width = rng.choice([2, 2, 3])
+            for dx in range(width):
+                root_until[(x + dx) % W] = max(root_until[(x + dx) % W],
+                                               edge[(x + dx) % W] + length * rng.uniform(0.8, 1.0))
+            x += width + rng.randint(6, 18)
+        else:
+            x += rng.randint(4, 10)
+    ROOT_C = (74, 58, 40)      # marrom-raiz legivel contra o backdrop escuro
+    TIP_C = (40, 118, 66)      # ponta com brilho de musgo (amarra na paleta)
+    for xx in range(W):
+        e = edge[xx]
+        ru = root_until[xx]
+        for y in range(FULL_H):
+            if y <= e - 2:
+                continue                      # corpo cheio
+            r, g, b, _a = px[xx, y]
+            if y <= e:                        # borda: escurece + fade curto
+                px[xx, y] = (int(r * 0.7), int(g * 0.7), int(b * 0.7), 255)
+            elif y <= ru:                     # fio de raiz -> ponta com musgo
+                t = (y - e) / max(1.0, ru - e)
+                a = int(255 * (1.0 - t * 0.35))
+                if t > 0.78:                  # ponta: verde-musgo luminoso
+                    px[xx, y] = (TIP_C[0], TIP_C[1], TIP_C[2], a)
+                else:
+                    px[xx, y] = (int(ROOT_C[0] * (1.0 - t * 0.3)),
+                                 int(ROOT_C[1] * (1.0 - t * 0.3)),
+                                 int(ROOT_C[2] * (1.0 - t * 0.3)), a)
+            else:
+                px[xx, y] = (0, 0, 0, 0)      # ar
+    return tile
 
 
 def compose_floor(_grass: Image.Image, dirt: Image.Image) -> Image.Image:
@@ -244,8 +310,8 @@ def main() -> None:
     if terrain_p.exists() and "--rim-lit" not in sys.argv:
         floor = compose_floor_from_terrain(Image.open(terrain_p).convert("RGB"))
         floor.save(DEST / "grass_floor.png")
-        floor.crop((0, 0, 512, 64)).save(DEST / "grass_platform.png")
-        print("modo v4: fatiado do terreno pintado (terrain_101.jpg)")
+        compose_platform_from_terrain(floor).save(DEST / "grass_platform.png")
+        print("modo v4: fatiado do terreno pintado + plataforma com raizes")
     else:
         grass = make_seamless(Image.open(RAW / "grass.jpg").convert("RGB"))
         dirt = make_seamless(Image.open(RAW / "dirt.jpg").convert("RGB"))

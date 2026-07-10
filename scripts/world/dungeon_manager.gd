@@ -332,8 +332,9 @@ func _shake_trees(cx: float, radius: float, intensity: float) -> void:
 		tw.tween_property(t, "rotation", -a * 0.8, 0.12)
 		tw.tween_property(t, "rotation", a * 0.5, 0.10)
 		tw.tween_property(t, "rotation", 0.0, 0.12)
-		# folhas se soltando da copa
-		VFX.burst(t.global_position + Vector2(randf_range(-18, 18), -40.0 * t.scale.y),
+		# folhas se soltando da copa (offset pela altura real da textura)
+		var ch: float = (t.texture.get_size().y * 0.35 if t.texture else 40.0) * t.scale.y
+		VFX.burst(t.global_position + Vector2(randf_range(-18, 18), -ch),
 				get_parent(), Color(0.16, 0.40, 0.18), 5, 40.0, 85.0)
 
 # ── Avalanche de pedras que tranca/destranca a arena ──────────────────────────

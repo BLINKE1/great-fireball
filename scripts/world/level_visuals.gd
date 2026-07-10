@@ -161,13 +161,19 @@ func _scatter_trees(level: Node) -> void:
 		return
 	seed(808)
 	var x := 120.0
+	var tex_h := tex.get_size().y      # ancora a BASE no chao p/ qualquer textura
+	# alvo: arvores ~260-380px no mundo (a Avon tem 220px; a procedural, 128)
+	var s_lo := 260.0 / tex_h
+	var s_hi := 380.0 / tex_h
 	while x < 5350.0:
 		var spr := Sprite2D.new()
 		spr.texture = tex
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var s := randf_range(1.8, 2.7)
+		# Avon (pintada, >=200px) usa filtro suave; procedural segue pixel
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if tex_h >= 200.0 \
+				else CanvasItem.TEXTURE_FILTER_NEAREST
+		var s := randf_range(s_lo, s_hi)
 		spr.scale = Vector2(s, s)
-		spr.position = Vector2(x, 492.0 - 64.0 * s)   # base perto do topo do chão
+		spr.position = Vector2(x, 492.0 - tex_h * 0.5 * s)   # base no topo do chão
 		spr.z_index = -5                              # atrás do gameplay
 		var d := randf()                              # profundidade: árvores ao fundo + escuras/azuis
 		spr.modulate = Color(0.52 + 0.26 * d, 0.60 + 0.24 * d, 0.56 + 0.20 * d, 0.92)
@@ -212,7 +218,15 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# cola no TOPO do sprite pra QUALQUER altura. Ancorar em -sz/2
 				# (antigo) poe a grama no meio do chao quando a altura nao e'
 				# multipla de 32.
-				child.region_rect = Rect2(0, 0, sz.x, sz.y)
+				var draw_h := sz.y
+				if tex == pt and _forest and tex.get_height() >= 80:
+					# plataforma pintada: RAIZES penduradas abaixo do collider
+					# (overhang so' visual — a fisica nao muda). offset desce o
+					# desenho pra manter o topo alinhado com o topo do corpo.
+					var overhang := minf(40.0, tex.get_height() - sz.y)
+					draw_h = sz.y + overhang
+					child.offset = Vector2(0, overhang * 0.5)
+				child.region_rect = Rect2(0, 0, sz.x, draw_h)
 				child.modulate = Color.WHITE
 				# floresta = tiles pintados premium (512px, gen_forest_ground.py)
 				# -> filtro suave, mesmo registro do backdrop. Pedra/caverna
