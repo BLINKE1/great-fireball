@@ -213,7 +213,11 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# multipla de 32.
 				child.region_rect = Rect2(0, 0, sz.x, sz.y)
 				child.modulate = Color.WHITE
-				child.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				# floresta = tiles pintados premium (512px, gen_forest_ground.py)
+				# -> filtro suave, mesmo registro do backdrop. Pedra/caverna
+				# segue pixel-art NEAREST.
+				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if _forest \
+						else CanvasItem.TEXTURE_FILTER_NEAREST
 		_visit(child, ft, pt, wt)
 
 # ── Named special objects ─────────────────────────────────────────────────────
