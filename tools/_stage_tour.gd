@@ -13,9 +13,15 @@ var _f := 0
 var _i := 0
 var _cam: Camera2D = null
 var _lvl: Node = null
+var _prefix := ""
 
 func _initialize() -> void:
-	_lvl = load("res://scenes/world/dungeon_1.tscn").instantiate()
+	var scene := "res://scenes/world/dungeon_1.tscn"
+	var u := OS.get_cmdline_user_args()
+	if u.size() > 0:
+		scene = "res://scenes/world/%s.tscn" % u[0]   # ex.: -- dungeon_cave_test
+		_prefix = u[0] + "_"
+	_lvl = load(scene).instantiate()
 	get_root().add_child.call_deferred(_lvl)
 
 func _process(_d: float) -> bool:
@@ -37,7 +43,7 @@ func _process(_d: float) -> bool:
 		# 16 ticks depois de mover: captura (parallax/fx assentados)
 		var s: Array = SPOTS[_i - 1]
 		get_root().get_texture().get_image().save_png(
-			ProjectSettings.globalize_path("res://tools/art_director/iterations/godot_shots/tour_%s.png" % s[0]))
+			ProjectSettings.globalize_path("res://tools/art_director/iterations/godot_shots/tour_%s%s.png" % [_prefix, s[0]]))
 		print("shot ", s[0])
 	if _f > 400:
 		quit(1); return true

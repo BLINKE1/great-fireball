@@ -6,6 +6,10 @@ extends Node
 # de árvores, tiles de grama); o resto (tutorial) usa o tema caverna.
 
 var _forest := false
+# TESTE (pedido do Will): tema CAVERNA — no' "CaveTheme" na cena troca o
+# backdrop pela caverna John Avon (parede total, estilo Terraria) e corta
+# arvores/arbustos. O resto (chao musgado, backwalls de plataforma) fica.
+var _cave := false
 
 # Foreground (folhagem da frente): arbustos subindo da BASE da tela 640x360.
 const FG_SCALE := 0.55
@@ -23,9 +27,10 @@ func _build() -> void:
 	if level == null:
 		return
 	_forest = level.has_node("DungeonManager")
+	_cave = level.has_node("CaveTheme")
 	_add_solid_background(level)
 	_add_parallax(level)
-	if _forest:
+	if _forest and not _cave:
 		_scatter_trees(level)
 		_add_foreground(level)
 	_add_canvas_modulate(level)
@@ -54,7 +59,10 @@ func _add_solid_background(level: Node) -> void:
 	level.add_child(cl)
 	if _forest:
 		# Backdrop pintado (John Avon) se houver PNG; senao gradiente de entardecer.
-		var backdrop := _load_backdrop("res://assets/sprites/backgrounds/forest_backdrop.png")
+		# Tema caverna: a parede pintada vira o fundo TODO (Terraria full-wall).
+		var bd_path := "res://assets/sprites/backgrounds/cave_backdrop.png" if _cave \
+				else "res://assets/sprites/backgrounds/forest_backdrop.png"
+		var backdrop := _load_backdrop(bd_path)
 		var tr := TextureRect.new()
 		if backdrop != null:
 			tr.texture = backdrop
@@ -187,7 +195,9 @@ func _scatter_trees(level: Node) -> void:
 func _add_canvas_modulate(level: Node) -> void:
 	var cm := CanvasModulate.new()
 	cm.name = "CaveAtmosphere"
-	cm.color = Color(0.88, 0.93, 0.88) if _forest else Color(0.80, 0.72, 0.96)  # luar de floresta vs caverna
+	# luar de floresta / breu esverdeado de caverna / roxo da caverna antiga
+	cm.color = (Color(0.74, 0.86, 0.84) if _cave else Color(0.88, 0.93, 0.88)) if _forest \
+			else Color(0.80, 0.72, 0.96)
 	level.add_child(cm)
 
 # ── Stone tile textures on all platforms/floors/walls ─────────────────────────
