@@ -233,7 +233,8 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# (antigo) poe a grama no meio do chao quando a altura nao e'
 				# multipla de 32.
 				var draw_h := sz.y
-				if tex == pt and _forest and tex.get_height() >= 80:
+				var is_plat := tex == pt and _forest and tex.get_height() >= 80
+				if is_plat:
 					# plataforma pintada: RAIZES penduradas abaixo do collider
 					# (overhang so' visual — a fisica nao muda). offset desce o
 					# desenho pra manter o topo alinhado com o topo do corpo.
@@ -251,6 +252,12 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# segue pixel-art NEAREST.
 				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if _forest \
 						else CanvasItem.TEXTURE_FILTER_NEAREST
+				# COESAO: integra o tile na cena (feedback do Will)
+				if _forest:
+					if is_plat:
+						_feather_sides(child, sz.x, draw_h)
+					_add_terrain_glow(child, sz)
+					_add_contact_shadow(child, sz, tex == ft)
 		_visit(child, ft, pt, wt)
 
 # ── Parede de fundo (tecnica Terraria) atras das plataformas da floresta ──────
@@ -259,6 +266,60 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 # dentro do chao (o piso cobre a emenda). z=-4: frente das arvores (-5), atras
 # de tudo que joga.
 const BACKWALL_GROUND_Y := 520.0
+
+# Integracao atmosferica do terreno (coesao com o backdrop pintado)
+var _feather_shader: Shader = null
+var _soft_tex: Texture2D = null
+
+func _get_feather_shader() -> Shader:
+	if _feather_shader == null:
+		_feather_shader = load("res://assets/shaders/terrain_feather.gdshader")
+	return _feather_shader
+
+func _get_soft_tex() -> Texture2D:
+	if _soft_tex != null:
+		return _soft_tex
+	var s := 64
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	var c := (s - 1) * 0.5
+	for y in range(s):
+		for x in range(s):
+			var d := Vector2(x - c, y - c).length() / c
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			a = a * a
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	_soft_tex = ImageTexture.create_from_image(img)
+	return _soft_tex
+
+func _feather_sides(spr: Sprite2D, w: float, h: float) -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = _get_feather_shader()
+	mat.set_shader_parameter("half_size", Vector2(w, h) * 0.5)
+	mat.set_shader_parameter("feather", Vector2(clampf(w * 0.18, 18.0, 40.0), 0.0))
+	spr.material = mat
+
+## Rim de musgo luminoso na linha da grama (aditivo): sangra glow sobre o backdrop.
+func _add_terrain_glow(spr: Sprite2D, sz: Vector2) -> void:
+	var glow := Sprite2D.new()
+	glow.texture = _get_soft_tex()
+	glow.z_index = 1
+	glow.scale = Vector2((sz.x + 40.0) / 64.0, 34.0 / 64.0)
+	glow.position = Vector2(0, -sz.y * 0.5 + 3.0)
+	glow.modulate = Color(0.22, 0.85, 0.55, 0.5)
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = m
+	spr.add_child(glow)
+
+## Sombra de contato: escurece abaixo do terreno (assenta na cena).
+func _add_contact_shadow(spr: Sprite2D, sz: Vector2, is_floor: bool) -> void:
+	var sh := Sprite2D.new()
+	sh.texture = _get_soft_tex()
+	sh.z_index = -1
+	sh.scale = Vector2((sz.x + 20.0) / 64.0, 40.0 / 64.0)
+	sh.position = Vector2(0, sz.y * 0.5 + (2.0 if is_floor else 10.0))
+	sh.modulate = Color(0.02, 0.05, 0.05, 0.55)
+	spr.add_child(sh)
 
 func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
 	var tex := SpriteSetup.get_texture("moss_wall")

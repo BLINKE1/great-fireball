@@ -295,6 +295,54 @@ def compose_wall(rock: Image.Image) -> Image.Image:
     return _grade(rock.resize((384, 384), Image.LANCZOS), (0.50, 0.62, 0.56))
 
 
+# ── COESAO (feedback do Will: "nao mescla"): grade pra paleta da cena ────────
+# O tile saia com um LABIO de musgo verde-neon (pico ~0,112,25) sobre massa
+# quase preta -> navalha que grita "tile colado". Aqui: dessatura, empurra o
+# verde pro TEAL-esmeralda do backdrop, comprime o highlight neon, levanta o
+# preto morto pra um carvao-teal (relaciona com a cena) e FEATHER-a o labio
+# (blur vertical no musgo -> rim suave que sangra glow, nao navalha).
+def _grade_scene(img: Image.Image) -> Image.Image:
+    import numpy as np
+    a = np.asarray(img.convert("RGB")).astype(np.float32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+    # 1) dessatura 16%
+    a = lum[..., None] * 0.16 + a * 0.84
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    # 2) teal-shift: sobe o azul nos verdes vivos (hue neon->esmeralda) e alivia
+    #    o pico do verde
+    green_dom = np.clip((g - np.maximum(r, b)) / 90.0, 0.0, 1.0)
+    b = b + green_dom * (g - b) * 0.45
+    g = g - green_dom * g * 0.12
+    # 3) comprime highlight (o neon estourado assenta na cena)
+    hi = np.clip((lum - 150.0) / 105.0, 0.0, 1.0)
+    for ch in (0,):
+        pass
+    r = r * (1.0 - hi * 0.18); g = g * (1.0 - hi * 0.22); b = b * (1.0 - hi * 0.10)
+    # 4) levanta o preto morto pra carvao-teal (nao preto puro)
+    charc = np.array([7.0, 16.0, 15.0], np.float32)
+    sh = np.clip(1.0 - lum / 46.0, 0.0, 1.0)[..., None]
+    rgb = np.stack([r, g, b], -1)
+    rgb = rgb * (1.0 - sh * 0.55) + charc * (sh * 0.55)
+    out = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB")
+    return out
+
+
+def _feather_moss(img: Image.Image) -> Image.Image:
+    """Suaviza o labio: blur vertical so' na banda de musgo -> rim gradiente."""
+    import numpy as np
+    a = np.asarray(img.convert("RGB")).astype(np.float32)
+    soft = np.asarray(img.filter(ImageFilter.GaussianBlur(2.2))).astype(np.float32)
+    H = a.shape[0]
+    # peso: forte no topo (labio), some ate' ~18% da altura
+    band = int(H * 0.20)
+    w = np.zeros(H, np.float32)
+    w[:band] = np.linspace(0.75, 0.0, band)
+    mix = w[:, None, None]
+    out = a * (1.0 - mix) + soft * mix
+    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
+
+
 def main() -> None:
     RAW.mkdir(parents=True, exist_ok=True)
     DEST.mkdir(parents=True, exist_ok=True)
@@ -309,16 +357,18 @@ def main() -> None:
     terrain_p = RAW / "terrain_101.jpg"
     if terrain_p.exists() and "--rim-lit" not in sys.argv:
         floor = compose_floor_from_terrain(Image.open(terrain_p).convert("RGB"))
+        floor = _feather_moss(_grade_scene(floor))   # coesao com a cena
         floor.save(DEST / "grass_floor.png")
+        # plataforma herda o floor ja graduado (mesma paleta), depois raizes+alpha
         compose_platform_from_terrain(floor).save(DEST / "grass_platform.png")
-        print("modo v4: fatiado do terreno pintado + plataforma com raizes")
+        print("modo v4: fatiado do terreno pintado + grade de cena + raizes")
     else:
         grass = make_seamless(Image.open(RAW / "grass.jpg").convert("RGB"))
         dirt = make_seamless(Image.open(RAW / "dirt.jpg").convert("RGB"))
         compose_floor(grass, dirt).save(DEST / "grass_floor.png")
         compose_platform(grass, dirt).save(DEST / "grass_platform.png")
         print("modo fallback: composicao rim-lit procedural")
-    compose_wall(rock).save(DEST / "moss_wall.png")
+    _grade_scene(compose_wall(rock)).save(DEST / "moss_wall.png")
     print("tiles premium -> assets/tilesets/{grass_floor,grass_platform,moss_wall}.png")
 
 
