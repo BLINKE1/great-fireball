@@ -353,6 +353,18 @@ func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
 		wall.modulate = sp[2]
 		wall.rotation = sp[3]
 		wall.position = Vector2(0, cy)
+		# COESAO: sem isso o painel e' um RETANGULO duro flutuando entre as
+		# arvores (o "painel de UI" que a rotacao sozinha nao mata). O feather
+		# por posicao dissolve os 4 lados -> vira cavidade de rocha que sangra
+		# na cena, nao um card. Generoso: a borda de cima (contra o backdrop) e'
+		# a que mais denuncia, entao feather forte nos dois eixos.
+		var mat := ShaderMaterial.new()
+		mat.shader = _get_feather_shader()
+		mat.set_shader_parameter("half_size", Vector2(sp[0], sp[1]) * 0.5)
+		mat.set_shader_parameter("feather", Vector2(
+				clampf(sp[0] * 0.28, 60.0, 150.0),
+				clampf(sp[1] * 0.30, 70.0, 200.0)))
+		wall.material = mat
 		plat_sprite.get_parent().add_child.call_deferred(wall)
 
 # ── Named special objects ─────────────────────────────────────────────────────
