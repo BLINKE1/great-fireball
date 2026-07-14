@@ -303,9 +303,10 @@ func _add_terrain_glow(spr: Sprite2D, sz: Vector2) -> void:
 	var glow := Sprite2D.new()
 	glow.texture = _get_soft_tex()
 	glow.z_index = 1
-	glow.scale = Vector2((sz.x + 40.0) / 64.0, 34.0 / 64.0)
-	glow.position = Vector2(0, -sz.y * 0.5 + 3.0)
-	glow.modulate = Color(0.22, 0.85, 0.55, 0.5)
+	# fino e discreto: um SUSSURRO de bloom na linha do musgo, nao barra de luz.
+	glow.scale = Vector2((sz.x + 24.0) / 64.0, 16.0 / 64.0)
+	glow.position = Vector2(0, -sz.y * 0.5 + 2.0)
+	glow.modulate = Color(0.16, 0.52, 0.38, 0.18)   # teal-esmeralda apagado
 	var m := CanvasItemMaterial.new()
 	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = m
@@ -316,9 +317,9 @@ func _add_contact_shadow(spr: Sprite2D, sz: Vector2, is_floor: bool) -> void:
 	var sh := Sprite2D.new()
 	sh.texture = _get_soft_tex()
 	sh.z_index = -1
-	sh.scale = Vector2((sz.x + 20.0) / 64.0, 40.0 / 64.0)
-	sh.position = Vector2(0, sz.y * 0.5 + (2.0 if is_floor else 10.0))
-	sh.modulate = Color(0.02, 0.05, 0.05, 0.55)
+	sh.scale = Vector2((sz.x + 20.0) / 64.0, 30.0 / 64.0)
+	sh.position = Vector2(0, sz.y * 0.5 + (1.0 if is_floor else 8.0))
+	sh.modulate = Color(0.02, 0.05, 0.05, 0.32)
 	spr.add_child(sh)
 
 func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
