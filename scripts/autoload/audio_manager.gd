@@ -20,6 +20,7 @@ const _PITCH_JITTER := {
 	"missile": 0.09, "missile_spread": 0.07, "missile_piercing": 0.08,
 	"missile_curved": 0.08, "cast": 0.07, "dash": 0.08,
 	"arrow": 0.11, "fire_arrow": 0.11, "orb_pickup": 0.06, "detect": 0.06,
+	"splash": 0.13, "water_step": 0.16,
 }
 
 func _ready() -> void:
@@ -138,6 +139,8 @@ func _build(sound: String) -> AudioStreamWAV:
 		"fire_arrow":         return _wave(480.0,  0.08, "up",        0.30)
 		"stone_emerge":       return _wave(72.0,   0.75, "explosion", 0.78)
 		"qte_alert":          return _wave(920.0,  0.18, "down",      0.50)
+		"splash":             return _wave(300.0,  0.24, "noise",     0.34)
+		"water_step":         return _wave(240.0,  0.07, "noise",     0.13)
 	return null
 
 func _wave(freq: float, dur: float, shape: String, vol: float) -> AudioStreamWAV:

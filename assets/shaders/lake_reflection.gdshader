@@ -13,6 +13,9 @@ uniform float ripple_freq = 30.0;
 uniform float ripple_speed = 0.5;
 uniform float reflect_strength = 0.85;
 uniform float shimmer = 0.10;
+// ondas (dos pes da Soph) que distorcem o reflexo: xy=centro uv, z=raio uv.x,
+// w=forca. Alimentado pelo water_ripples por frame. Zerado = sem efeito.
+uniform vec4 ripples[10];
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
 
@@ -35,9 +38,25 @@ void fragment() {
 		float amp = ripple_amp * (0.2 + depth);
 		float wob = sin(SCREEN_UV.y * ripple_freq + t * 2.0) * amp
 				  + sin(SCREEN_UV.y * ripple_freq * 2.7 - t * 1.3) * amp * 0.5;
-		// fonte ESPELHADA: mesma distancia acima da margem
+		// distorcao das ONDAS: empurra o reflexo radialmente na banda do anel
+		vec2 vsize = 1.0 / SCREEN_PIXEL_SIZE;
+		vec2 rdisp = vec2(0.0);
+		float rcrest = 0.0;
+		for (int i = 0; i < 10; i++) {
+			vec4 rp = ripples[i];
+			if (rp.w <= 0.001) { continue; }
+			vec2 dpx = (SCREEN_UV - rp.xy) * vsize;
+			dpx.y /= 0.32;                          // desfaz o achatamento eliptico
+			float dist = length(dpx);
+			float ring = dist - rp.z * vsize.x;      // 0 no anel
+			float band = exp(-ring * ring * 0.03);   // banda fina (~px)
+			vec2 dir = normalize((SCREEN_UV - rp.xy) + vec2(1e-6));
+			rdisp += dir * band * rp.w * 0.009;
+			rcrest += band * rp.w;
+		}
+		// fonte ESPELHADA: mesma distancia acima da margem (+ distorcao das ondas)
 		float src_y = waterline_uv - (SCREEN_UV.y - waterline_uv);
-		vec3 refl = texture(screen_tex, vec2(SCREEN_UV.x + wob, src_y)).rgb;
+		vec3 refl = texture(screen_tex, vec2(SCREEN_UV.x + wob + rdisp.x, src_y + rdisp.y)).rgb;
 		// cor da agua (gradiente) + reflexo enfraquecendo no fundo
 		vec3 water = mix(water_shallow, water_deep, clamp(depth * 1.1, 0.0, 1.0));
 		float rstr = reflect_strength * (1.0 - depth * 0.55);
@@ -56,6 +75,7 @@ void fragment() {
 		float fbreak = 0.45 + 0.55 * vnoise(vec2(SCREEN_UV.x * 46.0 + t, 5.0));
 		float foam = (1.0 - smoothstep(0.006, 0.032, depth)) * fbreak;
 		col = mix(col, vec3(0.82, 0.90, 0.88), foam * 0.22);
+		col += min(rcrest, 1.0) * 0.05 * vec3(0.80, 0.95, 0.90);   // crista da onda
 		COLOR = vec4(col, 1.0);
 	}
 }

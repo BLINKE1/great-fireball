@@ -167,6 +167,7 @@ func _add_foot_ripples(level: Node) -> void:
 	var rip = RipplesScript.new()
 	rip.player = level.get_node_or_null("Player")
 	rip.water_y = _waterline_y
+	rip.water_mat = _water_mat       # p/ distorcer o reflexo nas ondas
 	lay.add_child(rip)
 
 # Feixes de luz atravessando a copa (aditivo, atras do player = atmosfera).
