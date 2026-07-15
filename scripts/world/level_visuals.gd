@@ -11,10 +11,13 @@ var _forest := false
 # arvores/arbustos. O resto (chao musgado, backwalls de plataforma) fica.
 var _cave := false
 
-# Foreground (folhagem da frente): arbustos subindo da BASE da tela 640x360.
-const FG_SCALE := 0.55
+# Foreground (folhagem perto da CAMERA): clumps procedurais fora de foco que
+# sobem da base da tela 640x360. Ver gen_forest_foreground.py.
 const FG_VP_H := 360.0   # altura do viewport (ancora a folhagem no chao da tela)
-const FG_Y := 8.0        # nudge: +desce (deixa a base pra fora), -sobe
+const FG_LEVEL_W := 5500.0
+const FG_CLUMPS := [
+	"fg_bush_a", "fg_bush_b", "fg_fern_a", "fg_fern_b", "fg_grass_a", "fg_grass_b",
+]
 
 func _ready() -> void:
 	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
@@ -88,30 +91,64 @@ func _add_solid_background(level: Node) -> void:
 		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cl.add_child(rect)
 
-# ── Foreground (folhagem na FRENTE, "perto da tela" estilo HK) ───────────────
+# ── Foreground perto da CAMERA (estilo Ori/HK) ───────────────────────────────
+# Duas camadas de folhagem fora-de-foco brotando da linha do CHAO, na frente do
+# player. Chave da leitura "colado na lente" (que a v1 nao pegou): blur baked +
+# parallax HORIZONTAL mais rapido que o mundo (desliza contra o chao quando anda)
+# + a base enterrada no chao. VERTICAL travado no mundo (motion_scale.y=1.0):
+# assim a folhagem cola no chao em QUALQUER zoom (o boss puxa zoom 1.18) — foi o
+# ancoramento em tela que quebrou antes. layer=5 (CanvasLayer): desenha sempre na
+# frente do gameplay e atras da UI (>=8); z_index ordena entre as camadas de fg.
+const FG_GROUND_Y := 500.0   # linha do chao no mundo (Floor y=500)
+
 func _add_foreground(level: Node) -> void:
-	var tex := _load_backdrop("res://assets/sprites/backgrounds/forest_foreground.png")
-	if tex == null:
+	var texs: Array[Texture2D] = []
+	for n in FG_CLUMPS:
+		var t := _load_backdrop("res://assets/sprites/backgrounds/%s.png" % n)
+		if t != null:
+			texs.append(t)
+	if texs.is_empty():
 		return
 	var pb := ParallaxBackground.new()
 	pb.name = "ForegroundPB"
-	pb.layer = 5                        # frente do gameplay (0), atras da UI (>=8)
+	pb.layer = 5
 	level.add_child(pb)
+	# MID: mais longe da lente -> menor, mais claro (alpha=haze deixa o backdrop
+	# sangrar), parallax menor, z atras. NEAR: colado -> maior, escuro, opaco,
+	# desliza mais rapido, z na frente.
+	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.32, 0.55, 1, 0xF0)
+	_scatter_fg_layer(pb, texs, 1.5,  0.30, 0.46, 0.96, 3, 0xA5)
+
+func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
+		scale_lo: float, scale_hi: float, alpha: float, z: int, seed: int) -> void:
 	var lay := ParallaxLayer.new()
-	lay.motion_scale = Vector2(1.35, 0.0)   # x: rola mais rapido (perto da tela); y=0: ancora vertical na tela
-	var iw: float = tex.get_width() * FG_SCALE
-	lay.motion_mirroring = Vector2(iw, 0)   # tileia na horizontal
+	lay.motion_scale = Vector2(motion_x, 1.0)   # x: parallax rapido; y: trava no mundo
 	pb.add_child(lay)
-	var spr := Sprite2D.new()
-	spr.texture = tex
-	spr.centered = false
-	spr.scale = Vector2(FG_SCALE, FG_SCALE)
-	# ancora a BASE dos arbustos no chao da tela (sensacao de perto do player)
-	var strip_h: float = tex.get_height() * FG_SCALE
-	spr.position = Vector2(0, FG_VP_H - strip_h + FG_Y)
-	spr.modulate = Color(1, 1, 1, 0.92)
-	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	lay.add_child(spr)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var span: float = FG_LEVEL_W * motion_x + 640.0
+	var x := -300.0
+	while x < span:
+		var tex: Texture2D = texs[rng.randi() % texs.size()]
+		var s := rng.randf_range(scale_lo, scale_hi)
+		var wpx: float = tex.get_width() * s
+		var hpx: float = tex.get_height() * s
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.scale = Vector2(s, s)
+		# base BEM enterrada no chao -> a base chapada some, brota da linha do
+		# solo; topo sobe pouco (so' a faixa inferior; tapa pes/pernas, nao o corpo)
+		var base_y: float = FG_GROUND_Y + rng.randf_range(24.0, 52.0)
+		spr.position = Vector2(x, base_y - hpx)
+		if rng.randf() < 0.5:                    # espelha p/ variar a silhueta
+			spr.scale.x = -s
+			spr.position.x += wpx                # compensa o flip (centered=false)
+		spr.modulate = Color(1, 1, 1, alpha)
+		spr.z_index = z
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		lay.add_child(spr)
+		x += rng.randf_range(wpx * 0.7, wpx * 1.6)   # sobreposicoes + brechas
 
 # Carrega o backdrop pintado (importado ou PNG cru). null se nao existir.
 func _load_backdrop(path: String) -> Texture2D:

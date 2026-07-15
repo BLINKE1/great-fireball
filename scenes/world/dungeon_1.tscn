@@ -130,70 +130,15 @@ modulate = Color(0.18, 0.15, 0.12, 1.0)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/WallRight"]
 shape = SubResource("5")
 
-[node name="Platform1" type="StaticBody2D" parent="Environment"]
-position = Vector2(600, 430)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform1"]
-texture = SubResource("8")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform1"]
-shape = SubResource("7")
-
-[node name="Platform2" type="StaticBody2D" parent="Environment"]
-position = Vector2(1050, 390)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform2"]
-texture = SubResource("10")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform2"]
-shape = SubResource("9")
-
-[node name="Platform3" type="StaticBody2D" parent="Environment"]
-position = Vector2(1550, 450)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform3"]
-texture = SubResource("12")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform3"]
-shape = SubResource("11")
-
-[node name="Platform4" type="StaticBody2D" parent="Environment"]
-position = Vector2(2800, 420)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform4"]
-texture = SubResource("14")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform4"]
-shape = SubResource("13")
+# Plataformas flutuantes REMOVIDAS (decisao do Will 2026-07-15): na floresta
+# elas nao mesclavam (o backwall rochoso que salva a caverna destoa do backdrop
+# pintado). O nivel vira chao unico -> libera a faixa inferior da tela pro
+# foreground perto-da-camera. O bau foi aterrado no chao.
 
 [node name="Chest" type="Sprite2D" parent="Environment"]
-position = Vector2(2800, 406)
+position = Vector2(2800, 468)
 texture = SubResource("19")
 modulate = Color(0.95, 0.78, 0.10, 1.0)
-
-[node name="Platform5" type="StaticBody2D" parent="Environment"]
-position = Vector2(3550, 380)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform5"]
-texture = SubResource("16")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform5"]
-shape = SubResource("15")
-
-[node name="Platform6" type="StaticBody2D" parent="Environment"]
-position = Vector2(4350, 440)
-
-[node name="Sprite2D" type="Sprite2D" parent="Environment/Platform6"]
-texture = SubResource("18")
-modulate = Color(0.35, 0.28, 0.22, 1.0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Platform6"]
-shape = SubResource("17")
 
 [node name="Checkpoint1" parent="Environment" instance=ExtResource("6")]
 position = Vector2(1800, 464)
