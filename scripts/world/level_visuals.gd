@@ -37,11 +37,22 @@ func _build() -> void:
 		_add_lake(level)
 		_scatter_trees(level)
 		_add_foreground(level)
+		_add_falling_leaves(level)
 	_add_canvas_modulate(level)
 	_apply_stone_textures(level)
 	_apply_special_objects(level)
 	_add_point_lights(level)
 	_add_ambient_particles(level)
+
+func _add_falling_leaves(level: Node) -> void:
+	var LeavesScript = load("res://scripts/world/falling_leaves.gd")
+	if LeavesScript == null:
+		return
+	var lv = LeavesScript.new()
+	lv.area_width = FG_LEVEL_W
+	lv.bottom_y = LAKE_WATERLINE_Y - 12.0    # respawna acima da agua
+	lv.z_index = 3                            # na frente das arvores/player
+	level.add_child(lv)
 
 func _add_ambient_particles(level: Node) -> void:
 	var AmbientScript = load("res://scripts/world/ambient_particles.gd")
@@ -118,9 +129,27 @@ func _add_lake(level: Node) -> void:
 	_water_mat.shader = sh
 	rect.material = _water_mat
 	cl.add_child(rect)
+	_add_god_rays(level)
 	_add_lilypads(level)
 	_add_mist(level)
 	set_process(true)
+
+# Feixes de luz atravessando a copa (aditivo, atras do player = atmosfera).
+func _add_god_rays(level: Node) -> void:
+	var sh := load("res://assets/shaders/god_rays.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "GodRays"
+	cl.layer = -5                      # na frente do backdrop (-100), atras do mundo
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := ShaderMaterial.new()
+	m.shader = sh
+	rect.material = m
+	cl.add_child(rect)
 
 # Vitorias-regias flutuando na superficie (layer=3: na frente do lago=2, atras
 # da nevoa=4). motion_scale (1,1) = travadas no mundo (posicao fixa no lago).
