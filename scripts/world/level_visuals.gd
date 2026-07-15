@@ -101,6 +101,7 @@ func _add_solid_background(level: Node) -> void:
 # abaixo dela; nao tapa o mundo acima). Ondula, tinge e poe margem.
 const LAKE_WATERLINE_Y := 488.0   # mundo: logo abaixo da grama (chao topo ~484)
 var _water_mat: ShaderMaterial = null
+var _mist_mat: ShaderMaterial = null
 
 func _add_lake(level: Node) -> void:
 	var sh := load("res://assets/shaders/lake_reflection.gdshader")
@@ -117,7 +118,25 @@ func _add_lake(level: Node) -> void:
 	_water_mat.shader = sh
 	rect.material = _water_mat
 	cl.add_child(rect)
+	_add_mist(level)
 	set_process(true)
+
+# Nevoa baixa driftando sobre a agua (na frente do lago=2, atras do foreground=5)
+func _add_mist(level: Node) -> void:
+	var sh := load("res://assets/shaders/lake_mist.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "LakeMist"
+	cl.layer = 3
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mist_mat = ShaderMaterial.new()
+	_mist_mat.shader = sh
+	rect.material = _mist_mat
+	cl.add_child(rect)
 
 func _process(_dt: float) -> void:
 	if _water_mat == null:
@@ -129,7 +148,11 @@ func _process(_dt: float) -> void:
 	var screen_y: float = (vp.get_canvas_transform() * Vector2(0, LAKE_WATERLINE_Y)).y
 	var h: float = vp.get_visible_rect().size.y
 	if h > 0.0:
-		_water_mat.set_shader_parameter("waterline_uv", clampf(screen_y / h, 0.0, 1.0))
+		var wl := clampf(screen_y / h, 0.0, 1.0)
+		_water_mat.set_shader_parameter("waterline_uv", wl)
+		if _mist_mat != null:
+			# faixa de nevoa um tico ACIMA da margem (sobe da agua p/ os troncos)
+			_mist_mat.set_shader_parameter("band_center", clampf(wl - 0.02, 0.0, 1.0))
 
 # ── Foreground perto da CAMERA (estilo Ori/HK) ───────────────────────────────
 # Duas camadas de folhagem fora-de-foco brotando da linha do CHAO, na frente do
