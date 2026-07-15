@@ -162,11 +162,13 @@ func _add_foreground(level: Node) -> void:
 	# MID (mais recuado/esmaecido): pode ter arbusto — atras, so' insinua massa.
 	# NEAR (na margem do lago): so' capim/samambaia, que afinam na base e nao
 	# jogam retangulo escuro sobre a agua clara (arbusto solido denunciava).
-	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.30, 0.50, 1, 0xF0)
-	_scatter_fg_layer(pb, airy, 1.5,  0.30, 0.46, 0.95, 3, 0xA5)
+	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.30, 0.50, 1, 0xF0, 2.2)
+	_scatter_fg_layer(pb, airy, 1.5,  0.30, 0.46, 0.95, 3, 0xA5, 3.6)
 
 func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
-		scale_lo: float, scale_hi: float, alpha: float, z: int, seed: int) -> void:
+		scale_lo: float, scale_hi: float, alpha: float, z: int, seed: int,
+		sway_amp: float) -> void:
+	var sway_sh := load("res://assets/shaders/foliage_sway.gdshader") as Shader
 	var lay := ParallaxLayer.new()
 	lay.motion_scale = Vector2(motion_x, 1.0)   # x: parallax rapido; y: trava no mundo
 	pb.add_child(lay)
@@ -195,6 +197,14 @@ func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
 		spr.modulate = Color(1, 1, 1, alpha)
 		spr.z_index = z
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		# vento: material por instancia com fase da posicao -> balanco dessincronizado
+		if sway_sh != null:
+			var m := ShaderMaterial.new()
+			m.shader = sway_sh
+			m.set_shader_parameter("amp", sway_amp)
+			m.set_shader_parameter("speed", rng.randf_range(1.05, 1.5))
+			m.set_shader_parameter("phase", x * 0.02)
+			spr.material = m
 		lay.add_child(spr)
 		x += rng.randf_range(wpx * 0.7, wpx * 1.6)   # sobreposicoes + brechas
 
