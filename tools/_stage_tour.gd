@@ -50,9 +50,9 @@ func _process(_d: float) -> bool:
 	return false
 
 func _hide_ui(n: Node) -> void:
-	if n is ParallaxBackground or (n is CanvasLayer and n.name == "Lake"):
-		return   # mantem parallax (fg/bg) E o lago visiveis; some so' a UI
-	if n is CanvasLayer and n.layer >= 0:
+	# esconde so' a UI (layers >= 8: HUD 10, dialogo 20, popup 25); mantem os
+	# visuais de cena (Lake 2, LilyPads 3, Mist 4, Foreground 5, parallax).
+	if n is CanvasLayer and n.layer >= 8:
 		n.visible = false
 		return
 	for c in n.get_children():

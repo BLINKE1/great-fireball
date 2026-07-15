@@ -118,8 +118,52 @@ func _add_lake(level: Node) -> void:
 	_water_mat.shader = sh
 	rect.material = _water_mat
 	cl.add_child(rect)
+	_add_lilypads(level)
 	_add_mist(level)
 	set_process(true)
+
+# Vitorias-regias flutuando na superficie (layer=3: na frente do lago=2, atras
+# da nevoa=4). motion_scale (1,1) = travadas no mundo (posicao fixa no lago).
+const LILYPADS := ["lilypad_a", "lilypad_b", "lilypad_c", "lilypad_d"]
+
+func _add_lilypads(level: Node) -> void:
+	var texs: Array[Texture2D] = []
+	for n in LILYPADS:
+		var t := _load_backdrop("res://assets/sprites/backgrounds/%s.png" % n)
+		if t != null:
+			texs.append(t)
+	if texs.is_empty():
+		return
+	var bob := load("res://assets/shaders/lilypad_bob.gdshader") as Shader
+	var pb := ParallaxBackground.new()
+	pb.name = "LilyPads"
+	pb.layer = 3
+	level.add_child(pb)
+	var lay := ParallaxLayer.new()
+	lay.motion_scale = Vector2(1, 1)
+	pb.add_child(lay)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0x11
+	var x := 220.0
+	while x < FG_LEVEL_W:
+		var wy := rng.randf_range(LAKE_WATERLINE_Y + 16.0, LAKE_WATERLINE_Y + 122.0)
+		var near := (wy - LAKE_WATERLINE_Y) / 122.0        # 0 longe(margem) .. 1 perto
+		var s := lerpf(0.5, 1.15, near) * rng.randf_range(0.85, 1.15)
+		var spr := Sprite2D.new()
+		spr.texture = texs[rng.randi() % texs.size()]
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(x, wy)
+		spr.modulate = Color(1, 1, 1, lerpf(0.72, 1.0, near))   # longe = mais esmaecido
+		spr.z_index = int(near * 100.0)                    # perto desenha por cima
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		if bob != null:
+			var m := ShaderMaterial.new()
+			m.shader = bob
+			m.set_shader_parameter("phase", x * 0.03)
+			m.set_shader_parameter("bob", lerpf(0.8, 2.1, near))
+			spr.material = m
+		lay.add_child(spr)
+		x += rng.randf_range(280.0, 620.0)
 
 # Nevoa baixa driftando sobre a agua (na frente do lago=2, atras do foreground=5)
 func _add_mist(level: Node) -> void:
@@ -128,7 +172,7 @@ func _add_mist(level: Node) -> void:
 		return
 	var cl := CanvasLayer.new()
 	cl.name = "LakeMist"
-	cl.layer = 3
+	cl.layer = 4
 	level.add_child(cl)
 	var rect := ColorRect.new()
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
