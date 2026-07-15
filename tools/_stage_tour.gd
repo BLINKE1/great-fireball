@@ -50,8 +50,8 @@ func _process(_d: float) -> bool:
 	return false
 
 func _hide_ui(n: Node) -> void:
-	if n is ParallaxBackground:
-		return   # mantem parallax de fundo E o foreground perto-da-camera visiveis
+	if n is ParallaxBackground or (n is CanvasLayer and n.name == "Lake"):
+		return   # mantem parallax (fg/bg) E o lago visiveis; some so' a UI
 	if n is CanvasLayer and n.layer >= 0:
 		n.visible = false
 		return

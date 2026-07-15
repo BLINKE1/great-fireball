@@ -34,6 +34,7 @@ func _build() -> void:
 	_add_solid_background(level)
 	_add_parallax(level)
 	if _forest and not _cave:
+		_add_lake(level)
 		_scatter_trees(level)
 		_add_foreground(level)
 	_add_canvas_modulate(level)
@@ -91,6 +92,45 @@ func _add_solid_background(level: Node) -> void:
 		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cl.add_child(rect)
 
+# ── Lago (reflexo da floresta abaixo da linha d'agua) ────────────────────────
+# O Will notou que o backdrop aparecendo por baixo do chao "parecia reflexo de
+# agua" — e pediu pra virar um LAGO de verdade. Uma CanvasLayer DEPOIS do mundo
+# (layer=2: apos gameplay=0, antes do foreground=5) roda o shader
+# lake_reflection: o screen_tex ja' tem backdrop + arvores + SOPH desenhados,
+# entao o reflexo espelha a cena inteira pra baixo da linha d'agua (so' desenha
+# abaixo dela; nao tapa o mundo acima). Ondula, tinge e poe margem.
+const LAKE_WATERLINE_Y := 488.0   # mundo: logo abaixo da grama (chao topo ~484)
+var _water_mat: ShaderMaterial = null
+
+func _add_lake(level: Node) -> void:
+	var sh := load("res://assets/shaders/lake_reflection.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "Lake"
+	cl.layer = 2
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_water_mat = ShaderMaterial.new()
+	_water_mat.shader = sh
+	rect.material = _water_mat
+	cl.add_child(rect)
+	set_process(true)
+
+func _process(_dt: float) -> void:
+	if _water_mat == null:
+		return
+	var vp := get_viewport()
+	if vp == null:
+		return
+	# projeta a linha d'agua do MUNDO -> tela (robusto a zoom/pulo da camera)
+	var screen_y: float = (vp.get_canvas_transform() * Vector2(0, LAKE_WATERLINE_Y)).y
+	var h: float = vp.get_visible_rect().size.y
+	if h > 0.0:
+		_water_mat.set_shader_parameter("waterline_uv", clampf(screen_y / h, 0.0, 1.0))
+
 # ── Foreground perto da CAMERA (estilo Ori/HK) ───────────────────────────────
 # Duas camadas de folhagem fora-de-foco brotando da linha do CHAO, na frente do
 # player. Chave da leitura "colado na lente" (que a v1 nao pegou): blur baked +
@@ -102,22 +142,28 @@ func _add_solid_background(level: Node) -> void:
 const FG_GROUND_Y := 500.0   # linha do chao no mundo (Floor y=500)
 
 func _add_foreground(level: Node) -> void:
-	var texs: Array[Texture2D] = []
+	var texs: Array[Texture2D] = []       # todos
+	var airy: Array[Texture2D] = []       # so' capim/samambaia (afinam na base)
 	for n in FG_CLUMPS:
 		var t := _load_backdrop("res://assets/sprites/backgrounds/%s.png" % n)
-		if t != null:
-			texs.append(t)
+		if t == null:
+			continue
+		texs.append(t)
+		if n.begins_with("fg_grass") or n.begins_with("fg_fern"):
+			airy.append(t)
 	if texs.is_empty():
 		return
+	if airy.is_empty():
+		airy = texs
 	var pb := ParallaxBackground.new()
 	pb.name = "ForegroundPB"
 	pb.layer = 5
 	level.add_child(pb)
-	# MID: mais longe da lente -> menor, mais claro (alpha=haze deixa o backdrop
-	# sangrar), parallax menor, z atras. NEAR: colado -> maior, escuro, opaco,
-	# desliza mais rapido, z na frente.
-	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.32, 0.55, 1, 0xF0)
-	_scatter_fg_layer(pb, texs, 1.5,  0.30, 0.46, 0.96, 3, 0xA5)
+	# MID (mais recuado/esmaecido): pode ter arbusto — atras, so' insinua massa.
+	# NEAR (na margem do lago): so' capim/samambaia, que afinam na base e nao
+	# jogam retangulo escuro sobre a agua clara (arbusto solido denunciava).
+	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.30, 0.50, 1, 0xF0)
+	_scatter_fg_layer(pb, airy, 1.5,  0.30, 0.46, 0.95, 3, 0xA5)
 
 func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
 		scale_lo: float, scale_hi: float, alpha: float, z: int, seed: int) -> void:
@@ -137,9 +183,11 @@ func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
 		spr.texture = tex
 		spr.centered = false
 		spr.scale = Vector2(s, s)
-		# base BEM enterrada no chao -> a base chapada some, brota da linha do
-		# solo; topo sobe pouco (so' a faixa inferior; tapa pes/pernas, nao o corpo)
-		var base_y: float = FG_GROUND_Y + rng.randf_range(24.0, 52.0)
+		# base na MARGEM do lago (linha da grama, ACIMA da agua) -> brota da
+		# margem sem invadir o lago; o fade da base dissolve na grama escura.
+		# (antes ficava enterrada no chao; com o lago, isso jogava a base chapada
+		# sobre a agua clara e denunciava o retangulo.)
+		var base_y: float = LAKE_WATERLINE_Y + rng.randf_range(-8.0, 8.0)
 		spr.position = Vector2(x, base_y - hpx)
 		if rng.randf() < 0.5:                    # espelha p/ variar a silhueta
 			spr.scale.x = -s

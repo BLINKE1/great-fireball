@@ -131,6 +131,15 @@ def _compose(mask: Image.Image, blur: float, seed: int) -> Image.Image:
     out.paste(rimimg, (0, 0), rim)
     # FORA DE FOCO: o blur que vende "perto da lente"
     out = out.filter(ImageFilter.GaussianBlur(blur))
+    # fade da BASE: some a borda chapada do clump (agora ha' agua/lago atras,
+    # a base reta denunciava). Dissolve o ultimo ~22% da altura.
+    alpha = out.getchannel("A")
+    grad = Image.new("L", (w, h), 255)
+    gd = ImageDraw.Draw(grad)
+    fade = max(1, int(h * 0.32))
+    for i in range(fade):
+        gd.line([(0, h - 1 - i), (w, h - 1 - i)], fill=int(255 * (i / float(fade))))
+    out.putalpha(ImageChops.multiply(alpha, grad))
     return out
 
 
