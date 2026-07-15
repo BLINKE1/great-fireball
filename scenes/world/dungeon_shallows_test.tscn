@@ -9,9 +9,13 @@
 [ext_resource type="Script"      path="res://scripts/world/kill_zone.gd"     id="7"]
 [ext_resource type="Script"      path="res://scripts/world/dungeon_manager.gd" id="8"]
 [ext_resource type="Script"      path="res://scripts/world/level_visuals.gd" id="9"]
+[ext_resource type="Script"      path="res://scripts/world/deep_water.gd"    id="10"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(5500, 32)
+
+[sub_resource type="RectangleShape2D" id="25"]
+size = Vector2(760, 120)
 
 [sub_resource type="PlaceholderTexture2D" id="2"]
 size = Vector2(5500, 32)
@@ -201,3 +205,10 @@ shape = SubResource("24")
 
 [node name="DungeonManager" type="Node" parent="."]
 script = ExtResource("8")
+
+[node name="DeepWater" type="Area2D" parent="."]
+position = Vector2(2400, 500)
+script = ExtResource("10")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DeepWater"]
+shape = SubResource("25")

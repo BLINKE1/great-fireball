@@ -540,10 +540,14 @@ func _handle_jump() -> void:
 	if Input.is_action_just_released("ui_accept") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT_MULT
 
+# Multiplicador externo de velocidade horizontal (ex.: area de agua funda no
+# tema alagados atrasa a Soph). 1.0 = normal.
+var water_speed_mult: float = 1.0
+
 func _handle_movement() -> void:
 	var direction := Input.get_axis("ui_left", "ui_right")
 	var running := Input.is_key_pressed(KEY_SHIFT)
-	var spd := RUN_SPEED if running else WALK_SPEED
+	var spd := (RUN_SPEED if running else WALK_SPEED) * water_speed_mult
 	if direction != 0:
 		velocity.x = direction * spd
 		facing = direction
