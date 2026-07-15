@@ -10,6 +10,11 @@ var _forest := false
 # backdrop pela caverna John Avon (parede total, estilo Terraria) e corta
 # arvores/arbustos. O resto (chao musgado, backwalls de plataforma) fica.
 var _cave := false
+# Tema ALAGADOS (no' "ShallowsTheme"): o chao vira agua RASA na linha de
+# caminhada — a Soph vadeia, os pes tocam a superficie e soltam ondas. Reusa o
+# lago (waterline nos pes, agua mais turva/rasa) + ativa water_ripples.
+var _shallows := false
+var _waterline_y := 488.0     # y da superficie da agua (mundo); nos pes se shallows
 
 # Foreground (folhagem perto da CAMERA): clumps procedurais fora de foco que
 # sobem da base da tela 640x360. Ver gen_forest_foreground.py.
@@ -31,6 +36,8 @@ func _build() -> void:
 		return
 	_forest = level.has_node("DungeonManager")
 	_cave = level.has_node("CaveTheme")
+	_shallows = level.has_node("ShallowsTheme")
+	_waterline_y = 482.0 if _shallows else LAKE_WATERLINE_Y   # nos pes se alagados
 	_add_solid_background(level)
 	_add_parallax(level)
 	if _forest and not _cave:
@@ -50,7 +57,7 @@ func _add_falling_leaves(level: Node) -> void:
 		return
 	var lv = LeavesScript.new()
 	lv.area_width = FG_LEVEL_W
-	lv.bottom_y = LAKE_WATERLINE_Y - 12.0    # respawna acima da agua
+	lv.bottom_y = _waterline_y - 12.0        # respawna acima da agua
 	lv.z_index = 3                            # na frente das arvores/player
 	level.add_child(lv)
 
@@ -127,12 +134,40 @@ func _add_lake(level: Node) -> void:
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_water_mat = ShaderMaterial.new()
 	_water_mat.shader = sh
+	if _shallows:
+		# agua RASA: reflete menos (ve-se o fundo), mais turva/esverdeada e
+		# margem/ondas mais presentes -> leitura de poca rasa, nao lago fundo.
+		_water_mat.set_shader_parameter("reflect_strength", 0.5)
+		_water_mat.set_shader_parameter("water_shallow", Color(0.20, 0.40, 0.36))
+		_water_mat.set_shader_parameter("water_deep", Color(0.10, 0.22, 0.22))
+		_water_mat.set_shader_parameter("shimmer", 0.14)
 	rect.material = _water_mat
 	cl.add_child(rect)
 	_add_god_rays(level)
-	_add_lilypads(level)
+	if not _shallows:
+		_add_lilypads(level)      # vitorias-regias = lago fundo, nao poca rasa
 	_add_mist(level)
+	if _shallows:
+		_add_foot_ripples(level)
 	set_process(true)
+
+# Ondas nos pes da Soph vadeando (tema alagados). ParallaxBackground layer=3
+# (na frente da agua=2, coords de mundo via motion_scale 1,1).
+func _add_foot_ripples(level: Node) -> void:
+	var RipplesScript = load("res://scripts/world/water_ripples.gd")
+	if RipplesScript == null:
+		return
+	var pb := ParallaxBackground.new()
+	pb.name = "FootRipples"
+	pb.layer = 3
+	level.add_child(pb)
+	var lay := ParallaxLayer.new()
+	lay.motion_scale = Vector2(1, 1)
+	pb.add_child(lay)
+	var rip = RipplesScript.new()
+	rip.player = level.get_node_or_null("Player")
+	rip.water_y = _waterline_y
+	lay.add_child(rip)
 
 # Feixes de luz atravessando a copa (aditivo, atras do player = atmosfera).
 func _add_god_rays(level: Node) -> void:
@@ -218,7 +253,7 @@ func _process(_dt: float) -> void:
 	if vp == null:
 		return
 	# projeta a linha d'agua do MUNDO -> tela (robusto a zoom/pulo da camera)
-	var screen_y: float = (vp.get_canvas_transform() * Vector2(0, LAKE_WATERLINE_Y)).y
+	var screen_y: float = (vp.get_canvas_transform() * Vector2(0, _waterline_y)).y
 	var h: float = vp.get_visible_rect().size.y
 	if h > 0.0:
 		var wl := clampf(screen_y / h, 0.0, 1.0)
@@ -285,7 +320,7 @@ func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
 		# margem sem invadir o lago; o fade da base dissolve na grama escura.
 		# (antes ficava enterrada no chao; com o lago, isso jogava a base chapada
 		# sobre a agua clara e denunciava o retangulo.)
-		var base_y: float = LAKE_WATERLINE_Y + rng.randf_range(-8.0, 8.0)
+		var base_y: float = _waterline_y + rng.randf_range(-8.0, 8.0)
 		spr.position = Vector2(x, base_y - hpx)
 		if rng.randf() < 0.5:                    # espelha p/ variar a silhueta
 			spr.scale.x = -s
