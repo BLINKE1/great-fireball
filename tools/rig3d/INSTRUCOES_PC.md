@@ -30,6 +30,24 @@
 > **Próximo:** anims de locomoção (Mixamo idle/walk/run no `soph_rigged.fbx`) →
 > re-texturizar → render 3/4 → sprite sheet.
 
+## 🤖 ATUALIZAÇÃO 2026-07-15 — ORQUESTRADOR API-first (`soph_pipeline.py`)
+> Alternativa AUTOMATIZADA ao fluxo manual Hunyuan Studio + Mixamo: um script
+> chama a **API da Tripo** (image-to-3D com **rig+anim**) e baixa o GLB pronto.
+> ```bash
+> export TRIPO_API_KEY=...                                  # sua chave (nao commitar)
+> python tools/rig3d/soph_pipeline.py --dry-run --yes       # testa a logica (sem rede)
+> python tools/rig3d/soph_pipeline.py --stages mesh,rig,anim  # de verdade
+> ```
+> - Input = `docs/concept_art/multiview/soph_mv_{front,side,back}.png`.
+> - Etapas: multiview→mesh+textura → auto-rig → anim (idle/walk/run). **Portao de
+>   aprovacao** entre cada uma (salva preview; `--yes` pula). Estado resumivel
+>   (`--resume`). **Nunca escreve em `in/`** — GLBs vao pra `out/pipeline/glb/`.
+> - No fim ele imprime o comando do **render 3/4** (que ja' existe: `render_soph_3q.py`
+>   + `pack_sheet.py`). Mixamo deixa de ser necessario (Tripo riga por API).
+> - ⚠️ Campos/endpoints da Tripo em `PROVIDERS["tripo"]` — se a API mudar, ajuste
+>   la' (confira em https://platform.tripo3d.ai/docs). O fluxo manual abaixo segue
+>   valendo como fallback.
+
 ## 🚀 TL;DR — comece por aqui (passo a passo)
 
 ```bash
