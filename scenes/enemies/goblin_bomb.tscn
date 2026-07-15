@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/goblin_bomb.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 8.0
+
+[sub_resource type="PlaceholderTexture2D" id="2"]
+size = Vector2(14, 14)
+
+[node name="GoblinBomb" type="Area2D"]
+script = ExtResource("1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")

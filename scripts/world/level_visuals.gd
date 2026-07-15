@@ -6,11 +6,23 @@ extends Node
 # de árvores, tiles de grama); o resto (tutorial) usa o tema caverna.
 
 var _forest := false
+# TESTE (pedido do Will): tema CAVERNA — no' "CaveTheme" na cena troca o
+# backdrop pela caverna John Avon (parede total, estilo Terraria) e corta
+# arvores/arbustos. O resto (chao musgado, backwalls de plataforma) fica.
+var _cave := false
+# Tema ALAGADOS (no' "ShallowsTheme"): o chao vira agua RASA na linha de
+# caminhada — a Soph vadeia, os pes tocam a superficie e soltam ondas. Reusa o
+# lago (waterline nos pes, agua mais turva/rasa) + ativa water_ripples.
+var _shallows := false
+var _waterline_y := 488.0     # y da superficie da agua (mundo); nos pes se shallows
 
-# Foreground (folhagem da frente): arbustos subindo da BASE da tela 640x360.
-const FG_SCALE := 0.55
+# Foreground (folhagem perto da CAMERA): clumps procedurais fora de foco que
+# sobem da base da tela 640x360. Ver gen_forest_foreground.py.
 const FG_VP_H := 360.0   # altura do viewport (ancora a folhagem no chao da tela)
-const FG_Y := 8.0        # nudge: +desce (deixa a base pra fora), -sobe
+const FG_LEVEL_W := 5500.0
+const FG_CLUMPS := [
+	"fg_bush_a", "fg_bush_b", "fg_fern_a", "fg_fern_b", "fg_grass_a", "fg_grass_b",
+]
 
 func _ready() -> void:
 	# Adia a montagem p/ DEPOIS que o pai termina de instanciar seus filhos.
@@ -23,16 +35,31 @@ func _build() -> void:
 	if level == null:
 		return
 	_forest = level.has_node("DungeonManager")
+	_cave = level.has_node("CaveTheme")
+	_shallows = level.has_node("ShallowsTheme")
+	_waterline_y = 482.0 if _shallows else LAKE_WATERLINE_Y   # nos pes se alagados
 	_add_solid_background(level)
 	_add_parallax(level)
-	if _forest:
+	if _forest and not _cave:
+		_add_lake(level)
 		_scatter_trees(level)
 		_add_foreground(level)
+		_add_falling_leaves(level)
 	_add_canvas_modulate(level)
 	_apply_stone_textures(level)
 	_apply_special_objects(level)
 	_add_point_lights(level)
 	_add_ambient_particles(level)
+
+func _add_falling_leaves(level: Node) -> void:
+	var LeavesScript = load("res://scripts/world/falling_leaves.gd")
+	if LeavesScript == null:
+		return
+	var lv = LeavesScript.new()
+	lv.area_width = FG_LEVEL_W
+	lv.bottom_y = _waterline_y - 12.0        # respawna acima da agua
+	lv.z_index = 3                            # na frente das arvores/player
+	level.add_child(lv)
 
 func _add_ambient_particles(level: Node) -> void:
 	var AmbientScript = load("res://scripts/world/ambient_particles.gd")
@@ -54,7 +81,10 @@ func _add_solid_background(level: Node) -> void:
 	level.add_child(cl)
 	if _forest:
 		# Backdrop pintado (John Avon) se houver PNG; senao gradiente de entardecer.
-		var backdrop := _load_backdrop("res://assets/sprites/backgrounds/forest_backdrop.png")
+		# Tema caverna: a parede pintada vira o fundo TODO (Terraria full-wall).
+		var bd_path := "res://assets/sprites/backgrounds/cave_backdrop.png" if _cave \
+				else "res://assets/sprites/backgrounds/forest_backdrop.png"
+		var backdrop := _load_backdrop(bd_path)
 		var tr := TextureRect.new()
 		if backdrop != null:
 			tr.texture = backdrop
@@ -80,30 +110,235 @@ func _add_solid_background(level: Node) -> void:
 		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cl.add_child(rect)
 
-# ── Foreground (folhagem na FRENTE, "perto da tela" estilo HK) ───────────────
-func _add_foreground(level: Node) -> void:
-	var tex := _load_backdrop("res://assets/sprites/backgrounds/forest_foreground.png")
-	if tex == null:
+# ── Lago (reflexo da floresta abaixo da linha d'agua) ────────────────────────
+# O Will notou que o backdrop aparecendo por baixo do chao "parecia reflexo de
+# agua" — e pediu pra virar um LAGO de verdade. Uma CanvasLayer DEPOIS do mundo
+# (layer=2: apos gameplay=0, antes do foreground=5) roda o shader
+# lake_reflection: o screen_tex ja' tem backdrop + arvores + SOPH desenhados,
+# entao o reflexo espelha a cena inteira pra baixo da linha d'agua (so' desenha
+# abaixo dela; nao tapa o mundo acima). Ondula, tinge e poe margem.
+const LAKE_WATERLINE_Y := 488.0   # mundo: logo abaixo da grama (chao topo ~484)
+var _water_mat: ShaderMaterial = null
+var _mist_mat: ShaderMaterial = null
+
+func _add_lake(level: Node) -> void:
+	var sh := load("res://assets/shaders/lake_reflection.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "Lake"
+	cl.layer = 2
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_water_mat = ShaderMaterial.new()
+	_water_mat.shader = sh
+	if _shallows:
+		# agua RASA: reflete menos (ve-se o fundo), mais turva/esverdeada e
+		# margem/ondas mais presentes -> leitura de poca rasa, nao lago fundo.
+		_water_mat.set_shader_parameter("reflect_strength", 0.5)
+		_water_mat.set_shader_parameter("water_shallow", Color(0.20, 0.40, 0.36))
+		_water_mat.set_shader_parameter("water_deep", Color(0.10, 0.22, 0.22))
+		_water_mat.set_shader_parameter("shimmer", 0.14)
+	rect.material = _water_mat
+	cl.add_child(rect)
+	_add_god_rays(level)
+	if not _shallows:
+		_add_lilypads(level)      # vitorias-regias = lago fundo, nao poca rasa
+	_add_mist(level)
+	if _shallows:
+		_add_foot_ripples(level)
+	set_process(true)
+
+# Ondas nos pes da Soph vadeando (tema alagados). ParallaxBackground layer=3
+# (na frente da agua=2, coords de mundo via motion_scale 1,1).
+func _add_foot_ripples(level: Node) -> void:
+	var RipplesScript = load("res://scripts/world/water_ripples.gd")
+	if RipplesScript == null:
 		return
 	var pb := ParallaxBackground.new()
-	pb.name = "ForegroundPB"
-	pb.layer = 5                        # frente do gameplay (0), atras da UI (>=8)
+	pb.name = "FootRipples"
+	pb.layer = 3
 	level.add_child(pb)
 	var lay := ParallaxLayer.new()
-	lay.motion_scale = Vector2(1.35, 0.0)   # x: rola mais rapido (perto da tela); y=0: ancora vertical na tela
-	var iw: float = tex.get_width() * FG_SCALE
-	lay.motion_mirroring = Vector2(iw, 0)   # tileia na horizontal
+	lay.motion_scale = Vector2(1, 1)
 	pb.add_child(lay)
-	var spr := Sprite2D.new()
-	spr.texture = tex
-	spr.centered = false
-	spr.scale = Vector2(FG_SCALE, FG_SCALE)
-	# ancora a BASE dos arbustos no chao da tela (sensacao de perto do player)
-	var strip_h: float = tex.get_height() * FG_SCALE
-	spr.position = Vector2(0, FG_VP_H - strip_h + FG_Y)
-	spr.modulate = Color(1, 1, 1, 0.92)
-	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	lay.add_child(spr)
+	var rip = RipplesScript.new()
+	rip.player = level.get_node_or_null("Player")
+	rip.water_y = _waterline_y
+	rip.water_mat = _water_mat       # p/ distorcer o reflexo nas ondas
+	lay.add_child(rip)
+
+# Feixes de luz atravessando a copa (aditivo, atras do player = atmosfera).
+func _add_god_rays(level: Node) -> void:
+	var sh := load("res://assets/shaders/god_rays.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "GodRays"
+	cl.layer = -5                      # na frente do backdrop (-100), atras do mundo
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := ShaderMaterial.new()
+	m.shader = sh
+	rect.material = m
+	cl.add_child(rect)
+
+# Vitorias-regias flutuando na superficie (layer=3: na frente do lago=2, atras
+# da nevoa=4). motion_scale (1,1) = travadas no mundo (posicao fixa no lago).
+const LILYPADS := ["lilypad_a", "lilypad_b", "lilypad_c", "lilypad_d"]
+
+func _add_lilypads(level: Node) -> void:
+	var texs: Array[Texture2D] = []
+	for n in LILYPADS:
+		var t := _load_backdrop("res://assets/sprites/backgrounds/%s.png" % n)
+		if t != null:
+			texs.append(t)
+	if texs.is_empty():
+		return
+	var bob := load("res://assets/shaders/lilypad_bob.gdshader") as Shader
+	var pb := ParallaxBackground.new()
+	pb.name = "LilyPads"
+	pb.layer = 3
+	level.add_child(pb)
+	var lay := ParallaxLayer.new()
+	lay.motion_scale = Vector2(1, 1)
+	pb.add_child(lay)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0x11
+	var x := 220.0
+	while x < FG_LEVEL_W:
+		var wy := rng.randf_range(LAKE_WATERLINE_Y + 16.0, LAKE_WATERLINE_Y + 122.0)
+		var near := (wy - LAKE_WATERLINE_Y) / 122.0        # 0 longe(margem) .. 1 perto
+		var s := lerpf(0.5, 1.15, near) * rng.randf_range(0.85, 1.15)
+		var spr := Sprite2D.new()
+		spr.texture = texs[rng.randi() % texs.size()]
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(x, wy)
+		spr.modulate = Color(1, 1, 1, lerpf(0.72, 1.0, near))   # longe = mais esmaecido
+		spr.z_index = int(near * 100.0)                    # perto desenha por cima
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		if bob != null:
+			var m := ShaderMaterial.new()
+			m.shader = bob
+			m.set_shader_parameter("phase", x * 0.03)
+			m.set_shader_parameter("bob", lerpf(0.8, 2.1, near))
+			spr.material = m
+		lay.add_child(spr)
+		x += rng.randf_range(280.0, 620.0)
+
+# Nevoa baixa driftando sobre a agua (na frente do lago=2, atras do foreground=5)
+func _add_mist(level: Node) -> void:
+	var sh := load("res://assets/shaders/lake_mist.gdshader")
+	if sh == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.name = "LakeMist"
+	cl.layer = 4
+	level.add_child(cl)
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mist_mat = ShaderMaterial.new()
+	_mist_mat.shader = sh
+	rect.material = _mist_mat
+	cl.add_child(rect)
+
+func _process(_dt: float) -> void:
+	if _water_mat == null:
+		return
+	var vp := get_viewport()
+	if vp == null:
+		return
+	# projeta a linha d'agua do MUNDO -> tela (robusto a zoom/pulo da camera)
+	var screen_y: float = (vp.get_canvas_transform() * Vector2(0, _waterline_y)).y
+	var h: float = vp.get_visible_rect().size.y
+	if h > 0.0:
+		var wl := clampf(screen_y / h, 0.0, 1.0)
+		_water_mat.set_shader_parameter("waterline_uv", wl)
+		if _mist_mat != null:
+			# faixa de nevoa um tico ACIMA da margem (sobe da agua p/ os troncos)
+			_mist_mat.set_shader_parameter("band_center", clampf(wl - 0.02, 0.0, 1.0))
+
+# ── Foreground perto da CAMERA (estilo Ori/HK) ───────────────────────────────
+# Duas camadas de folhagem fora-de-foco brotando da linha do CHAO, na frente do
+# player. Chave da leitura "colado na lente" (que a v1 nao pegou): blur baked +
+# parallax HORIZONTAL mais rapido que o mundo (desliza contra o chao quando anda)
+# + a base enterrada no chao. VERTICAL travado no mundo (motion_scale.y=1.0):
+# assim a folhagem cola no chao em QUALQUER zoom (o boss puxa zoom 1.18) — foi o
+# ancoramento em tela que quebrou antes. layer=5 (CanvasLayer): desenha sempre na
+# frente do gameplay e atras da UI (>=8); z_index ordena entre as camadas de fg.
+const FG_GROUND_Y := 500.0   # linha do chao no mundo (Floor y=500)
+
+func _add_foreground(level: Node) -> void:
+	var texs: Array[Texture2D] = []       # todos
+	var airy: Array[Texture2D] = []       # so' capim/samambaia (afinam na base)
+	for n in FG_CLUMPS:
+		var t := _load_backdrop("res://assets/sprites/backgrounds/%s.png" % n)
+		if t == null:
+			continue
+		texs.append(t)
+		if n.begins_with("fg_grass") or n.begins_with("fg_fern"):
+			airy.append(t)
+	if texs.is_empty():
+		return
+	if airy.is_empty():
+		airy = texs
+	var pb := ParallaxBackground.new()
+	pb.name = "ForegroundPB"
+	pb.layer = 5
+	level.add_child(pb)
+	# MID (mais recuado/esmaecido): pode ter arbusto — atras, so' insinua massa.
+	# NEAR (na margem do lago): so' capim/samambaia, que afinam na base e nao
+	# jogam retangulo escuro sobre a agua clara (arbusto solido denunciava).
+	_scatter_fg_layer(pb, texs, 1.22, 0.20, 0.30, 0.50, 1, 0xF0, 2.2)
+	_scatter_fg_layer(pb, airy, 1.5,  0.30, 0.46, 0.95, 3, 0xA5, 3.6)
+
+func _scatter_fg_layer(pb: ParallaxBackground, texs: Array, motion_x: float,
+		scale_lo: float, scale_hi: float, alpha: float, z: int, seed: int,
+		sway_amp: float) -> void:
+	var sway_sh := load("res://assets/shaders/foliage_sway.gdshader") as Shader
+	var lay := ParallaxLayer.new()
+	lay.motion_scale = Vector2(motion_x, 1.0)   # x: parallax rapido; y: trava no mundo
+	pb.add_child(lay)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var span: float = FG_LEVEL_W * motion_x + 640.0
+	var x := -300.0
+	while x < span:
+		var tex: Texture2D = texs[rng.randi() % texs.size()]
+		var s := rng.randf_range(scale_lo, scale_hi)
+		var wpx: float = tex.get_width() * s
+		var hpx: float = tex.get_height() * s
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.scale = Vector2(s, s)
+		# base na MARGEM do lago (linha da grama, ACIMA da agua) -> brota da
+		# margem sem invadir o lago; o fade da base dissolve na grama escura.
+		# (antes ficava enterrada no chao; com o lago, isso jogava a base chapada
+		# sobre a agua clara e denunciava o retangulo.)
+		var base_y: float = _waterline_y + rng.randf_range(-8.0, 8.0)
+		spr.position = Vector2(x, base_y - hpx)
+		if rng.randf() < 0.5:                    # espelha p/ variar a silhueta
+			spr.scale.x = -s
+			spr.position.x += wpx                # compensa o flip (centered=false)
+		spr.modulate = Color(1, 1, 1, alpha)
+		spr.z_index = z
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		# vento: material por instancia com fase da posicao -> balanco dessincronizado
+		if sway_sh != null:
+			var m := ShaderMaterial.new()
+			m.shader = sway_sh
+			m.set_shader_parameter("amp", sway_amp)
+			m.set_shader_parameter("speed", rng.randf_range(1.05, 1.5))
+			m.set_shader_parameter("phase", x * 0.02)
+			spr.material = m
+		lay.add_child(spr)
+		x += rng.randf_range(wpx * 0.7, wpx * 1.6)   # sobreposicoes + brechas
 
 # Carrega o backdrop pintado (importado ou PNG cru). null se nao existir.
 func _load_backdrop(path: String) -> Texture2D:
@@ -161,17 +396,24 @@ func _scatter_trees(level: Node) -> void:
 		return
 	seed(808)
 	var x := 120.0
+	var tex_h := tex.get_size().y      # ancora a BASE no chao p/ qualquer textura
+	# alvo: arvores ~260-380px no mundo (a Avon tem 220px; a procedural, 128)
+	var s_lo := 260.0 / tex_h
+	var s_hi := 380.0 / tex_h
 	while x < 5350.0:
 		var spr := Sprite2D.new()
 		spr.texture = tex
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var s := randf_range(1.8, 2.7)
+		# Avon (pintada, >=200px) usa filtro suave; procedural segue pixel
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if tex_h >= 200.0 \
+				else CanvasItem.TEXTURE_FILTER_NEAREST
+		var s := randf_range(s_lo, s_hi)
 		spr.scale = Vector2(s, s)
-		spr.position = Vector2(x, 492.0 - 64.0 * s)   # base perto do topo do chão
+		spr.position = Vector2(x, 492.0 - tex_h * 0.5 * s)   # base no topo do chão
 		spr.z_index = -5                              # atrás do gameplay
 		var d := randf()                              # profundidade: árvores ao fundo + escuras/azuis
 		spr.modulate = Color(0.52 + 0.26 * d, 0.60 + 0.24 * d, 0.56 + 0.20 * d, 0.92)
 		spr.flip_h = randf() < 0.5
+		spr.add_to_group("forest_tree")   # cinematica do boss balanca as arvores
 		level.add_child(spr)
 		x += randf_range(300.0, 560.0)
 
@@ -180,7 +422,9 @@ func _scatter_trees(level: Node) -> void:
 func _add_canvas_modulate(level: Node) -> void:
 	var cm := CanvasModulate.new()
 	cm.name = "CaveAtmosphere"
-	cm.color = Color(0.88, 0.93, 0.88) if _forest else Color(0.80, 0.72, 0.96)  # luar de floresta vs caverna
+	# luar de floresta / breu esverdeado de caverna / roxo da caverna antiga
+	cm.color = (Color(0.74, 0.86, 0.84) if _cave else Color(0.88, 0.93, 0.88)) if _forest \
+			else Color(0.80, 0.72, 0.96)
 	level.add_child(cm)
 
 # ── Stone tile textures on all platforms/floors/walls ─────────────────────────
@@ -191,13 +435,19 @@ func _apply_stone_textures(level: Node) -> void:
 	var wt := SpriteSetup.get_texture("moss_wall" if _forest else "wall_tile")
 	_visit(level, ft, pt, wt)
 
-func _visit(node: Node, ft: ImageTexture, pt: ImageTexture, wt: ImageTexture) -> void:
+# Texture2D (nao ImageTexture): tiles vindos de override PNG reimportado chegam
+# como CompressedTexture2D; os procedurais continuam ImageTexture. Aceitar ambos.
+func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 	for child in node.get_children():
 		if child is Sprite2D and child.texture is PlaceholderTexture2D:
 			var sz: Vector2 = child.texture.get_size()
 			var aspect := sz.x / sz.y
-			var tex: ImageTexture
-			if   aspect >= 8.0:  tex = ft   # very wide → floor
+			var tex: Texture2D
+			# FINO (<=28px) e largo = plataforma, mesmo com aspect enorme —
+			# antes 180x16 caia em aspect>=8 e virava "chao" (bug antigo: as
+			# plataformas nunca recebiam o proprio tile).
+			if   aspect >= 3.5 and sz.y <= 28.0: tex = pt   # ledge fino → platform
+			elif aspect >= 8.0:  tex = ft   # largo e fundo → floor
 			elif aspect >= 3.5:  tex = pt   # wide → platform
 			elif aspect <= 0.40: tex = wt   # tall → wall
 			# square-ish (aspect ~1) = special object, skip
@@ -205,10 +455,144 @@ func _visit(node: Node, ft: ImageTexture, pt: ImageTexture, wt: ImageTexture) ->
 				child.texture = tex
 				child.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 				child.region_enabled = true
-				child.region_rect = Rect2(-sz.x * 0.5, -sz.y * 0.5, sz.x, sz.y)
+				# regiao ancorada em (0,0): a linha 0 da textura (faixa de grama)
+				# cola no TOPO do sprite pra QUALQUER altura. Ancorar em -sz/2
+				# (antigo) poe a grama no meio do chao quando a altura nao e'
+				# multipla de 32.
+				var draw_h := sz.y
+				var is_plat := tex == pt and _forest and tex.get_height() >= 80
+				if is_plat:
+					# plataforma pintada: RAIZES penduradas abaixo do collider
+					# (overhang so' visual — a fisica nao muda). offset desce o
+					# desenho pra manter o topo alinhado com o topo do corpo.
+					var overhang := minf(40.0, tex.get_height() - sz.y)
+					draw_h = sz.y + overhang
+					child.offset = Vector2(0, overhang * 0.5)
+					# tecnica TERRARIA: parede de fundo atras da plataforma ate'
+					# o chao -> "encosta/caverna", a plataforma vira bancada
+					# embutida em vez de tile flutuante.
+					_add_backwall(child, sz)
+				child.region_rect = Rect2(0, 0, sz.x, draw_h)
 				child.modulate = Color.WHITE
-				child.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				# floresta = tiles pintados premium (512px, gen_forest_ground.py)
+				# -> filtro suave, mesmo registro do backdrop. Pedra/caverna
+				# segue pixel-art NEAREST.
+				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if _forest \
+						else CanvasItem.TEXTURE_FILTER_NEAREST
+				# COESAO: integra o tile na cena (feedback do Will)
+				if _forest:
+					if is_plat:
+						_feather_sides(child, sz.x, draw_h)
+					_add_terrain_glow(child, sz)
+					_add_contact_shadow(child, sz, tex == ft)
 		_visit(child, ft, pt, wt)
+
+# ── Parede de fundo (tecnica Terraria) atras das plataformas da floresta ──────
+# Mesma rocha musgada dos paredoes, so' que ESCURA e atras do gameplay: leitura
+# imediata de "interior da encosta". Vai de um pouco acima da plataforma ate'
+# dentro do chao (o piso cobre a emenda). z=-4: frente das arvores (-5), atras
+# de tudo que joga.
+const BACKWALL_GROUND_Y := 520.0
+
+# Integracao atmosferica do terreno (coesao com o backdrop pintado)
+var _feather_shader: Shader = null
+var _soft_tex: Texture2D = null
+
+func _get_feather_shader() -> Shader:
+	if _feather_shader == null:
+		_feather_shader = load("res://assets/shaders/terrain_feather.gdshader")
+	return _feather_shader
+
+func _get_soft_tex() -> Texture2D:
+	if _soft_tex != null:
+		return _soft_tex
+	var s := 64
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	var c := (s - 1) * 0.5
+	for y in range(s):
+		for x in range(s):
+			var d := Vector2(x - c, y - c).length() / c
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			a = a * a
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	_soft_tex = ImageTexture.create_from_image(img)
+	return _soft_tex
+
+func _feather_sides(spr: Sprite2D, w: float, h: float) -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = _get_feather_shader()
+	mat.set_shader_parameter("half_size", Vector2(w, h) * 0.5)
+	mat.set_shader_parameter("feather", Vector2(clampf(w * 0.18, 18.0, 40.0), 0.0))
+	spr.material = mat
+
+## Rim de musgo luminoso na linha da grama (aditivo): sangra glow sobre o backdrop.
+func _add_terrain_glow(spr: Sprite2D, sz: Vector2) -> void:
+	var glow := Sprite2D.new()
+	glow.texture = _get_soft_tex()
+	glow.z_index = 1
+	# fino e discreto: um SUSSURRO de bloom na linha do musgo, nao barra de luz.
+	glow.scale = Vector2((sz.x + 24.0) / 64.0, 16.0 / 64.0)
+	glow.position = Vector2(0, -sz.y * 0.5 + 2.0)
+	glow.modulate = Color(0.16, 0.52, 0.38, 0.18)   # teal-esmeralda apagado
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = m
+	spr.add_child(glow)
+
+## Sombra de contato: escurece abaixo do terreno (assenta na cena).
+func _add_contact_shadow(spr: Sprite2D, sz: Vector2, is_floor: bool) -> void:
+	var sh := Sprite2D.new()
+	sh.texture = _get_soft_tex()
+	sh.z_index = -1
+	sh.scale = Vector2((sz.x + 20.0) / 64.0, 30.0 / 64.0)
+	sh.position = Vector2(0, sz.y * 0.5 + (1.0 if is_floor else 8.0))
+	sh.modulate = Color(0.02, 0.05, 0.05, 0.32)
+	spr.add_child(sh)
+
+func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
+	var tex := SpriteSetup.get_texture("moss_wall")
+	if tex == null:
+		return
+	# coords LOCAIS do corpo da plataforma (o wall vira filho dele)
+	var top_local := -sz.y * 0.5 - 64.0
+	var bottom_local := BACKWALL_GROUND_Y - plat_sprite.global_position.y
+	var h := bottom_local - top_local
+	if h <= 0.0:
+		return
+	var w := sz.x + 44.0
+	var cy := top_local + h * 0.5
+	# jitter deterministico por posicao (mesma cara a cada load)
+	var jit := fposmod(plat_sprite.global_position.x * 0.137, 1.0) - 0.5
+	# 2 camadas com rotacao levemente oposta: quebra o retangulo "painel de UI"
+	# e le como face de rocha. A de tras e' maior e mais escura (silhueta).
+	var specs := [
+		[w + 30.0, h + 18.0, Color(0.22, 0.28, 0.27, 0.95),  jit * 0.07 - 0.02],
+		[w,        h,        Color(0.38, 0.47, 0.44, 0.97), -jit * 0.06 + 0.015],
+	]
+	for sp in specs:
+		var wall := Sprite2D.new()
+		wall.texture = tex
+		wall.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		wall.region_enabled = true
+		wall.region_rect = Rect2(0, 0, sp[0], sp[1])
+		wall.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		wall.z_index = -4
+		wall.modulate = sp[2]
+		wall.rotation = sp[3]
+		wall.position = Vector2(0, cy)
+		# COESAO: sem isso o painel e' um RETANGULO duro flutuando entre as
+		# arvores (o "painel de UI" que a rotacao sozinha nao mata). O feather
+		# por posicao dissolve os 4 lados -> vira cavidade de rocha que sangra
+		# na cena, nao um card. Generoso: a borda de cima (contra o backdrop) e'
+		# a que mais denuncia, entao feather forte nos dois eixos.
+		var mat := ShaderMaterial.new()
+		mat.shader = _get_feather_shader()
+		mat.set_shader_parameter("half_size", Vector2(sp[0], sp[1]) * 0.5)
+		mat.set_shader_parameter("feather", Vector2(
+				clampf(sp[0] * 0.28, 60.0, 150.0),
+				clampf(sp[1] * 0.30, 70.0, 200.0)))
+		wall.material = mat
+		plat_sprite.get_parent().add_child.call_deferred(wall)
 
 # ── Named special objects ─────────────────────────────────────────────────────
 

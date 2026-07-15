@@ -36,6 +36,7 @@ func _ready() -> void:
 	call_deferred("_connect_to_player")
 	call_deferred("_build_vignette")
 	call_deferred("_build_nail_indicator")
+	call_deferred("_build_walkrun_toggle")
 
 func _build_vignette() -> void:
 	_vignette = ColorRect.new()
@@ -59,15 +60,16 @@ func _connect_to_player() -> void:
 	_player.hp.hp_changed.connect(_on_hp_changed)
 	if _player.has_signal("fall_danger"):
 		_player.fall_danger.connect(_on_fall_danger)
+	_player.mana.mana_changed.connect(_on_mana_changed)
+	_player.mana.mana_depleted.connect(_on_mana_depleted)
+	_on_hp_changed(_player.hp.get_ratio())
+	_on_mana_changed(_player.mana.get_ratio())
+	_refresh_walkrun_btn_text()
 
 func _on_fall_danger(is_dangerous: bool) -> void:
 	_fall_danger = is_dangerous
 	if is_dangerous and _fall_vignette:
 		_fall_vignette.color.a = 0.22
-	_player.mana.mana_changed.connect(_on_mana_changed)
-	_player.mana.mana_depleted.connect(_on_mana_depleted)
-	_on_hp_changed(_player.hp.get_ratio())
-	_on_mana_changed(_player.mana.get_ratio())
 
 # ── Bar styling ───────────────────────────────────────────────────────────────
 
@@ -196,6 +198,30 @@ func _build_nail_indicator() -> void:
 		Nails.nail_changed.connect(_on_nail_changed)
 	_on_nail_changed(Nails.equipped)
 
+# ── Debug: alterna walk/run entre HD-suave e pixel-baked (F2 / botao) ─────────
+var _walkrun_btn: Button = null
+
+func _build_walkrun_toggle() -> void:
+	_walkrun_btn = Button.new()
+	_walkrun_btn.custom_minimum_size = Vector2(74, 30)
+	_walkrun_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_walkrun_btn.position = Vector2(-82, 8)
+	_walkrun_btn.add_theme_font_size_override("font_size", 11)
+	_walkrun_btn.tooltip_text = "F2 — alterna estilo do walk/run (HD-suave / pixel)"
+	_walkrun_btn.pressed.connect(_on_walkrun_toggle_pressed)
+	add_child(_walkrun_btn)
+	_refresh_walkrun_btn_text()
+
+func _on_walkrun_toggle_pressed() -> void:
+	if _player and _player.has_method("toggle_walkrun_style"):
+		_player.toggle_walkrun_style()
+		_refresh_walkrun_btn_text()
+
+func _refresh_walkrun_btn_text() -> void:
+	if not _walkrun_btn or not _player:
+		return
+	_walkrun_btn.text = "PIX ✓" if _player.get("use_pixel_walkrun") else "HD ✓"
+
 func _on_nail_changed(id: String) -> void:
 	if _nail_icon == null:
 		return
@@ -217,8 +243,11 @@ func _on_mana_changed(ratio: float) -> void:
 	mana_bar.value = ratio * 100.0
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F1:
-		visible = not visible
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F1:
+			visible = not visible
+		elif event.keycode == KEY_F2:
+			_on_walkrun_toggle_pressed()
 
 func _on_time_stop_start() -> void:
 	time_stop_overlay.visible = true

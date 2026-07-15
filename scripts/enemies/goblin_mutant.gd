@@ -23,7 +23,7 @@ const SWIPE_RANGE  = 96.0     # tapa do braço gigante
 const SLAM_RANGE   = 132.0    # pisão AoE
 const CHARGE_NEAR  = 150.0    # investe quando está nesta faixa…
 const CHARGE_FAR   = 500.0    # …até aqui
-const TOSS_NEAR    = 290.0    # arremessa quando longe
+const TOSS_NEAR    = 210.0    # arremessa bombas do meio-alcance pra fora
 
 # ── Dano ──
 const SWIPE_DAMAGE  = 30.0
@@ -49,7 +49,14 @@ const DamageNumber  = preload("res://scenes/effects/damage_number.tscn")
 const GoblinScene   = preload("res://scenes/enemies/goblin.tscn")
 const OgreShockwave = preload("res://scenes/enemies/ogre_shockwave.tscn")
 const GoblinArrow   = preload("res://scenes/enemies/goblin_arrow.tscn")
+const GoblinBomb    = preload("res://scenes/enemies/goblin_bomb.tscn")
 const BossBeam      = preload("res://scenes/enemies/boss_beam.tscn")
+
+# ── HK-tuning: punir e ser punível ──
+const STUN_DUR        = 1.5    # atordoado apos comer a parede na investida
+const STUN_DMG_MULT   = 1.5    # toma +50% de dano atordoado (janela de punicao)
+const ROCK_DAMAGE     = 18.0
+const ROCK_TELEGRAPH  = 0.55   # poeira no chao ANTES da pedra cair (da pra ler)
 
 # ── Facho de energia (braço mutante) — canal contínuo; estoura escudo do Will ──
 const BEAM_WINDUP = 0.70
@@ -263,12 +270,40 @@ func _tick_active(delta: float) -> void:
 				_charge_hit = true
 				_hit_player(CHARGE_DAMAGE)
 		if is_on_wall():
-			_t = 0.0
-			VFX.burst(global_position + Vector2(facing * 30, 0), get_parent(), Color(0.7, 0.6, 0.4), 14, 120.0, 60.0)
-			if player and is_instance_valid(player) and player.has_method("shake"):
-				player.shake(9.0, 0.3)
+			# PUNISH WINDOW (HK): errou a investida e comeu a parede -> ATORDOADO.
+			# Desviar da investida e deixar ele bater e' a leitura que o jogador
+			# aprende — e a janela de dano bonus e' a recompensa.
+			_enter_stun()
+			return
 	if _t <= 0.0:
 		_enter_recover()
+
+# ── Atordoado (comeu a parede na investida) ──────────────────────────────────
+var _stun_t := 0.0
+
+func _enter_stun() -> void:
+	_state = St.RECOVER
+	_t = STUN_DUR
+	_stun_t = STUN_DUR
+	velocity.x = 0.0
+	AudioManager.play("stomp", 0.5)
+	GameState.start_hitstop(0.10)
+	VFX.burst(global_position + Vector2(facing * 34, -10), get_parent(), Color(0.75, 0.65, 0.45), 22, 160.0, 70.0)
+	VFX.ring(global_position + Vector2(facing * 30, -20), get_parent(), Color(0.9, 0.8, 0.4, 0.8), 40.0, 0.4)
+	if player and is_instance_valid(player) and player.has_method("shake"):
+		player.shake(11.0, 0.4)
+	# visual "tonto": cor apagada + cambaleio + estrelinhas na cabeca
+	sprite.modulate = Color(0.68, 0.68, 1.05)
+	var tw := sprite.create_tween()
+	tw.tween_property(sprite, "rotation", 0.12, 0.16)
+	tw.tween_property(sprite, "rotation", -0.10, 0.22)
+	tw.tween_property(sprite, "rotation", 0.06, 0.22)
+	tw.tween_property(sprite, "rotation", 0.0, 0.20)
+	for i in 3:
+		get_tree().create_timer(0.12 + i * 0.35).timeout.connect(func():
+			if is_instance_valid(self) and not is_dead and _stun_t > 0.0:
+				VFX.sparkle(global_position + Vector2(randf_range(-18, 18), -70), get_parent(),
+						Color(1.0, 0.9, 0.4), 6))
 
 func _enter_recover() -> void:
 	_state = St.RECOVER
@@ -284,6 +319,11 @@ func _enter_recover() -> void:
 func _tick_recover(delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, _walk() * 8.0 * delta)
 	_t -= delta
+	if _stun_t > 0.0:
+		_stun_t -= delta
+		if _stun_t <= 0.0:
+			sprite.modulate = _base_mod
+			sprite.rotation = 0.0
 	if _t <= 0.0:
 		_state = St.IDLE
 		_global_cd = _global_gate()
@@ -323,12 +363,60 @@ func _do_slam() -> void:
 	VFX.ring(base, get_parent(), Color(0.85, 0.55, 0.20, 0.85), 70.0, 0.45)
 	_spawn_shockwave(1.0)
 	_spawn_shockwave(-1.0)
-	if phase != Phase.ONE:           # fase 2+: onda dupla mais cadenciada
+	if phase != Phase.ONE:           # fase 2+: onda dupla + PEDRAS DO TETO
 		_spawn_shockwave(1.0, 36.0)
 		_spawn_shockwave(-1.0, 36.0)
+		_rockfall()
 	if player and is_instance_valid(player):
 		if global_position.distance_to(player.global_position) <= SLAM_RANGE:
 			_hit_player(SLAM_DAMAGE)
+
+# ── Pedras do teto (slam fase 2+): poeira telegrafa ONDE, depois a pedra cai ──
+func _rockfall() -> void:
+	var floor_y := global_position.y + 44.0
+	var n := 4 if phase == Phase.THREE else 3
+	var px: float = player.global_position.x if (player and is_instance_valid(player)) else global_position.x
+	for i in n:
+		# mira em volta do player (uma em cima, resto espalhado) — tem corredor livre
+		var x: float = px + [0.0, -90.0, 90.0, 170.0][i % 4] + randf_range(-14.0, 14.0)
+		_drop_rock(x, floor_y, i * 0.16)
+
+func _drop_rock(x: float, floor_y: float, delay: float) -> void:
+	await get_tree().create_timer(delay).timeout
+	if not is_instance_valid(self) or is_dead: return
+	var p := get_parent()
+	# 1) telegraph: poeira caindo do teto no ponto do impacto
+	VFX.ground_burst(Vector2(x, floor_y - 150.0), p, Color(0.42, 0.38, 0.30), 6)
+	VFX.burst(Vector2(x, floor_y - 8.0), p, Color(0.40, 0.36, 0.28), 5, 30.0, 55.0)
+	await get_tree().create_timer(ROCK_TELEGRAPH).timeout
+	if not is_instance_valid(self) or is_dead: return
+	# 2) a pedra despenca
+	var rock := Sprite2D.new()
+	var tex := SpriteSetup.get_texture("moss_wall")
+	if tex:
+		rock.texture = tex
+		rock.region_enabled = true
+		rock.region_rect = Rect2(randf_range(0, 40), randf_range(0, 40), 24, 24)
+		rock.modulate = Color(0.55, 0.50, 0.44)
+	rock.rotation = randf_range(-0.5, 0.5)
+	rock.global_position = Vector2(x, floor_y - 300.0)
+	p.add_child(rock)
+	var tw := rock.create_tween()
+	tw.tween_property(rock, "global_position:y", floor_y - 10.0, 0.26)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func():
+		if not is_instance_valid(rock): return
+		VFX.ground_burst(Vector2(x, floor_y), p, Color(0.48, 0.42, 0.32), 10)
+		AudioManager.play("stomp", 1.25)
+		var pl := get_tree().get_first_node_in_group("player")
+		if pl and is_instance_valid(pl) and pl.has_method("take_damage") \
+				and absf(pl.global_position.x - x) < 26.0 \
+				and absf(pl.global_position.y - floor_y) < 60.0:
+			pl.take_damage(ROCK_DAMAGE, Vector2(x, floor_y - 40.0))
+		var ftw := rock.create_tween()
+		ftw.tween_interval(0.35)
+		ftw.tween_property(rock, "modulate:a", 0.0, 0.4)
+		ftw.tween_callback(rock.queue_free))
 
 func _begin_charge() -> void:
 	_charge_hit = false
@@ -353,16 +441,28 @@ func _do_summon() -> void:
 		VFX.ring(g.global_position, get_parent(), Color(0.5, 1.0, 0.4, 0.7), 26.0, 0.3)
 
 func _do_toss() -> void:
+	# BOMBAS (kit Siege-Gang): arco balistico mirado no player, com espalhamento
+	# por fase. A bomba pisca no chao antes de estourar (telegraph) e pode ser
+	# REBATIDA pelo slash (parry) — bomba devolvida fere o boss em dobro.
 	_t = 0.3
 	_toss_cd = TOSS_CD
 	AudioManager.play("enemy_attack", randf_range(0.6, 0.75))
-	var n := 2 if phase == Phase.THREE else 1
+	var n := 3 if phase == Phase.THREE else (2 if phase == Phase.TWO else 1)
+	var floor_y := global_position.y + 44.0
+	var target_x: float = player.global_position.x if (player and is_instance_valid(player)) \
+			else global_position.x + facing * 240.0
 	for i in n:
-		var arrow = GoblinArrow.instantiate()
-		arrow.direction = facing
-		arrow.position = global_position + Vector2(facing * 40.0, -20.0 + i * 12.0)
-		get_parent().add_child(arrow)
-	VFX.burst(global_position + Vector2(facing * 40, -16), get_parent(), Color(0.6, 0.3, 0.5), 8, 60.0, 20.0)
+		var bomb = GoblinBomb.instantiate()
+		var origin := global_position + Vector2(facing * 34.0, -34.0)
+		bomb.position = origin
+		bomb.land_y = floor_y
+		# balistica: cai perto do player com offsets por bomba (espalha o perigo)
+		var spread: float = [0.0, -78.0, 78.0][i] if i < 3 else 0.0
+		var tf := randf_range(0.72, 0.9)     # tempo de voo
+		bomb.vx = (target_x + spread - origin.x) / tf
+		bomb.vy = -(620.0 * tf) * 0.5 + (floor_y - origin.y) / tf
+		get_parent().add_child(bomb)
+	VFX.burst(global_position + Vector2(facing * 40, -30), get_parent(), Color(0.9, 0.5, 0.2), 10, 70.0, 25.0)
 
 func _begin_beam() -> void:
 	# Solta o facho contínuo pelo braço mutante (dura BEAM_DUR; segue o braço).
@@ -425,6 +525,8 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	var crit := HitZones.is_head_hit(self, from)   # cabeça = crítico (2x)
 	if crit:
 		amount *= HitZones.CRIT_MULT
+	if _stun_t > 0.0:
+		amount *= STUN_DMG_MULT   # atordoado na parede = janela de punicao
 	hp -= amount
 	if is_instance_valid(hp_bar): hp_bar.show_damage(hp / MAX_HP)
 	boss_hp_changed.emit(clampf(hp / MAX_HP, 0.0, 1.0))

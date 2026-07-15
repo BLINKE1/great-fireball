@@ -21,6 +21,12 @@ const APEX_GRAVITY_MULT  = 0.55   # gravidade reduzida perto do topo
 # pixel-art 32x64. Os assets HD ficam em assets/sprites/player/soph_hd_*.png
 # e sao gerados por tools/art_director/soph_dream.py --apply-game.
 const USE_HD_SOPH := true  # arte HD gerada (Pollinations) com downscale estilo Hollow Knight
+# walk/run vieram do PC em HD-suave (render cru, ~3000 cores) enquanto o resto da
+# Soph e' pixel-bake (paleta de 47 cores). false = mantem o HD-suave vivo p/
+# testar; true = usa a versao pixel-baked (soph_hd_walk_pix_* / _run_pix_*, mesma
+# paleta do idle) que casa com o resto do jogo. So' recolore -> preserva o loop.
+# Runtime-togglable (F2 in-game / botao do HUD) -> nao e' const de proposito.
+var use_pixel_walkrun := false
 const HD_SCALE := 0.43            # set1 c/ cajado: personagem ocupa 151px do frame de 192 → ~65px na tela
 const HD_OFFSET := Vector2(0, -8)  # sobe o sprite: pés do frame (base do 192px) no chão com a escala nova
 
@@ -534,10 +540,14 @@ func _handle_jump() -> void:
 	if Input.is_action_just_released("ui_accept") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT_MULT
 
+# Multiplicador externo de velocidade horizontal (ex.: area de agua funda no
+# tema alagados atrasa a Soph). 1.0 = normal.
+var water_speed_mult: float = 1.0
+
 func _handle_movement() -> void:
 	var direction := Input.get_axis("ui_left", "ui_right")
 	var running := Input.is_key_pressed(KEY_SHIFT)
-	var spd := RUN_SPEED if running else WALK_SPEED
+	var spd := (RUN_SPEED if running else WALK_SPEED) * water_speed_mult
 	if direction != 0:
 		velocity.x = direction * spd
 		facing = direction
@@ -1138,6 +1148,17 @@ func _build_soph_frames() -> SpriteFrames:
 		return _build_soph_frames_hd()
 	return _build_soph_frames_pixel()
 
+## Troca walk/run entre HD-suave e pixel-baked SEM cortar a animacao em curso
+## (guarda anim/frame atual e restaura). Chamado pelo botao de debug no HUD.
+func toggle_walkrun_style() -> void:
+	use_pixel_walkrun = not use_pixel_walkrun
+	var cur_anim := sprite.animation
+	var cur_frame := sprite.frame
+	sprite.sprite_frames = _build_soph_frames()
+	if sprite.sprite_frames.has_animation(cur_anim):
+		sprite.play(cur_anim)
+		sprite.frame = mini(cur_frame, sprite.sprite_frames.get_frame_count(cur_anim) - 1)
+
 func _build_soph_frames_pixel() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	# idle: 2 frames, 4 fps (slow breathe)
@@ -1182,8 +1203,12 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	# janela natural (achada do mesmo jeito) que ja repete bem sozinha, so' com um
 	# crossfade leve de seguranca.
 	_add_anim(sf, "walk_start", _seq("soph_hd_walkstart_%d", 8), 22.0, false)
-	_add_anim(sf, "walk", _seq("soph_hd_walk_%d", 36), 22.0, true)
-	_add_anim(sf, "run",  _seq("soph_hd_run_%d",  20), 18.0, true)
+	# toggle HD-suave vs pixel-baked (ver USE_PIXEL_WALKRUN). Mesmos frames/loop,
+	# so' muda a paleta -> comparar in-game sem mexer no resto.
+	var walk_pfx := "soph_hd_walk_pix_%d" if use_pixel_walkrun else "soph_hd_walk_%d"
+	var run_pfx  := "soph_hd_run_pix_%d"  if use_pixel_walkrun else "soph_hd_run_%d"
+	_add_anim(sf, "walk", _seq(walk_pfx, 36), 22.0, true)
+	_add_anim(sf, "run",  _seq(run_pfx,  20), 18.0, true)
 	_add_anim(sf, "jump", _seq("soph_hd_jump_%d",  4), 14.0, false)
 	_add_anim(sf, "fall", _seq("soph_hd_fall_%d",  3),  8.0, true)
 	_add_anim(sf, "hurt", _seq("soph_hd_hurt_%d",  6), 12.0, false)
@@ -1192,9 +1217,13 @@ func _build_soph_frames_hd() -> SpriteFrames:
 	for lvl in range(1, 6):
 		_add_anim(sf, "cast_%d"  % lvl, _seq("soph_hd_cast_%d",  10), 18.0, false)
 		_add_anim(sf, "slash_%d" % lvl, _seq("soph_hd_slash_%d", 10), 20.0, false)
-	# Estados de mana no idle reusam a arte HD (sem escurecer o cabelo por ora).
+	# Estados de mana no idle: cabelo pintado por nivel (tools/art_director/
+	# paint_mana_hair_hd.py). Gasto RAIZ->PONTAS (escurece de cima pra baixo);
+	# nivel 3 (50%) = a arte ja commitada (soph_hd_idle_%d), os demais sao
+	# variantes recoloreadas (soph_hd_idle_m<nivel>_%d).
 	for lvl in range(1, 6):
-		_add_anim(sf, "idle_%d" % lvl, _seq("soph_hd_idle_%d", 8), 7.0, true)
+		var idle_pfx := "soph_hd_idle_%d" if lvl == 3 else "soph_hd_idle_m%d_%%d" % lvl
+		_add_anim(sf, "idle_%d" % lvl, _seq(idle_pfx, 8), 7.0, true)
 	return sf
 
 func _add_anim(sf: SpriteFrames, name: String, keys: Array, fps: float, loop: bool) -> void:

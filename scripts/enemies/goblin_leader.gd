@@ -194,6 +194,8 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	VFX.enemy_impact($Sprite2D, global_position, get_parent(), kdir, amount, killing, -24.0)
 	_flash()
 	if killing:
+		if crit:
+			_head_explode(kdir)   # kill critico na cabeca -> a jaca estoura
 		_die()
 
 func _flash() -> void:
@@ -202,14 +204,72 @@ func _flash() -> void:
 	if is_instance_valid(self) and not is_dead:
 		$Sprite2D.modulate = Color.WHITE
 
+# ── Headshot fatal: a cabeca explode com sangue VERDE (goblin) ────────────────
+# Decapita o sprite de verdade (region_rect corta o topo da textura), solta
+# gibs da cabeca girando em arco e banha a area de particulas verdes.
+const HEAD_TEX_H := 14.0    # altura da cabeca na textura 36x54 (head shape y=-18)
+var _head_gone := false
+
+func _head_explode(kdir: float) -> void:
+	_head_gone = true
+	var p := get_parent()
+	var head_pos := global_position + Vector2(0, -18)
+	# sangue verde: jato principal + nevoa escura + anel + respingo no chao
+	VFX.burst(head_pos, p, Color(0.22, 0.78, 0.14), 34, 240.0, -85.0)
+	VFX.burst(head_pos, p, Color(0.10, 0.46, 0.08), 20, 150.0, -40.0)
+	VFX.ring(head_pos, p, Color(0.40, 0.92, 0.22, 0.90), 46.0, 0.42)
+	VFX.ground_burst(Vector2(global_position.x, global_position.y + 20), p,
+			Color(0.14, 0.52, 0.10), 16)
+	AudioManager.play("enemy_die", 0.62)   # tom grave = estouro
+	var pl := get_tree().get_first_node_in_group("player")
+	if pl and pl.has_method("shake"):
+		pl.shake(6.0, 0.28)
+	# decapita o sprite: region mostra so' o corpo (textura abaixo da cabeca)
+	var spr: Sprite2D = $Sprite2D
+	var tex := spr.texture
+	if tex:
+		var sz := tex.get_size()
+		spr.region_enabled = true
+		spr.region_rect = Rect2(0, HEAD_TEX_H, sz.x, sz.y - HEAD_TEX_H)
+		spr.position.y += HEAD_TEX_H * 0.5 * spr.scale.y
+		# gibs: 3 pedacos da cabeca voando em arco, girando, sumindo
+		for i in 3:
+			var gib := Sprite2D.new()
+			gib.texture = tex
+			gib.texture_filter = spr.texture_filter
+			gib.region_enabled = true
+			gib.region_rect = Rect2(sz.x / 3.0 * i, 0, sz.x / 3.0, HEAD_TEX_H)
+			gib.global_position = head_pos + Vector2(randf_range(-4, 4), randf_range(-4, 2))
+			gib.scale = spr.scale
+			gib.modulate = Color(0.75, 1.0, 0.70)   # banhado de verde
+			gib.z_index = 3
+			p.add_child(gib)
+			var vx := kdir * randf_range(30.0, 90.0) + randf_range(-40.0, 40.0)
+			var vy := randf_range(-140.0, -70.0)
+			var tw := gib.create_tween()
+			tw.set_parallel(true)
+			tw.tween_property(gib, "position:x", gib.position.x + vx, 0.65)
+			tw.tween_property(gib, "position:y", gib.position.y + vy, 0.30)\
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.chain().tween_property(gib, "position:y", gib.position.y + 60.0, 0.40)\
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			tw.parallel().tween_property(gib, "rotation", randf_range(-7.0, 7.0), 1.05)
+			tw.parallel().tween_property(gib, "modulate:a", 0.0, 1.05)
+			tw.chain().tween_callback(gib.queue_free)
+
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
 	GameState.enemy_died()
 	AudioManager.play("enemy_die")
-	VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.78, 0.12, 0.08), 20, 115.0, 58.0)
-	VFX.burst(global_position + Vector2(0, -8), get_parent(), Color(0.95, 0.45, 0.08), 10, 72.0, 30.0)
-	VFX.ring(global_position + Vector2(0, -12), get_parent(), Color(0.90, 0.30, 0.10, 0.85), 44.0, 0.38)
+	# sangue: verde-goblin se a cabeca estourou, senao o impacto padrao
+	if _head_gone:
+		VFX.burst(global_position + Vector2(0, -10), get_parent(), Color(0.18, 0.66, 0.12), 18, 105.0, 50.0)
+		VFX.ring(global_position + Vector2(0, -12), get_parent(), Color(0.35, 0.85, 0.20, 0.85), 40.0, 0.36)
+	else:
+		VFX.burst(global_position + Vector2(0, -18), get_parent(), Color(0.78, 0.12, 0.08), 20, 115.0, 58.0)
+		VFX.burst(global_position + Vector2(0, -8), get_parent(), Color(0.95, 0.45, 0.08), 10, 72.0, 30.0)
+		VFX.ring(global_position + Vector2(0, -12), get_parent(), Color(0.90, 0.30, 0.10, 0.85), 44.0, 0.38)
 	if randf() < 0.80:
 		var orb = ManaOrb.instantiate()
 		orb.position = global_position + Vector2(randf_range(-14, 14), -8)
