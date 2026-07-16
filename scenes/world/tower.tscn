@@ -1,0 +1,185 @@
+[gd_scene load_steps=25 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/hud/hud.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/skill_popup.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/world/level_visuals.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/world/tower_manager.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/world/tower_room.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/world/tower_door.gd" id="12"]
+
+[sub_resource type="RectangleShape2D" id="f1"]
+size = Vector2(2900, 32)
+
+[sub_resource type="PlaceholderTexture2D" id="f2"]
+size = Vector2(2900, 32)
+
+[sub_resource type="RectangleShape2D" id="wl"]
+size = Vector2(16, 320)
+
+[sub_resource type="PlaceholderTexture2D" id="wlt"]
+size = Vector2(16, 320)
+
+[sub_resource type="RectangleShape2D" id="wr"]
+size = Vector2(16, 320)
+
+[sub_resource type="PlaceholderTexture2D" id="wrt"]
+size = Vector2(16, 320)
+
+[sub_resource type="RectangleShape2D" id="p1c"]
+size = Vector2(180, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="p1t"]
+size = Vector2(180, 16)
+
+[sub_resource type="RectangleShape2D" id="p2c"]
+size = Vector2(200, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="p2t"]
+size = Vector2(200, 16)
+
+[sub_resource type="RectangleShape2D" id="p3c"]
+size = Vector2(180, 16)
+
+[sub_resource type="PlaceholderTexture2D" id="p3t"]
+size = Vector2(180, 16)
+
+[sub_resource type="RectangleShape2D" id="rm0"]
+size = Vector2(900, 360)
+
+[sub_resource type="RectangleShape2D" id="rm1"]
+size = Vector2(800, 360)
+
+[sub_resource type="RectangleShape2D" id="rm2"]
+size = Vector2(1200, 420)
+
+[sub_resource type="RectangleShape2D" id="ct"]
+size = Vector2(60, 180)
+
+[node name="Tower" type="Node2D"]
+
+[node name="TowerTheme" type="Node" parent="."]
+
+[node name="LevelVisuals" type="Node" parent="."]
+script = ExtResource("9")
+
+[node name="HUD" parent="." instance=ExtResource("2")]
+
+[node name="DialogueBox" parent="." instance=ExtResource("3")]
+
+[node name="SkillPopup" parent="." instance=ExtResource("4")]
+
+[node name="Player" parent="." instance=ExtResource("1")]
+position = Vector2(120, 458)
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="Floor" type="StaticBody2D" parent="Environment"]
+position = Vector2(1450, 500)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/Floor"]
+texture = SubResource("f2")
+modulate = Color(0.35, 0.30, 0.34, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/Floor"]
+shape = SubResource("f1")
+
+[node name="WallLeft" type="StaticBody2D" parent="Environment"]
+position = Vector2(20, 380)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/WallLeft"]
+texture = SubResource("wlt")
+modulate = Color(0.2, 0.18, 0.24, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/WallLeft"]
+shape = SubResource("wl")
+
+[node name="WallRight" type="StaticBody2D" parent="Environment"]
+position = Vector2(2880, 380)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/WallRight"]
+texture = SubResource("wrt")
+modulate = Color(0.2, 0.18, 0.24, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/WallRight"]
+shape = SubResource("wr")
+
+[node name="P1" type="StaticBody2D" parent="Environment"]
+position = Vector2(2100, 442)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/P1"]
+texture = SubResource("p1t")
+modulate = Color(0.3, 0.26, 0.32, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/P1"]
+shape = SubResource("p1c")
+
+[node name="P2" type="StaticBody2D" parent="Environment"]
+position = Vector2(2360, 384)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/P2"]
+texture = SubResource("p2t")
+modulate = Color(0.3, 0.26, 0.32, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/P2"]
+shape = SubResource("p2c")
+
+[node name="P3" type="StaticBody2D" parent="Environment"]
+position = Vector2(2600, 330)
+
+[node name="Sprite2D" type="Sprite2D" parent="Environment/P3"]
+texture = SubResource("p3t")
+modulate = Color(0.3, 0.26, 0.32, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/P3"]
+shape = SubResource("p3c")
+
+[node name="StaffPedestal" type="Node2D" parent="Environment"]
+position = Vector2(2680, 470)
+
+[node name="Rooms" type="Node2D" parent="."]
+
+[node name="RoomEntrance" type="Area2D" parent="Rooms"]
+position = Vector2(450, 360)
+script = ExtResource("11")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rooms/RoomEntrance"]
+shape = SubResource("rm0")
+
+[node name="RoomCorridor" type="Area2D" parent="Rooms"]
+position = Vector2(1300, 360)
+script = ExtResource("11")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rooms/RoomCorridor"]
+shape = SubResource("rm1")
+
+[node name="RoomChamber" type="Area2D" parent="Rooms"]
+position = Vector2(2300, 330)
+script = ExtResource("11")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rooms/RoomChamber"]
+shape = SubResource("rm2")
+
+[node name="Triggers" type="Node2D" parent="."]
+
+[node name="ChamberTrigger" type="Area2D" parent="Triggers"]
+position = Vector2(1760, 440)
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Triggers/ChamberTrigger"]
+shape = SubResource("ct")
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="FutureDoor" type="StaticBody2D" parent="Doors"]
+position = Vector2(2840, 430)
+script = ExtResource("12")
+door_height = 150.0
+future = true
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="TowerManager" type="Node" parent="."]
+script = ExtResource("10")

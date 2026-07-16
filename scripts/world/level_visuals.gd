@@ -14,6 +14,10 @@ var _cave := false
 # caminhada — a Soph vadeia, os pes tocam a superficie e soltam ondas. Reusa o
 # lago (waterline nos pes, agua mais turva/rasa) + ativa water_ripples.
 var _shallows := false
+# Tema TORRE (no' "TowerTheme"): interior arcano de mago — backdrop de catedral,
+# tijolo de pedra com runas purpura, luar frio + god rays, poeira magica. Sem
+# floresta/lago. Ver gen_tower_art.py.
+var _tower := false
 var _waterline_y := 488.0     # y da superficie da agua (mundo); nos pes se shallows
 
 # Foreground (folhagem perto da CAMERA): clumps procedurais fora de foco que
@@ -37,9 +41,12 @@ func _build() -> void:
 	_forest = level.has_node("DungeonManager")
 	_cave = level.has_node("CaveTheme")
 	_shallows = level.has_node("ShallowsTheme")
+	_tower = level.has_node("TowerTheme")   # torre arcana (pedra + runas purpura)
 	_waterline_y = 482.0 if _shallows else LAKE_WATERLINE_Y   # nos pes se alagados
 	_add_solid_background(level)
 	_add_parallax(level)
+	if _tower:
+		_add_god_rays(level)      # feixes frios das janelas altas (atmosfera arcana)
 	if _forest and not _cave:
 		_add_lake(level)
 		_scatter_trees(level)
@@ -79,11 +86,14 @@ func _add_solid_background(level: Node) -> void:
 	cl.name = "CaveBG"
 	cl.layer = -100
 	level.add_child(cl)
-	if _forest:
+	if _forest or _tower:
 		# Backdrop pintado (John Avon) se houver PNG; senao gradiente de entardecer.
-		# Tema caverna: a parede pintada vira o fundo TODO (Terraria full-wall).
-		var bd_path := "res://assets/sprites/backgrounds/cave_backdrop.png" if _cave \
-				else "res://assets/sprites/backgrounds/forest_backdrop.png"
+		# Tema caverna: parede pintada vira o fundo TODO. Torre: catedral arcana.
+		var bd_path := "res://assets/sprites/backgrounds/forest_backdrop.png"
+		if _tower:
+			bd_path = "res://assets/sprites/backgrounds/tower_backdrop.png"
+		elif _cave:
+			bd_path = "res://assets/sprites/backgrounds/cave_backdrop.png"
 		var backdrop := _load_backdrop(bd_path)
 		var tr := TextureRect.new()
 		if backdrop != null:
@@ -363,10 +373,9 @@ func _add_parallax(level: Node) -> void:
 	var far_tex := SpriteSetup.get_texture("forest_far" if _forest else "cave_far")
 	var mid_tex := SpriteSetup.get_texture("forest_mid" if _forest else "cave_mid")
 
-	if _forest:
-		# O céu de floresta é o gradiente de _add_solid_background (sempre visível).
-		# O parallax de árvores não renderiza no contexto da dungeon (limites de
-		# câmera), então fica desligado aqui — a linha de árvores vive no gradiente.
+	if _forest or _tower:
+		# Floresta: a linha de árvores vive no gradiente/backdrop. Torre: o backdrop
+		# pintado (catedral) JA e' o fundo — nada de estalactites de caverna aqui.
 		pass
 	else:
 		# Far layer — barely moves (0.08x horizontal). Sprite y=-250 covers ceiling area.
@@ -422,18 +431,35 @@ func _scatter_trees(level: Node) -> void:
 func _add_canvas_modulate(level: Node) -> void:
 	var cm := CanvasModulate.new()
 	cm.name = "CaveAtmosphere"
-	# luar de floresta / breu esverdeado de caverna / roxo da caverna antiga
-	cm.color = (Color(0.74, 0.86, 0.84) if _cave else Color(0.88, 0.93, 0.88)) if _forest \
-			else Color(0.80, 0.72, 0.96)
+	# luar frio-purpura da torre / luar de floresta / breu de caverna / roxo antigo
+	if _tower:
+		cm.color = Color(0.72, 0.70, 0.86)     # luar arcano frio (leve purpura)
+	elif _forest:
+		cm.color = Color(0.74, 0.86, 0.84) if _cave else Color(0.88, 0.93, 0.88)
+	else:
+		cm.color = Color(0.80, 0.72, 0.96)
 	level.add_child(cm)
 
 # ── Stone tile textures on all platforms/floors/walls ─────────────────────────
 
 func _apply_stone_textures(level: Node) -> void:
-	var ft := SpriteSetup.get_texture("grass_floor" if _forest else "floor_tile")
-	var pt := SpriteSetup.get_texture("grass_platform" if _forest else "platform_tile")
-	var wt := SpriteSetup.get_texture("moss_wall" if _forest else "wall_tile")
+	var ft: Texture2D
+	var pt: Texture2D
+	var wt: Texture2D
+	if _tower:
+		# tijolo arcano pintado — carregado por caminho (nao registrado no SpriteSetup)
+		ft = _load_backdrop("res://assets/tilesets/tower_floor.png")
+		pt = _load_backdrop("res://assets/tilesets/tower_platform.png")
+		wt = _load_backdrop("res://assets/tilesets/tower_wall.png")
+	else:
+		ft = SpriteSetup.get_texture("grass_floor" if _forest else "floor_tile")
+		pt = SpriteSetup.get_texture("grass_platform" if _forest else "platform_tile")
+		wt = SpriteSetup.get_texture("moss_wall" if _forest else "wall_tile")
 	_visit(level, ft, pt, wt)
+
+# Cor do rim de musgo/runa por tema (integra o tile na paleta da cena).
+func _rim_color() -> Color:
+	return Color(0.52, 0.30, 0.85, 0.20) if _tower else Color(0.16, 0.52, 0.38, 0.18)
 
 # Texture2D (nao ImageTexture): tiles vindos de override PNG reimportado chegam
 # como CompressedTexture2D; os procedurais continuam ImageTexture. Aceitar ambos.
@@ -460,7 +486,8 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# (antigo) poe a grama no meio do chao quando a altura nao e'
 				# multipla de 32.
 				var draw_h := sz.y
-				var is_plat := tex == pt and _forest and tex.get_height() >= 80
+				var themed := _forest or _tower
+				var is_plat := tex == pt and themed and tex.get_height() >= 80
 				if is_plat:
 					# plataforma pintada: RAIZES penduradas abaixo do collider
 					# (overhang so' visual — a fisica nao muda). offset desce o
@@ -477,10 +504,10 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				# floresta = tiles pintados premium (512px, gen_forest_ground.py)
 				# -> filtro suave, mesmo registro do backdrop. Pedra/caverna
 				# segue pixel-art NEAREST.
-				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if _forest \
+				child.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if themed \
 						else CanvasItem.TEXTURE_FILTER_NEAREST
 				# COESAO: integra o tile na cena (feedback do Will)
-				if _forest:
+				if themed:
 					if is_plat:
 						_feather_sides(child, sz.x, draw_h)
 					_add_terrain_glow(child, sz)
@@ -533,7 +560,7 @@ func _add_terrain_glow(spr: Sprite2D, sz: Vector2) -> void:
 	# fino e discreto: um SUSSURRO de bloom na linha do musgo, nao barra de luz.
 	glow.scale = Vector2((sz.x + 24.0) / 64.0, 16.0 / 64.0)
 	glow.position = Vector2(0, -sz.y * 0.5 + 2.0)
-	glow.modulate = Color(0.16, 0.52, 0.38, 0.18)   # teal-esmeralda apagado
+	glow.modulate = _rim_color()   # musgo (floresta) / runa purpura (torre)
 	var m := CanvasItemMaterial.new()
 	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = m
@@ -550,7 +577,8 @@ func _add_contact_shadow(spr: Sprite2D, sz: Vector2, is_floor: bool) -> void:
 	spr.add_child(sh)
 
 func _add_backwall(plat_sprite: Sprite2D, sz: Vector2) -> void:
-	var tex := SpriteSetup.get_texture("moss_wall")
+	var tex := _load_backdrop("res://assets/tilesets/tower_wall.png") if _tower \
+			else SpriteSetup.get_texture("moss_wall")
 	if tex == null:
 		return
 	# coords LOCAIS do corpo da plataforma (o wall vira filho dele)
