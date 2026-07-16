@@ -1,9 +1,9 @@
 extends Node
-## Orquestra o slice jogavel da Torre dos Magos: atrio -> corredor -> CAMARA DA
-## STAFF. A Soph entra na camara, os golens guardioes despertam; ao limpar a
-## sala, o cajado no pedestal se ergue e voa pra ela (a maga recupera sua arma).
-## Uma porta arcana trancada na parede do fundo insinua a torre exploravel que
-## vem depois (metroidvania — arquitetura pronta pra crescer em salas conectadas).
+## Orquestra a Torre dos Magos (metroidvania). Progressao:
+##   átrio -> SALÃO DOS GUARDIÕES (golens ambiente) -> POÇO (subida + segredo no
+##   topo) -> CÂMARA DA STAFF (golens guardioes + o cajado) -> [porta selada
+##   abre com a staff] -> ALA SELADA (golem-elite + tesouro) -> CUME (saida pra
+##   floresta). A staff e' a "chave" que destranca a ala — loop metroidvania.
 
 const GolemScene = preload("res://scenes/enemies/golem.tscn")
 
@@ -11,12 +11,14 @@ const GolemScene = preload("res://scenes/enemies/golem.tscn")
 @onready var dialogue_box    = $"../DialogueBox"
 @onready var skill_popup     = $"../SkillPopup"
 @onready var enemies         = $"../Enemies"
+@onready var guard_trigger   = $"../Triggers/GuardTrigger"
 @onready var chamber_trigger = $"../Triggers/ChamberTrigger"
+@onready var wing_trigger    = $"../Triggers/WingTrigger"
 @onready var pedestal        = $"../Environment/StaffPedestal"
-@onready var future_door     = $"../Doors/FutureDoor"
+@onready var sealed_door     = $"../Doors/SealedDoor"
 
 var _staff: Node2D = null
-var _done := false
+var _got_staff := false
 
 func _ready() -> void:
 	GameState.reset_state()
@@ -30,13 +32,27 @@ func _start() -> void:
 	_place_staff()
 	await _say([
 		"A Torre dos Magos... abandonada há tanto tempo.",
-		"Foi aqui que perdi meu cajado. Sinto a mana dele pulsando adiante.",
-		"Guardiões de pedra ainda rondam os corredores. Cuidado, Soph.",
+		"Foi aqui que perdi meu cajado. Sinto a mana dele pulsando lá no alto.",
+		"Guardiões de pedra ainda rondam. Cuidado, Soph.",
 	], ["Soph", "Soph", "Soph"])
+	if guard_trigger:
+		guard_trigger.body_entered.connect(_on_guard, CONNECT_ONE_SHOT)
 	if chamber_trigger:
 		chamber_trigger.body_entered.connect(_on_chamber, CONNECT_ONE_SHOT)
 
-# ── Câmara da staff: os golens guardiões despertam ───────────────────────────
+# ── Salão dos Guardiões: golens ambiente (nao trava a passagem) ──────────────
+
+func _on_guard(body: Node) -> void:
+	if not body.is_in_group("player"):
+		return
+	if guard_trigger:
+		guard_trigger.monitoring = false
+	await _say(["Guardiões! Pedra viva. A espada arranha; a magia dói mais."], ["Soph"])
+	AudioManager.play("roar", 0.9)
+	_spawn(GolemScene, Vector2(1180, 466))
+	_spawn(GolemScene, Vector2(1360, 466))
+
+# ── Câmara da Staff: os guardioes despertam; limpar libera o cajado ──────────
 
 func _on_chamber(body: Node) -> void:
 	if not body.is_in_group("player"):
@@ -48,27 +64,28 @@ func _on_chamber(body: Node) -> void:
 		"E os guardiões despertaram. Vou ter que passar por eles.",
 	], ["Soph", "Soph"])
 	AudioManager.play("roar")
-	_spawn(GolemScene, Vector2(1980, 466))
-	_spawn(GolemScene, Vector2(2260, 466))
-	_spawn(GolemScene, Vector2(2500, 466))
-	await _wait_clear()
+	var guardians := [
+		_spawn(GolemScene, Vector2(2360, 466)),
+		_spawn(GolemScene, Vector2(2620, 466)),
+		_spawn(GolemScene, Vector2(2820, 466)),
+	]
+	await _wait_for(guardians)
 	await _reclaim_staff()
 
-# ── A maga recupera o cajado (o pedestal se abre, a staff voa pra ela) ────────
+# ── A maga recupera o cajado -> a porta selada abre (a staff e' a chave) ──────
 
 func _reclaim_staff() -> void:
-	if _done:
+	if _got_staff:
 		return
-	_done = true
+	_got_staff = true
 	await _say(["Silêncio de novo. Agora... meu cajado."], ["Soph"])
 	AudioManager.play("boss_appear")
-	var to := player.global_position + Vector2(0, -18) if is_instance_valid(player) \
-			else pedestal.global_position + Vector2(0, -80)
+	var to: Vector2 = (player.global_position + Vector2(0, -18)) if is_instance_valid(player) \
+			else (pedestal.global_position + Vector2(0, -80))
 	if is_instance_valid(_staff):
 		VFX.ring(_staff.global_position, get_parent(), Color(0.6, 0.35, 1.0, 0.9), 40.0, 0.5)
 		var tw := _staff.create_tween()
-		tw.tween_property(_staff, "global_position", _staff.global_position + Vector2(0, -30), 0.4)\
-			.set_trans(Tween.TRANS_SINE)
+		tw.tween_property(_staff, "global_position", _staff.global_position + Vector2(0, -30), 0.4).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(_staff, "global_position", to, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tw.parallel().tween_property(_staff, "scale", Vector2(0.2, 0.2), 0.5)
 		tw.tween_callback(_staff.queue_free)
@@ -81,12 +98,69 @@ func _reclaim_staff() -> void:
 		await skill_popup.show_skill("magic_missile")
 	await _say([
 		"De volta às minhas mãos. A mana flui outra vez.",
-		"Aquela porta selada no fundo... a torre guarda muito mais.",
-		"Mas primeiro: o Fireball. A floresta me espera lá fora.",
-	], ["Soph", "Soph", "Soph"])
-	# insinua a expansao: o selo da porta do fundo pulsa (fica trancada de proposito)
-	if future_door and future_door.has_method("unlock"):
-		pass   # future_door segue trancada — e' o gancho da area exploravel
+		"A porta selada... o cajado é a chave. O selo cede!",
+	], ["Soph", "Soph"])
+	if sealed_door and sealed_door.has_method("unlock"):
+		sealed_door.unlock()
+	if wing_trigger:
+		wing_trigger.body_entered.connect(_on_wing, CONNECT_ONE_SHOT)
+
+# ── Ala Selada: golem-elite guardando o caminho ao cume ──────────────────────
+
+func _on_wing(body: Node) -> void:
+	if not body.is_in_group("player"):
+		return
+	if wing_trigger:
+		wing_trigger.monitoring = false
+	await _say([
+		"Um guardião maior... o coração de pedra da torre.",
+		"Passo por ele e chego ao topo — e à saída pra floresta.",
+	], ["Soph", "Soph"])
+	AudioManager.play("roar", 0.7)
+	var elite := _spawn(GolemScene, Vector2(3520, 458))
+	elite.scale = Vector2(1.5, 1.5)          # elite: maior e mais imponente
+	if "hp" in elite:
+		elite.hp = 180.0                      # mais duro (barra escala pela vida)
+	await _wait_for([elite])
+	await _open_summit()
+
+# ── Cume: saida pra floresta ─────────────────────────────────────────────────
+
+func _open_summit() -> void:
+	await _say([
+		"O caminho está livre. O cume — e o mundo lá fora.",
+		"Agora, com o cajado de volta: o Fireball me espera na floresta.",
+	], ["Soph", "Soph"])
+	var portal := Area2D.new()
+	portal.position = Vector2(4050, 462)
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(90, 96)
+	shape.shape = rect
+	portal.add_child(shape)
+	var glow := Sprite2D.new()
+	glow.texture = _soft_tex()
+	glow.scale = Vector2(2.6, 3.2)
+	glow.modulate = Color(0.55, 0.35, 1.0, 0.9)
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = m
+	portal.add_child(glow)
+	get_parent().add_child(portal)
+	var tw := glow.create_tween().set_loops()
+	tw.tween_property(glow, "modulate:a", 0.5, 0.9).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(glow, "modulate:a", 0.95, 0.9).set_ease(Tween.EASE_IN_OUT)
+	VFX.ring(portal.position, get_parent(), Color(0.6, 0.4, 1.0, 0.9), 55.0, 0.6)
+	AudioManager.play("boss_appear")
+	portal.body_entered.connect(_on_portal)
+
+func _on_portal(body: Node) -> void:
+	if not body.is_in_group("player"):
+		return
+	if body.has_method("set_cutscene"):
+		body.set_cutscene(true)
+	GameState.fade_out_then(func():
+		get_tree().change_scene_to_file("res://scenes/world/dungeon_1.tscn"))
 
 # ── O cajado no pedestal (sprite procedural: haste + orbe de mana) ───────────
 
@@ -96,13 +170,11 @@ func _place_staff() -> void:
 	_staff = Node2D.new()
 	_staff.global_position = pedestal.global_position + Vector2(0, -40)
 	get_parent().add_child(_staff)
-	# haste
 	var shaft := Line2D.new()
 	shaft.points = PackedVector2Array([Vector2(0, 24), Vector2(-2, -18)])
 	shaft.width = 4.0
 	shaft.default_color = Color(0.42, 0.30, 0.20)
 	_staff.add_child(shaft)
-	# orbe de mana no topo (glow aditivo pulsante)
 	var orb := Sprite2D.new()
 	orb.texture = _soft_tex()
 	orb.scale = Vector2(0.5, 0.5)
@@ -115,9 +187,7 @@ func _place_staff() -> void:
 	var tw := orb.create_tween().set_loops()
 	tw.tween_property(orb, "scale", Vector2(0.62, 0.62), 0.9).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(orb, "scale", Vector2(0.5, 0.5), 0.9).set_ease(Tween.EASE_IN_OUT)
-	# feixe de luz subindo do pedestal
-	VFX.ring(pedestal.global_position + Vector2(0, -20), get_parent(),
-			Color(0.55, 0.35, 1.0, 0.7), 30.0, 0.6)
+	VFX.ring(pedestal.global_position + Vector2(0, -20), get_parent(), Color(0.55, 0.35, 1.0, 0.7), 30.0, 0.6)
 
 func _soft_tex() -> Texture2D:
 	var s := 32
@@ -137,9 +207,18 @@ func _say(lines: Array, names: Array = []) -> void:
 	await dialogue_box.dialogue_finished
 	GameState.dialogue_active = false
 
-func _wait_clear() -> void:
-	while get_tree().get_nodes_in_group("enemy").size() > 0:
-		await get_tree().create_timer(0.4).timeout
+## Espera SO' pelos inimigos deste encontro (golens mortos se auto-liberam ->
+## is_instance_valid fica falso). Evita travar por golens de outra sala.
+func _wait_for(nodes: Array) -> void:
+	while true:
+		var alive := false
+		for n in nodes:
+			if is_instance_valid(n):
+				alive = true
+				break
+		if not alive:
+			return
+		await get_tree().create_timer(0.35).timeout
 
 func _spawn(scene: PackedScene, pos: Vector2) -> Node:
 	var node = scene.instantiate()
