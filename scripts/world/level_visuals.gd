@@ -489,16 +489,16 @@ func _visit(node: Node, ft: Texture2D, pt: Texture2D, wt: Texture2D) -> void:
 				var themed := _forest or _tower
 				var is_plat := tex == pt and themed and tex.get_height() >= 80
 				if is_plat:
-					# plataforma pintada: RAIZES penduradas abaixo do collider
-					# (overhang so' visual — a fisica nao muda). offset desce o
-					# desenho pra manter o topo alinhado com o topo do corpo.
+					# overhang visual (plataforma mais encorpada): na floresta sao
+					# RAIZES penduradas; na torre, pedra encorpada (ledge solido).
 					var overhang := minf(40.0, tex.get_height() - sz.y)
 					draw_h = sz.y + overhang
 					child.offset = Vector2(0, overhang * 0.5)
-					# tecnica TERRARIA: parede de fundo atras da plataforma ate'
-					# o chao -> "encosta/caverna", a plataforma vira bancada
-					# embutida em vez de tile flutuante.
-					_add_backwall(child, sz)
+					# backwall "Terraria" so' na floresta/caverna (encosta organica).
+					# Na TORRE (catedral) o painel translucido flutuava estranho ->
+					# plataforma de pedra limpa (estilo City of Tears) le melhor.
+					if _forest:
+						_add_backwall(child, sz)
 				child.region_rect = Rect2(0, 0, sz.x, draw_h)
 				child.modulate = Color.WHITE
 				# floresta = tiles pintados premium (512px, gen_forest_ground.py)

@@ -19,7 +19,8 @@ var _t: float = 0.0
 func _ready() -> void:
 	add_to_group("tower_door")
 	var tex := _load("res://assets/sprites/tower_door.png")
-	var scale_v := door_height / (tex.get_height() if tex else 641.0)
+	var tex_h: float = float(tex.get_height()) if tex else 641.0
+	var scale_v: float = door_height / tex_h
 	_sprite = Sprite2D.new()
 	_sprite.texture = tex
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
